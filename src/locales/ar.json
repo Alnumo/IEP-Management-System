@@ -1,0 +1,72 @@
+{
+  "app": {
+    "title": "مركز أركان النمو",
+    "subtitle": "إدارة البرامج العلاجية"
+  },
+  "navigation": {
+    "plans": "البرامج العلاجية",
+    "categories": "التصنيفات",
+    "dashboard": "لوحة التحكم",
+    "settings": "الإعدادات"
+  },
+  "plans": {
+    "title": "البرامج العلاجية",
+    "addNew": "إضافة برنامج جديد",
+    "edit": "تعديل",
+    "view": "عرض",
+    "delete": "حذف",
+    "duplicate": "نسخ",
+    "featured": "مميز",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "searchPlaceholder": "البحث في البرامج...",
+    "noResults": "لا توجد برامج",
+    "loading": "جاري التحميل..."
+  },
+  "form": {
+    "required": "هذا الحقل مطلوب",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "saving": "جاري الحفظ...",
+    "basicInfo": "المعلومات الأساسية",
+    "details": "التفاصيل",
+    "pricing": "التسعير"
+  },
+  "plan": {
+    "nameAr": "اسم البرنامج (عربي)",
+    "nameEn": "اسم البرنامج (إنجليزي)",
+    "descriptionAr": "الوصف (عربي)",
+    "descriptionEn": "الوصف (إنجليزي)",
+    "category": "التصنيف",
+    "duration": "مدة البرنامج",
+    "weeks": "أسابيع",
+    "sessionsPerWeek": "الجلسات الأسبوعية",
+    "totalSessions": "إجمالي الجلسات",
+    "pricePerSession": "سعر الجلسة",
+    "totalPrice": "السعر الإجمالي",
+    "discount": "نسبة الخصم",
+    "finalPrice": "السعر النهائي",
+    "ageRange": "الفئة العمرية",
+    "prerequisites": "المتطلبات المسبقة",
+    "materials": "المواد المطلوبة",
+    "objectives": "أهداف التعلم"
+  },
+  "categories": {
+    "title": "تصنيفات البرامج",
+    "addNew": "إضافة تصنيف",
+    "nameAr": "اسم التصنيف (عربي)",
+    "nameEn": "اسم التصنيف (إنجليزي)",
+    "color": "اللون",
+    "icon": "الأيقونة"
+  },
+  "common": {
+    "yes": "نعم",
+    "no": "لا",
+    "confirm": "تأكيد",
+    "close": "إغلاق",
+    "back": "العودة",
+    "next": "التالي",
+    "previous": "السابق",
+    "currency": "ر.س"
+  }
+}

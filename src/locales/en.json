@@ -1,0 +1,72 @@
+{
+  "app": {
+    "title": "Arkan Growth Center",
+    "subtitle": "Therapy Plans Management"
+  },
+  "navigation": {
+    "plans": "Therapy Plans",
+    "categories": "Categories",
+    "dashboard": "Dashboard",
+    "settings": "Settings"
+  },
+  "plans": {
+    "title": "Therapy Plans",
+    "addNew": "Add New Plan",
+    "edit": "Edit",
+    "view": "View",
+    "delete": "Delete",
+    "duplicate": "Duplicate",
+    "featured": "Featured",
+    "active": "Active",
+    "inactive": "Inactive",
+    "searchPlaceholder": "Search plans...",
+    "noResults": "No plans found",
+    "loading": "Loading..."
+  },
+  "form": {
+    "required": "This field is required",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "basicInfo": "Basic Information",
+    "details": "Details",
+    "pricing": "Pricing"
+  },
+  "plan": {
+    "nameAr": "Plan Name (Arabic)",
+    "nameEn": "Plan Name (English)",
+    "descriptionAr": "Description (Arabic)",
+    "descriptionEn": "Description (English)",
+    "category": "Category",
+    "duration": "Duration",
+    "weeks": "weeks",
+    "sessionsPerWeek": "Sessions per Week",
+    "totalSessions": "Total Sessions",
+    "pricePerSession": "Price per Session",
+    "totalPrice": "Total Price",
+    "discount": "Discount Percentage",
+    "finalPrice": "Final Price",
+    "ageRange": "Age Range",
+    "prerequisites": "Prerequisites",
+    "materials": "Required Materials",
+    "objectives": "Learning Objectives"
+  },
+  "categories": {
+    "title": "Plan Categories",
+    "addNew": "Add Category",
+    "nameAr": "Category Name (Arabic)",
+    "nameEn": "Category Name (English)",
+    "color": "Color",
+    "icon": "Icon"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "currency": "SAR"
+  }
+}
