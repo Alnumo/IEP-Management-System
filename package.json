@@ -13,6 +13,9 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "verify-build": "node scripts/verify-build.js",
+    "test:db": "node test-supabase-connection.js",
+    "db:combine": "node scripts/combine-sql.js",
+    "db:verify": "node scripts/verify-database.js",
     "deploy": "npm run build:production && netlify deploy --prod",
     "deploy:preview": "npm run build:production && netlify deploy"
   },

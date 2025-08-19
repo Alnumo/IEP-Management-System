@@ -3,13 +3,11 @@ import { PlanForm } from '@/components/forms/PlanForm'
 import { usePlan, useUpdatePlan } from '@/hooks/usePlans'
 import { PlanFormData } from '@/lib/validations'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslation } from '@/hooks/useTranslation'
 
 export const EditPlanPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { language } = useLanguage()
-  const { t } = useTranslation()
   
   const { data: plan, isLoading, error } = usePlan(id!)
   const updatePlanMutation = useUpdatePlan()

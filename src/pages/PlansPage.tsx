@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plus, TrendingUp, Users, Star, Activity } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PlanCard } from '@/components/cards/PlanCard'
 import { SearchFilter } from '@/components/shared/SearchFilter'
 import { SortDropdown } from '@/components/shared/SortDropdown'
-import { usePlans } from '@/hooks/usePlans'
+import { LoginForm } from '@/components/auth/LoginForm'
+import { usePlans, useDeletePlan } from '@/hooks/usePlans'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useTranslation } from '@/hooks/useTranslation'
 import { PlanFilters, PlanSortOptions } from '@/types/plans'
 import { formatCurrency } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 export const PlansPage = () => {
   const navigate = useNavigate()
@@ -21,8 +23,24 @@ export const PlansPage = () => {
     field: 'created_at',
     direction: 'desc'
   })
+  const [user, setUser] = useState(null)
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null)
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
   
   const { data: allPlans = [], isLoading, error } = usePlans({})
+  const deletePlanMutation = useDeletePlan()
   
   // Apply filters and sorting locally for better UX
   const { plans, stats } = useMemo(() => {
@@ -104,20 +122,59 @@ export const PlansPage = () => {
     // TODO: Implement duplicate functionality
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     console.log('Delete plan:', id)
-    // TODO: Implement delete functionality with confirmation
+    
+    // Get the plan name for confirmation
+    const plan = allPlans.find(p => p.id === id)
+    const planName = plan?.name_ar || 'هذا البرنامج'
+    
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `هل أنت متأكد من حذف البرنامج "${planName}"؟\n\nهذا الإجراء لا يمكن التراجع عنه.`
+    )
+    
+    if (!confirmed) return
+    
+    try {
+      await deletePlanMutation.mutateAsync(id)
+      console.log('✅ Plan deleted successfully')
+    } catch (error) {
+      console.error('❌ Failed to delete plan:', error)
+      alert(`خطأ في حذف البرنامج: ${error.message}`)
+    }
   }
 
   const handleAddNew = () => {
+    console.log('Add New button clicked - navigating to /plans/add')
     navigate('/plans/add')
+  }
+
+  // Show login form if not authenticated
+  if (!user) {
+    return (
+      <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="text-center">
+          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+            {t('plans.title')}
+          </h1>
+          <p className={`text-muted-foreground mb-6 ${language === 'ar' ? 'font-arabic' : ''}`}>
+            {language === 'ar' 
+              ? 'يجب تسجيل الدخول للوصول لإدارة البرامج العلاجية'
+              : 'Please log in to access therapy plans management'
+            }
+          </p>
+        </div>
+        <LoginForm />
+      </div>
+    )
   }
 
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className={`text-red-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
-          {t('plans.loading')} {/* Fallback error message */}
+          {error.message || 'An error occurred while loading plans'}
         </p>
       </div>
     )

@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslation } from '@/hooks/useTranslation'
 import { PlanCategory } from '@/types/categories'
 
 // Validation schema
@@ -34,7 +33,6 @@ interface CategoryFormProps {
 
 export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading = false }: CategoryFormProps) => {
   const { language, isRTL } = useLanguage()
-  const { t } = useTranslation()
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Edit, Trash2, Search, Grid, List } from 'lucide-react'
 import { useAllCategories, useDeleteCategory } from '@/hooks/useCategories'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslation } from '@/hooks/useTranslation'
 import { PlanCategory } from '@/types/categories'
 
 import { Button } from '@/components/ui/button'
@@ -14,7 +13,6 @@ import { Badge } from '@/components/ui/badge'
 export const CategoriesPage = () => {
   const navigate = useNavigate()
   const { language, isRTL } = useLanguage()
-  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 

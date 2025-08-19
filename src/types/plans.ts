@@ -23,6 +23,7 @@ export interface TherapyPlan {
   max_students_per_session: number
   materials_needed: string[]
   learning_objectives: string[]
+  allowed_freeze_days: number
   created_by?: string
   created_at: string
   updated_at: string
@@ -76,6 +77,7 @@ export interface CreatePlanData {
   max_students_per_session?: number
   materials_needed?: string[]
   learning_objectives?: string[]
+  allowed_freeze_days?: number
   is_featured?: boolean
 }
 

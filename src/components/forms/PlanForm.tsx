@@ -592,7 +592,7 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <FormField
                       control={form.control}
                       name="target_age_min"
@@ -652,6 +652,29 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
                               max="10"
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="allowed_freeze_days"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className={language === 'ar' ? 'font-arabic' : ''}>
+                            {language === 'ar' ? 'أيام تجميد الاشتراك المسموح' : 'Allowed freeze days'}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="365"
+                              placeholder={language === 'ar' ? 'عدد الأيام' : 'Number of days'}
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                             />
                           </FormControl>
                           <FormMessage />

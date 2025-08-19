@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Search, Filter, X, SlidersHorizontal } from 'lucide-react'
+import { Search, X, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -31,7 +30,6 @@ export const SearchFilter = ({
   onFiltersChange, 
   placeholder = "البحث..." 
 }: SearchFilterProps) => {
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const { data: categories = [] } = useCategories()
 
   const handleSearchChange = (value: string) => {

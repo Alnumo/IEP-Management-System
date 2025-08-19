@@ -69,6 +69,7 @@ export const mockPlans: TherapyPlan[] = [
     max_students_per_session: 1,
     materials_needed: ['بطاقات صور', 'مرآة', 'ألعاب تفاعلية', 'كتب قصص'],
     learning_objectives: ['تحسين نطق الأصوات', 'زيادة المفردات', 'تطوير مهارات التواصل'],
+    allowed_freeze_days: 14,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z'
   },
@@ -95,6 +96,7 @@ export const mockPlans: TherapyPlan[] = [
     max_students_per_session: 1,
     materials_needed: ['كرات علاجية', 'أدوات حرفية', 'ألعاب توازن'],
     learning_objectives: ['تحسين التوازن', 'تطوير المهارات الحركية', 'زيادة التناسق'],
+    allowed_freeze_days: 21,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z'
   },

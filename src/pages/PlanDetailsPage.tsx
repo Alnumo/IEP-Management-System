@@ -1,8 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Edit, Copy, Trash2, Calendar, Clock, Users, Star, DollarSign, Target, BookOpen, Package } from 'lucide-react'
-import { usePlan } from '@/hooks/usePlans'
+import { usePlan, useDeletePlan } from '@/hooks/usePlans'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslation } from '@/hooks/useTranslation'
 import { formatCurrency } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
@@ -14,22 +13,66 @@ export const PlanDetailsPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { language, isRTL } = useLanguage()
-  const { t } = useTranslation()
   
   const { data: plan, isLoading, error } = usePlan(id!)
+  const deletePlanMutation = useDeletePlan()
 
   const handleEdit = () => {
     navigate(`/plans/edit/${id}`)
   }
 
   const handleDuplicate = () => {
-    // TODO: Implement duplicate functionality
+    if (!plan) return
+    
     console.log('Duplicate plan:', id)
+    
+    // Navigate to add page with pre-filled data from this plan
+    // We'll pass the plan data through URL state
+    navigate('/plans/add', { 
+      state: { 
+        duplicateFrom: {
+          name_ar: `نسخة من ${plan.name_ar}`,
+          name_en: plan.name_en ? `Copy of ${plan.name_en}` : '',
+          description_ar: plan.description_ar,
+          description_en: plan.description_en,
+          category_id: plan.category_id,
+          duration_weeks: plan.duration_weeks,
+          sessions_per_week: plan.sessions_per_week,
+          price_per_session: plan.price_per_session,
+          discount_percentage: plan.discount_percentage,
+          target_age_min: plan.target_age_min,
+          target_age_max: plan.target_age_max,
+          max_students_per_session: plan.max_students_per_session,
+          materials_needed: plan.materials_needed,
+          learning_objectives: plan.learning_objectives,
+          prerequisites: plan.prerequisites,
+          is_featured: false // Don't duplicate featured status
+        }
+      }
+    })
   }
 
-  const handleDelete = () => {
-    // TODO: Implement delete with confirmation
+  const handleDelete = async () => {
+    if (!plan) return
+    
     console.log('Delete plan:', id)
+    
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `هل أنت متأكد من حذف البرنامج "${plan.name_ar}"؟\n\nهذا الإجراء لا يمكن التراجع عنه.`
+    )
+    
+    if (!confirmed) return
+    
+    try {
+      await deletePlanMutation.mutateAsync(id!)
+      console.log('✅ Plan deleted successfully')
+      // Navigate back to plans list after successful deletion
+      navigate('/plans')
+    } catch (error) {
+      console.error('❌ Failed to delete plan:', error)
+      alert(`خطأ في حذف البرنامج: ${error.message}`)
+    }
   }
 
   const handleBack = () => {
@@ -301,6 +344,15 @@ export const PlanDetailsPage = () => {
                   {language === 'ar' ? 'عدد الطلاب/الجلسة' : 'Students per session'}
                 </p>
                 <p className="font-semibold">{plan.max_students_per_session}</p>
+              </div>
+
+              <div>
+                <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  {language === 'ar' ? 'أيام تجميد الاشتراك المسموح' : 'Allowed freeze days'}
+                </p>
+                <p className="font-semibold">
+                  {plan.allowed_freeze_days || 0} {language === 'ar' ? 'يوم' : 'days'}
+                </p>
               </div>
 
               {plan.discount_percentage > 0 && (

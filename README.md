@@ -3,7 +3,8 @@
 A comprehensive therapy plans management system for **Arkan Al-Numo Center** with full Arabic and English language support.
 
 ![Arabic First Design](https://img.shields.io/badge/Arabic%20First-Design-green)
-![React](https://img.shields.io/badge/React-18+-blue)
+![React](https:/
+/img.shields.io/badge/React-18+-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-blue)
 

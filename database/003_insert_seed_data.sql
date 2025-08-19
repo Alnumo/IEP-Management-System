@@ -62,6 +62,9 @@ INSERT INTO therapy_plans (
 -- Insert sample sessions for the first plan
 WITH speech_plan AS (
   SELECT id FROM therapy_plans WHERE name_ar = 'برنامج علاج النطق المتقدم' LIMIT 1
+),
+session_numbers AS (
+  SELECT generate_series(1, 24) as session_number
 )
 INSERT INTO plan_sessions (
   plan_id, session_number, session_name_ar, session_name_en,
@@ -70,26 +73,26 @@ INSERT INTO plan_sessions (
 ) 
 SELECT 
   speech_plan.id,
-  generate_series(1, 24) as session_number,
+  sn.session_number,
   CASE 
-    WHEN generate_series(1, 24) = 1 THEN 'التقييم الأولي'
-    WHEN generate_series(1, 24) <= 12 THEN 'تدريب النطق - المرحلة الأولى'
+    WHEN sn.session_number = 1 THEN 'التقييم الأولي'
+    WHEN sn.session_number <= 12 THEN 'تدريب النطق - المرحلة الأولى'
     ELSE 'تدريب النطق - المرحلة المتقدمة'
   END,
   CASE 
-    WHEN generate_series(1, 24) = 1 THEN 'Initial Assessment'
-    WHEN generate_series(1, 24) <= 12 THEN 'Speech Training - Phase 1'
+    WHEN sn.session_number = 1 THEN 'Initial Assessment'
+    WHEN sn.session_number <= 12 THEN 'Speech Training - Phase 1'
     ELSE 'Speech Training - Advanced Phase'
   END,
   CASE 
-    WHEN generate_series(1, 24) = 1 THEN 60
+    WHEN sn.session_number = 1 THEN 60
     ELSE 45
   END,
   ARRAY['تحسين النطق', 'زيادة الوضوح'],
   ARRAY['Improve articulation', 'Increase clarity'],
   ARRAY['مرآة', 'بطاقات صور', 'ألعاب'],
-  generate_series(1, 24) = 1
-FROM speech_plan;
+  sn.session_number = 1
+FROM speech_plan, session_numbers sn;
 
 -- Create some plan templates
 INSERT INTO plan_templates (

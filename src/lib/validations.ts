@@ -86,6 +86,10 @@ export const planSchema = z.object({
   materials_needed: z.array(z.string()).default([]),
   learning_objectives: z.array(z.string()).default([]),
   prerequisites: z.string().optional().or(z.literal('')),
+  allowed_freeze_days: z.number()
+    .min(0, 'عدد أيام التجميد يجب أن يكون أكبر من أو يساوي صفر')
+    .max(365, 'عدد أيام التجميد لا يجب أن يتجاوز 365 يوم')
+    .default(0),
   is_featured: z.boolean().default(false),
 }).refine((data) => {
   if (data.target_age_min !== undefined && data.target_age_max !== undefined) {

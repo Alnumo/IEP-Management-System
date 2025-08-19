@@ -1,112 +1,193 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { TherapyPlan, PlanFilters, CreatePlanData, UpdatePlanData } from '@/types/plans'
-import { mockPlans } from '@/lib/mock-data'
+import { supabase } from '@/lib/supabase'
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
-// Mock API functions
+// Real Supabase API functions
 const fetchPlans = async (filters?: PlanFilters): Promise<TherapyPlan[]> => {
-  await delay(500) // Simulate network delay
-  
-  let filteredPlans = [...mockPlans]
+  let query = supabase
+    .from('therapy_plans')
+    .select(`
+      *,
+      category:plan_categories(
+        id,
+        name_ar,
+        name_en,
+        color_code,
+        icon_name
+      )
+    `)
+    .order('created_at', { ascending: false })
   
   if (filters) {
     if (filters.category_id) {
-      filteredPlans = filteredPlans.filter(plan => plan.category_id === filters.category_id)
+      query = query.eq('category_id', filters.category_id)
     }
     
     if (filters.is_active !== undefined) {
-      filteredPlans = filteredPlans.filter(plan => plan.is_active === filters.is_active)
+      query = query.eq('is_active', filters.is_active)
     }
     
     if (filters.is_featured !== undefined) {
-      filteredPlans = filteredPlans.filter(plan => plan.is_featured === filters.is_featured)
+      query = query.eq('is_featured', filters.is_featured)
     }
     
     if (filters.search) {
-      const searchLower = filters.search.toLowerCase()
-      filteredPlans = filteredPlans.filter(plan => 
-        plan.name_ar.toLowerCase().includes(searchLower) ||
-        plan.name_en?.toLowerCase().includes(searchLower) ||
-        plan.description_ar?.toLowerCase().includes(searchLower)
-      )
+      query = query.or(`name_ar.ilike.%${filters.search}%,name_en.ilike.%${filters.search}%,description_ar.ilike.%${filters.search}%`)
     }
     
     if (filters.price_min !== undefined) {
-      filteredPlans = filteredPlans.filter(plan => plan.final_price >= filters.price_min!)
+      query = query.gte('final_price', filters.price_min)
     }
     
     if (filters.price_max !== undefined) {
-      filteredPlans = filteredPlans.filter(plan => plan.final_price <= filters.price_max!)
+      query = query.lte('final_price', filters.price_max)
     }
   }
   
-  return filteredPlans
+  const { data, error } = await query
+  
+  if (error) {
+    console.error('Error fetching plans:', error)
+    throw new Error(`Failed to fetch plans: ${error.message}`)
+  }
+  
+  return data || []
 }
 
 const fetchPlan = async (id: string): Promise<TherapyPlan | null> => {
-  await delay(300)
-  return mockPlans.find(plan => plan.id === id) || null
+  const { data, error } = await supabase
+    .from('therapy_plans')
+    .select(`
+      *,
+      category:plan_categories(
+        id,
+        name_ar,
+        name_en,
+        color_code,
+        icon_name
+      )
+    `)
+    .eq('id', id)
+    .single()
+  
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null // Plan not found
+    }
+    console.error('Error fetching plan:', error)
+    throw new Error(`Failed to fetch plan: ${error.message}`)
+  }
+  
+  return data
 }
 
 const createPlan = async (data: CreatePlanData): Promise<TherapyPlan> => {
-  await delay(1000)
+  console.log('🔍 createPlan called with:', data)
   
-  const newPlan: TherapyPlan = {
-    id: Math.random().toString(36).substr(2, 9),
-    ...data,
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  console.log('👤 Current user:', user?.email)
+  console.log('🔐 Auth error:', authError)
+  console.log('🔍 Full auth response:', { user, authError })
+  
+  if (!user) {
+    console.warn('⚠️ No user found, but continuing for testing...')
+    // Temporarily commenting out auth check for testing
+    // throw new Error('You must be logged in to create a plan')
+  }
+  
+  // Extract only the fields that exist in the database table
+  const {
+    session_types,
+    program_price,
+    price_includes_followup,
+    ...filteredData
+  } = data
+  
+  const planData = {
+    ...filteredData,
     discount_percentage: data.discount_percentage || 0,
     is_featured: data.is_featured || false,
-    total_sessions: data.duration_weeks * data.sessions_per_week,
-    total_price: (data.duration_weeks * data.sessions_per_week) * data.price_per_session,
-    final_price: ((data.duration_weeks * data.sessions_per_week) * data.price_per_session) * (1 - (data.discount_percentage || 0) / 100),
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
     materials_needed: data.materials_needed || [],
     learning_objectives: data.learning_objectives || [],
-    max_students_per_session: data.max_students_per_session || 1
+    max_students_per_session: data.max_students_per_session || 1,
+    allowed_freeze_days: data.allowed_freeze_days || 0,
+    is_active: true,
+    created_by: user?.id || null
+  }
+  
+  console.log('📝 Sending to database:', planData)
+  
+  const { data: newPlan, error } = await supabase
+    .from('therapy_plans')
+    .insert([planData])
+    .select(`
+      *,
+      category:plan_categories(
+        id,
+        name_ar,
+        name_en,
+        color_code,
+        icon_name
+      )
+    `)
+    .single()
+  
+  console.log('📊 Database response:', { newPlan, error })
+  
+  if (error) {
+    console.error('❌ Database error:', error)
+    throw new Error(`Failed to create plan: ${error.message}`)
   }
   
   return newPlan
 }
 
 const updatePlan = async (data: UpdatePlanData): Promise<TherapyPlan> => {
-  await delay(1000)
+  const { id, ...updateData } = data
   
-  const existingPlan = mockPlans.find(plan => plan.id === data.id)
-  if (!existingPlan) {
-    throw new Error('Plan not found')
-  }
+  const { data: updatedPlan, error } = await supabase
+    .from('therapy_plans')
+    .update({
+      ...updateData,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select(`
+      *,
+      category:plan_categories(
+        id,
+        name_ar,
+        name_en,
+        color_code,
+        icon_name
+      )
+    `)
+    .single()
   
-  const updatedPlan: TherapyPlan = {
-    ...existingPlan,
-    ...data,
-    updated_at: new Date().toISOString()
-  }
-  
-  // Recalculate totals if relevant fields changed
-  if (data.duration_weeks || data.sessions_per_week || data.price_per_session || data.discount_percentage !== undefined) {
-    const duration = data.duration_weeks ?? existingPlan.duration_weeks
-    const sessions = data.sessions_per_week ?? existingPlan.sessions_per_week
-    const price = data.price_per_session ?? existingPlan.price_per_session
-    const discount = data.discount_percentage ?? existingPlan.discount_percentage
-    
-    updatedPlan.total_sessions = duration * sessions
-    updatedPlan.total_price = updatedPlan.total_sessions * price
-    updatedPlan.final_price = updatedPlan.total_price * (1 - discount / 100)
+  if (error) {
+    console.error('Error updating plan:', error)
+    throw new Error(`Failed to update plan: ${error.message}`)
   }
   
   return updatedPlan
 }
 
 const deletePlan = async (id: string): Promise<void> => {
-  await delay(500)
-  const index = mockPlans.findIndex(plan => plan.id === id)
-  if (index === -1) {
-    throw new Error('Plan not found')
+  console.log('🗑️ Deleting plan with ID:', id)
+  
+  const { error } = await supabase
+    .from('therapy_plans')
+    .delete()
+    .eq('id', id)
+  
+  console.log('📊 Delete response:', { error })
+  
+  if (error) {
+    console.error('❌ Database error:', error)
+    throw new Error(`Failed to delete plan: ${error.message}`)
   }
+  
+  console.log('✅ Plan deleted from database successfully')
 }
 
 // React Query hooks

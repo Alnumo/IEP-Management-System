@@ -3,13 +3,11 @@ import { CategoryForm } from '@/components/forms/CategoryForm'
 import { useCategory, useUpdateCategory } from '@/hooks/useCategories'
 import { CategoryFormData } from '@/components/forms/CategoryForm'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslation } from '@/hooks/useTranslation'
 
 export const EditCategoryPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { language } = useLanguage()
-  const { t } = useTranslation()
   
   const { data: category, isLoading, error } = useCategory(id!)
   const updateCategoryMutation = useUpdateCategory()

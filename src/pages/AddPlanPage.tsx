@@ -2,22 +2,21 @@ import { useNavigate } from 'react-router-dom'
 import { PlanForm } from '@/components/forms/PlanForm'
 import { useCreatePlan } from '@/hooks/usePlans'
 import { PlanFormData } from '@/lib/validations'
-import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslation } from '@/hooks/useTranslation'
 
 export const AddPlanPage = () => {
   const navigate = useNavigate()
-  const { language } = useLanguage()
-  const { t } = useTranslation()
   const createPlanMutation = useCreatePlan()
 
   const handleSubmit = async (data: PlanFormData) => {
+    console.log('🚀 Form submitted with data:', data)
     try {
-      await createPlanMutation.mutateAsync(data)
+      console.log('⏳ Creating plan...')
+      const result = await createPlanMutation.mutateAsync(data)
+      console.log('✅ Plan created successfully:', result)
       navigate('/plans')
     } catch (error) {
-      console.error('Failed to create plan:', error)
-      // TODO: Show error toast/notification
+      console.error('❌ Failed to create plan:', error)
+      alert(`خطأ في إنشاء البرنامج: ${error.message}`)
     }
   }
 
