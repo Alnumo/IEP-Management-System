@@ -7,9 +7,20 @@
       "Bash(rmdir:*)",
       "Bash(npm install:*)",
       "Bash(npm run dev:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx supabase:*)",
+      "Bash(npx tsc:*)",
+      "Bash(powershell:*)",
+      "Bash(grep:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:db:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "E:\\app"
+    ]
   }
 }

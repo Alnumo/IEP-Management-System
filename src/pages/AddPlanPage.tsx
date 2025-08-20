@@ -16,7 +16,7 @@ export const AddPlanPage = () => {
       navigate('/plans')
     } catch (error) {
       console.error('❌ Failed to create plan:', error)
-      alert(`خطأ في إنشاء البرنامج: ${error.message}`)
+      alert(`خطأ في إنشاء البرنامج: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`)
     }
   }
 

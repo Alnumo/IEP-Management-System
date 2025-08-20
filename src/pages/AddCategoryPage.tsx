@@ -8,11 +8,14 @@ export const AddCategoryPage = () => {
   const createCategoryMutation = useCreateCategory()
 
   const handleSubmit = async (data: CategoryFormData) => {
+    console.log('🔍 AddCategoryPage: Starting submission with data:', data)
     try {
-      await createCategoryMutation.mutateAsync(data)
+      console.log('🔍 AddCategoryPage: Calling mutateAsync...')
+      const result = await createCategoryMutation.mutateAsync(data)
+      console.log('✅ AddCategoryPage: Category created successfully:', result)
       navigate('/categories')
     } catch (error) {
-      console.error('Failed to create category:', error)
+      console.error('❌ AddCategoryPage: Failed to create category:', error)
       // TODO: Show error toast/notification
     }
   }

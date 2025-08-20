@@ -23,7 +23,7 @@ export const PlansPage = () => {
     field: 'created_at',
     direction: 'desc'
   })
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<any>(null)
   
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -31,7 +31,7 @@ export const PlansPage = () => {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setUser(session?.user ?? null)
       }
     )
@@ -141,7 +141,7 @@ export const PlansPage = () => {
       console.log('✅ Plan deleted successfully')
     } catch (error) {
       console.error('❌ Failed to delete plan:', error)
-      alert(`خطأ في حذف البرنامج: ${error.message}`)
+      alert(`خطأ في حذف البرنامج: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`)
     }
   }
 

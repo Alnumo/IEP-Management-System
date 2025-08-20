@@ -95,22 +95,26 @@ const createPlan = async (data: CreatePlanData): Promise<TherapyPlan> => {
     // throw new Error('You must be logged in to create a plan')
   }
   
-  // Extract only the fields that exist in the database table
-  const {
-    session_types,
-    program_price,
-    price_includes_followup,
-    ...filteredData
-  } = data
+  // Filter out non-database fields before sending to Supabase
+  const { session_types, program_price, price_includes_followup, ...dbData } = data
+  
+  // Calculate price_per_session from program_price if provided
+  const totalSessions = session_types?.reduce((total: number, type: any) => {
+    return total + (type.sessions_per_week * type.duration_weeks)
+  }, 0) || (data.duration_weeks * data.sessions_per_week)
+  
+  const calculatedPricePerSession = program_price && totalSessions > 0 
+    ? program_price / totalSessions 
+    : data.price_per_session
   
   const planData = {
-    ...filteredData,
+    ...dbData,
+    price_per_session: calculatedPricePerSession,
     discount_percentage: data.discount_percentage || 0,
     is_featured: data.is_featured || false,
     materials_needed: data.materials_needed || [],
     learning_objectives: data.learning_objectives || [],
     max_students_per_session: data.max_students_per_session || 1,
-    allowed_freeze_days: data.allowed_freeze_days || 0,
     is_active: true,
     created_by: user?.id || null
   }

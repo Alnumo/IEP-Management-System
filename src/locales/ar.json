@@ -6,6 +6,9 @@
   "navigation": {
     "plans": "البرامج العلاجية",
     "categories": "التصنيفات",
+    "students": "الطلاب",
+    "courses": "الدورات",
+    "users": "المستخدمون",
     "dashboard": "لوحة التحكم",
     "settings": "الإعدادات"
   },

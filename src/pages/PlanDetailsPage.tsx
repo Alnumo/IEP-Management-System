@@ -71,7 +71,7 @@ export const PlanDetailsPage = () => {
       navigate('/plans')
     } catch (error) {
       console.error('❌ Failed to delete plan:', error)
-      alert(`خطأ في حذف البرنامج: ${error.message}`)
+      alert(`خطأ في حذف البرنامج: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`)
     }
   }
 
@@ -346,6 +346,7 @@ export const PlanDetailsPage = () => {
                 <p className="font-semibold">{plan.max_students_per_session}</p>
               </div>
 
+              {/* Temporarily hidden until DB is updated
               <div>
                 <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                   {language === 'ar' ? 'أيام تجميد الاشتراك المسموح' : 'Allowed freeze days'}
@@ -354,6 +355,7 @@ export const PlanDetailsPage = () => {
                   {plan.allowed_freeze_days || 0} {language === 'ar' ? 'يوم' : 'days'}
                 </p>
               </div>
+              */}
 
               {plan.discount_percentage > 0 && (
                 <div>

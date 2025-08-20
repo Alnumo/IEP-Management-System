@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { DashboardPage } from './pages/DashboardPage'
 import { PlansPage } from './pages/PlansPage'
@@ -8,6 +8,8 @@ import { PlanDetailsPage } from './pages/PlanDetailsPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { AddCategoryPage } from './pages/AddCategoryPage'
 import { EditCategoryPage } from './pages/EditCategoryPage'
+import { StudentsPage } from './pages/StudentsPage'
+import { CoursesPage } from './pages/CoursesPage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
 
@@ -24,6 +26,8 @@ export const AppRoutes = () => {
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="categories/add" element={<AddCategoryPage />} />
         <Route path="categories/edit/:id" element={<EditCategoryPage />} />
+        <Route path="students" element={<StudentsPage />} />
+        <Route path="courses" element={<CoursesPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

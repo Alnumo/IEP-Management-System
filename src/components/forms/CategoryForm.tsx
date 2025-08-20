@@ -49,6 +49,7 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading = fals
   })
 
   const handleSubmit = (data: CategoryFormData) => {
+    console.log('🔍 CategoryForm: Submitting data:', data)
     onSubmit(data)
   }
 

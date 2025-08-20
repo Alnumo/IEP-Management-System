@@ -6,6 +6,9 @@
   "navigation": {
     "plans": "Therapy Plans",
     "categories": "Categories",
+    "students": "Students",
+    "courses": "Courses",
+    "users": "Users",
     "dashboard": "Dashboard",
     "settings": "Settings"
   },

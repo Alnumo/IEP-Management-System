@@ -18,7 +18,7 @@ interface UserProfile {
 
 export const UsersPage = () => {
   const { language, isRTL } = useLanguage()
-  const [currentUser, setCurrentUser] = useState(null)
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -35,7 +35,7 @@ export const UsersPage = () => {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setCurrentUser(session?.user ?? null)
         if (session?.user) {
           loadUsers()
@@ -73,7 +73,7 @@ export const UsersPage = () => {
       therapist_lead: language === 'ar' ? 'رئيس معالجين' : 'Therapist Lead',
       receptionist: language === 'ar' ? 'موظف استقبال' : 'Receptionist'
     }
-    return roles[role] || (language === 'ar' ? 'غير محدد' : 'Unknown')
+    return roles[role as keyof typeof roles] || (language === 'ar' ? 'غير محدد' : 'Unknown')
   }
 
   const getRoleBadgeVariant = (role: string) => {

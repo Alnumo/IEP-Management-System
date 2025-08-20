@@ -46,7 +46,8 @@ export const planSchema = z.object({
   
   // Program price (not per session)
   program_price: z.number()
-    .min(0, 'سعر البرنامج يجب أن يكون أكبر من أو يساوي صفر'),
+    .min(0, 'سعر البرنامج يجب أن يكون أكبر من أو يساوي صفر')
+    .default(0),
   
   // Price includes follow-up appointments
   price_includes_followup: z.boolean().default(false),
@@ -89,7 +90,7 @@ export const planSchema = z.object({
   allowed_freeze_days: z.number()
     .min(0, 'عدد أيام التجميد يجب أن يكون أكبر من أو يساوي صفر')
     .max(365, 'عدد أيام التجميد لا يجب أن يتجاوز 365 يوم')
-    .default(0),
+    .default(30),
   is_featured: z.boolean().default(false),
 }).refine((data) => {
   if (data.target_age_min !== undefined && data.target_age_max !== undefined) {

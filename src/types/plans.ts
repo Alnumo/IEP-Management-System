@@ -79,6 +79,14 @@ export interface CreatePlanData {
   learning_objectives?: string[]
   allowed_freeze_days?: number
   is_featured?: boolean
+  session_types?: Array<{
+    type: 'speech_language' | 'occupational' | 'psychological' | 'educational'
+    duration_minutes: number
+    sessions_per_week: number
+    duration_weeks: number
+  }>
+  program_price?: number
+  price_includes_followup?: boolean
 }
 
 export interface UpdatePlanData extends Partial<CreatePlanData> {

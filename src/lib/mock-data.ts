@@ -69,7 +69,7 @@ export const mockPlans: TherapyPlan[] = [
     max_students_per_session: 1,
     materials_needed: ['بطاقات صور', 'مرآة', 'ألعاب تفاعلية', 'كتب قصص'],
     learning_objectives: ['تحسين نطق الأصوات', 'زيادة المفردات', 'تطوير مهارات التواصل'],
-    allowed_freeze_days: 14,
+    allowed_freeze_days: 30,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z'
   },
@@ -96,7 +96,7 @@ export const mockPlans: TherapyPlan[] = [
     max_students_per_session: 1,
     materials_needed: ['كرات علاجية', 'أدوات حرفية', 'ألعاب توازن'],
     learning_objectives: ['تحسين التوازن', 'تطوير المهارات الحركية', 'زيادة التناسق'],
-    allowed_freeze_days: 21,
+    allowed_freeze_days: 45,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z'
   },
@@ -123,6 +123,7 @@ export const mockPlans: TherapyPlan[] = [
     max_students_per_session: 1,
     materials_needed: ['جداول التعزيز', 'بطاقات المراقبة', 'ألعاب تحفيزية'],
     learning_objectives: ['تقليل السلوك المشكل', 'زيادة الانتباه', 'تحسين التفاعل الاجتماعي'],
+    allowed_freeze_days: 60,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z'
   },
@@ -148,6 +149,7 @@ export const mockPlans: TherapyPlan[] = [
     max_students_per_session: 1,
     materials_needed: ['مرآة', 'بطاقات'],
     learning_objectives: ['تحسين النطق'],
+    allowed_freeze_days: 14,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z'
   },
@@ -173,6 +175,7 @@ export const mockPlans: TherapyPlan[] = [
     max_students_per_session: 1,
     materials_needed: ['أدوات متخصصة', 'معدات علاجية'],
     learning_objectives: ['تطوير مكثف للمهارات'],
+    allowed_freeze_days: 21,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z'
   }

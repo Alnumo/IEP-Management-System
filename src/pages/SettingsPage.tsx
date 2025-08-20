@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { User, Globe, Moon, Sun, Database, Shield, Info, LogOut } from 'lucide-react'
+import { User, Globe, Moon, Sun, Shield, Info, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -11,8 +11,8 @@ import { supabase } from '@/lib/supabase'
 
 export const SettingsPage = () => {
   const { language, isRTL, setLanguage } = useLanguage()
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
   const [darkMode, setDarkMode] = useState(false)
   
   useEffect(() => {
@@ -34,7 +34,7 @@ export const SettingsPage = () => {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setUser(session?.user ?? null)
       }
     )

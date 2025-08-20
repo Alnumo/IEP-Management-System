@@ -5,7 +5,9 @@ import {
   FolderOpen, 
   Users, 
   Settings,
-  X
+  X,
+  GraduationCap,
+  BookOpen
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -32,6 +34,16 @@ const navigation = [
     key: 'navigation.categories',
     href: '/categories',
     icon: FolderOpen,
+  },
+  {
+    key: 'navigation.students',
+    href: '/students',
+    icon: GraduationCap,
+  },
+  {
+    key: 'navigation.courses',
+    href: '/courses',
+    icon: BookOpen,
   },
   {
     key: 'navigation.users',
@@ -99,6 +111,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               )
             })}
           </nav>
+
 
           {/* Footer */}
           <div className="p-4 border-t">

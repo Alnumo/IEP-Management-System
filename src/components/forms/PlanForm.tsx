@@ -103,6 +103,7 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
       target_age_min: initialData?.target_age_min || undefined,
       target_age_max: initialData?.target_age_max || undefined,
       max_students_per_session: initialData?.max_students_per_session || 1,
+      allowed_freeze_days: initialData?.allowed_freeze_days || 30,
       prerequisites: initialData?.prerequisites || '',
       is_featured: initialData?.is_featured || false,
       materials_needed: materials,
@@ -194,16 +195,25 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
     form.setValue('sessions_per_week', totalSessionsPerWeek)
   }
 
-
   const handleSubmit = async (data: PlanFormData) => {
+    console.log('🔍 PlanForm: Form submitted with data:', data)
+    console.log('🔍 PlanForm: Session types:', sessionTypes)
+    console.log('🔍 PlanForm: Materials:', materials)
+    console.log('🔍 PlanForm: Objectives:', objectives)
+    
     try {
-      await onSubmit({
+      const finalData = {
         ...data,
         materials_needed: materials,
         learning_objectives: objectives,
-      })
+      }
+      console.log('🔍 PlanForm: Final data being sent:', finalData)
+      
+      await onSubmit(finalData)
+      console.log('✅ PlanForm: Form submission successful')
     } catch (error) {
-      console.error('Form submission error:', error)
+      console.error('❌ PlanForm: Form submission error:', error)
+      throw error // Re-throw to let parent handle
     }
   }
 
@@ -221,7 +231,10 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
         
         <CardContent className="p-4 sm:p-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+              console.error('❌ Form validation errors:', errors)
+              console.error('❌ Form state:', form.formState)
+            })} className="space-y-4 sm:space-y-6">
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className={`grid w-full grid-cols-4 ${language === 'ar' ? 'font-arabic' : ''} text-xs sm:text-sm`}>
                   <TabsTrigger value="basic" className="px-1 sm:px-3">
@@ -963,8 +976,16 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !form.formState.isValid}
                   className="min-w-[120px]"
+                  onClick={() => {
+                    console.log('🔍 Button clicked - Form state:', {
+                      isValid: form.formState.isValid,
+                      errors: form.formState.errors,
+                      isLoading,
+                      values: form.getValues()
+                    })
+                  }}
                 >
                   {isLoading 
                     ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...')

@@ -196,3 +196,4 @@ testSupabaseConnection().catch(error => {
   logError(`Test failed with error: ${error.message}`)
   process.exit(1)
 })
+
