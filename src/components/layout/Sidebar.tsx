@@ -79,7 +79,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       )}>
         <div className="flex flex-col h-full">
           {/* Mobile close button */}
-          <div className="flex items-center justify-between p-4 border-b md:hidden">
+          <div 
+            className="flex items-center justify-between p-4 border-b md:hidden"
+            dir={isRTL ? 'rtl' : 'ltr'}
+            style={{ textAlign: isRTL ? 'right' : 'left' }}
+          >
             <h2 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'القائمة' : 'Menu'}
             </h2>
@@ -89,7 +93,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2" dir={isRTL ? 'rtl' : 'ltr'}>
             {navigation.map((item) => {
               const isActive = location.pathname === item.href
               
@@ -99,11 +103,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   to={item.href}
                   onClick={() => onClose()}
                   className={cn(
-                    `flex items-center ${isRTL ? 'space-x-3 space-x-reverse' : 'space-x-3'} px-3 py-2 rounded-lg text-sm transition-colors`,
+                    `flex items-center px-3 py-2 rounded-lg text-sm transition-colors`,
+                    isRTL ? 'space-x-3 space-x-reverse text-right' : 'space-x-3 text-left',
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground hover:bg-accent hover:text-accent-foreground"
                   )}
+                  style={{ 
+                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                    textAlign: isRTL ? 'right' : 'left'
+                  }}
                 >
                   <item.icon className="h-5 w-5" />
                   <span className={language === 'ar' ? 'font-arabic' : ''}>{t(item.key)}</span>
@@ -114,8 +123,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
 
           {/* Footer */}
-          <div className="p-4 border-t">
-            <div className="text-xs text-muted-foreground text-center">
+          <div 
+            className="p-4 border-t"
+            dir={isRTL ? 'rtl' : 'ltr'}
+          >
+            <div 
+              className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-center'}`}
+              style={{ textAlign: isRTL ? 'right' : 'center' }}
+            >
               <p className={language === 'ar' ? 'font-arabic' : ''}>{t('app.title')}</p>
               <p>{language === 'ar' ? 'النسخة 1.0.0' : 'Version 1.0.0'}</p>
             </div>

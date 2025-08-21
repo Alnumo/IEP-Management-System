@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter as Router } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { AppRoutes } from './routes'
 
@@ -19,6 +20,7 @@ function App() {
         <Router>
           <div className="min-h-screen bg-background font-arabic">
             <AppRoutes />
+            <Toaster richColors position="top-right" />
           </div>
         </Router>
       </LanguageProvider>

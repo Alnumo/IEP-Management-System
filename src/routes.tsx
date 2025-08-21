@@ -9,6 +9,9 @@ import { CategoriesPage } from './pages/CategoriesPage'
 import { AddCategoryPage } from './pages/AddCategoryPage'
 import { EditCategoryPage } from './pages/EditCategoryPage'
 import { StudentsPage } from './pages/StudentsPage'
+import { AddStudentPage } from './pages/AddStudentPage'
+import { EditStudentPage } from './pages/EditStudentPage'
+import { StudentDetailsPage } from './pages/StudentDetailsPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -27,6 +30,9 @@ export const AppRoutes = () => {
         <Route path="categories/add" element={<AddCategoryPage />} />
         <Route path="categories/edit/:id" element={<EditCategoryPage />} />
         <Route path="students" element={<StudentsPage />} />
+        <Route path="students/add" element={<AddStudentPage />} />
+        <Route path="students/edit/:id" element={<EditStudentPage />} />
+        <Route path="students/:id" element={<StudentDetailsPage />} />
         <Route path="courses" element={<CoursesPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />

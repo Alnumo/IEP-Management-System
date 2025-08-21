@@ -1,54 +1,42 @@
 import { useState } from 'react'
-import { Plus, Search, Filter, Users } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Search, Filter, Users, Eye, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Badge } from '@/components/ui/badge'
+import { useStudents } from '@/hooks/useStudents'
+import type { Student } from '@/types/student'
 
 export const StudentsPage = () => {
   const { language, isRTL } = useLanguage()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
-
-  // Mock data - will be replaced with real data later
-  const mockStudents = [
-    {
-      id: '1',
-      student_id: 'STU2024001',
-      first_name: 'أحمد',
-      last_name: 'محمد',
-      birth_date: '2010-05-15',
-      gender: 'male' as const,
-      status: 'active' as const,
-      enrollment_date: '2024-01-15',
-      created_at: '2024-01-15',
-      updated_at: '2024-01-15'
-    },
-    {
-      id: '2',
-      student_id: 'STU2024002',
-      first_name: 'فاطمة',
-      last_name: 'عبدالله',
-      birth_date: '2011-08-22',
-      gender: 'female' as const,
-      status: 'active' as const,
-      enrollment_date: '2024-02-01',
-      created_at: '2024-02-01',
-      updated_at: '2024-02-01'
-    },
-    {
-      id: '3',
-      student_id: 'STU2024003',
-      first_name: 'عمر',
-      last_name: 'خالد',
-      birth_date: '2009-12-03',
-      gender: 'male' as const,
-      status: 'inactive' as const,
-      enrollment_date: '2024-01-10',
-      created_at: '2024-01-10',
-      updated_at: '2024-01-10'
-    }
-  ]
+  
+  // Fetch students data
+  const { data: students = [], isLoading, error } = useStudents()
+  
+  // Filter students based on search term
+  const filteredStudents = students.filter((student: Student) => {
+    if (!searchTerm.trim()) return true
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      student.first_name_ar?.toLowerCase().includes(searchLower) ||
+      student.last_name_ar?.toLowerCase().includes(searchLower) ||
+      student.first_name_en?.toLowerCase().includes(searchLower) ||
+      student.last_name_en?.toLowerCase().includes(searchLower) ||
+      student.registration_number?.toLowerCase().includes(searchLower)
+    )
+  })
+  
+  // Calculate statistics
+  const stats = {
+    total: students.length,
+    active: students.filter((s: Student) => s.status === 'active').length,
+    male: students.filter((s: Student) => s.gender === 'male').length,
+    female: students.filter((s: Student) => s.gender === 'female').length
+  }
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -82,6 +70,25 @@ export const StudentsPage = () => {
     
     return age
   }
+  
+  const getDisplayName = (student: Student) => {
+    return language === 'ar' 
+      ? `${student.first_name_ar} ${student.last_name_ar}`
+      : `${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar}`
+  }
+  
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-2">{language === 'ar' ? 'خطأ في تحميل الطلاب' : 'Error loading students'}</p>
+          <Button onClick={() => window.location.reload()}>
+            {language === 'ar' ? 'إعادة المحاولة' : 'Try Again'}
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -95,7 +102,7 @@ export const StudentsPage = () => {
             {language === 'ar' ? 'إدارة الطلاب المسجلين' : 'Manage registered students'}
           </p>
         </div>
-        <Button>
+        <Button onClick={() => navigate('/students/add')}>
           <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
           {language === 'ar' ? 'إضافة طالب' : 'Add Student'}
         </Button>
@@ -128,7 +135,7 @@ export const StudentsPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
               {language === 'ar' ? 'طالب مسجل' : 'registered students'}
             </p>
@@ -143,7 +150,7 @@ export const StudentsPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">2</div>
+            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
             <p className="text-xs text-muted-foreground">
               {language === 'ar' ? 'طالب نشط' : 'active students'}
             </p>
@@ -158,7 +165,7 @@ export const StudentsPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">2</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.male}</div>
             <p className="text-xs text-muted-foreground">
               {language === 'ar' ? 'طالب ذكر' : 'male students'}
             </p>
@@ -173,7 +180,7 @@ export const StudentsPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-pink-600">1</div>
+            <div className="text-2xl font-bold text-pink-600">{stats.female}</div>
             <p className="text-xs text-muted-foreground">
               {language === 'ar' ? 'طالبة أنثى' : 'female students'}
             </p>
@@ -189,36 +196,78 @@ export const StudentsPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {mockStudents.map((student) => (
-              <div
-                key={student.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className={`font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
-                      {student.first_name} {student.last_name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {student.student_id} • {language === 'ar' ? 'العمر:' : 'Age:'} {calculateAge(student.birth_date)} {language === 'ar' ? 'سنة' : 'years'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant={getStatusBadgeVariant(student.status)}>
-                    {getStatusLabel(student.status)}
-                  </Badge>
-                  <Button variant="outline" size="sm">
-                    {language === 'ar' ? 'عرض' : 'View'}
-                  </Button>
-                </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-muted-foreground">
+                  {language === 'ar' ? 'جاري تحميل الطلاب...' : 'Loading students...'}
+                </p>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className={`text-lg font-semibold mb-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'لا يوجد طلاب' : 'No Students Found'}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm 
+                  ? (language === 'ar' ? 'لم يتم العثور على طلاب تطابق بحثك' : 'No students match your search')
+                  : (language === 'ar' ? 'ابدأ بإضافة طلاب جدد' : 'Start by adding new students')
+                }
+              </p>
+              {!searchTerm && (
+                <Button onClick={() => navigate('/students/add')}>
+                  <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                  {language === 'ar' ? 'إضافة طالب' : 'Add Student'}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredStudents.map((student: Student) => (
+                <div
+                  key={student.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className={`font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {getDisplayName(student)}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {student.registration_number} • {language === 'ar' ? 'العمر:' : 'Age:'} {calculateAge(student.date_of_birth)} {language === 'ar' ? 'سنة' : 'years'}
+                      </p>
+                      {student.diagnosis_ar && (
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'ar' ? student.diagnosis_ar : student.diagnosis_en}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={getStatusBadgeVariant(student.status)}>
+                      {getStatusLabel(student.status)}
+                    </Badge>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/students/${student.id}`)}>
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">{language === 'ar' ? 'عرض' : 'View'}</span>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/students/edit/${student.id}`)}>
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">{language === 'ar' ? 'تعديل' : 'Edit'}</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

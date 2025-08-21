@@ -69,6 +69,417 @@
   --tw-space-x-reverse: 1;
 }
 
+/* RTL Support for forms and layouts */
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] input, 
+[dir="rtl"] textarea, 
+[dir="rtl"] select {
+  text-align: right;
+}
+
+[dir="rtl"] .grid {
+  direction: rtl;
+}
+
+[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] .space-x-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-left: 0;
+  margin-right: 1.5rem;
+}
+
+/* Radio and checkbox alignment for RTL */
+[dir="rtl"] .flex.items-center {
+  flex-direction: row-reverse;
+}
+
+/* Button spacing for RTL */
+[dir="rtl"] .mr-2 {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+/* Icon spacing for RTL buttons */
+[dir="rtl"] .lucide {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+/* Form labels alignment for RTL */
+[dir="rtl"] label {
+  text-align: right;
+}
+
+/* Input placeholder text alignment for RTL */
+[dir="rtl"] input::placeholder,
+[dir="rtl"] textarea::placeholder {
+  text-align: right;
+}
+
+/* Select dropdown alignment for RTL */
+[dir="rtl"] [role="combobox"] {
+  text-align: right;
+}
+
+/* Card content alignment for RTL */
+[dir="rtl"] .grid {
+  text-align: right;
+}
+
+/* Tab navigation for RTL */
+[dir="rtl"] [role="tablist"] {
+  direction: rtl;
+}
+
+/* Checkbox and radio positioning for RTL */
+[dir="rtl"] [type="checkbox"],
+[dir="rtl"] [type="radio"] {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+/* Section headlines and card titles alignment for RTL */
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6 {
+  text-align: right;
+}
+
+[dir="rtl"] .card-title,
+[dir="rtl"] [role="heading"] {
+  text-align: right;
+}
+
+/* Card header content alignment for RTL */
+[dir="rtl"] .card-header {
+  text-align: right;
+}
+
+/* General text alignment for Arabic content */
+[dir="rtl"] .font-arabic {
+  text-align: right;
+}
+
+/* Specific targeting for Shadcn UI Card components */
+[dir="rtl"] h3[class*="text-2xl"],
+[dir="rtl"] h4[class*="text-lg"] {
+  text-align: right;
+}
+
+/* Tab titles alignment for RTL */
+[dir="rtl"] [role="tab"] {
+  text-align: center; /* Keep tabs centered but content RTL */
+}
+
+/* Force all heading elements in RTL forms to align right */
+[dir="rtl"] form h1,
+[dir="rtl"] form h2,
+[dir="rtl"] form h3,
+[dir="rtl"] form h4,
+[dir="rtl"] form h5,
+[dir="rtl"] form h6 {
+  text-align: right !important;
+}
+
+/* Ensure card headers and their content align right in RTL */
+[dir="rtl"] .card-header h1,
+[dir="rtl"] .card-header h2,
+[dir="rtl"] .card-header h3,
+[dir="rtl"] .card-header h4,
+[dir="rtl"] .card-header h5,
+[dir="rtl"] .card-header h6 {
+  text-align: right !important;
+}
+
+/* Subsection headings within card content for RTL */
+[dir="rtl"] .card-content h1,
+[dir="rtl"] .card-content h2,
+[dir="rtl"] .card-content h3,
+[dir="rtl"] .card-content h4,
+[dir="rtl"] .card-content h5,
+[dir="rtl"] .card-content h6 {
+  text-align: right !important;
+}
+
+/* All text with font-semibold class (common for headings) */
+[dir="rtl"] .font-semibold {
+  text-align: right !important;
+}
+
+/* Page title and subtitle alignment for RTL */
+[dir="rtl"] .text-2xl,
+[dir="rtl"] .text-3xl {
+  text-align: right !important;
+}
+
+[dir="rtl"] .text-muted-foreground {
+  text-align: right !important;
+}
+
+/* AGGRESSIVE Header layout fixes for RTL */
+[dir="rtl"] .container {
+  direction: rtl !important;
+}
+
+[dir="rtl"] header .flex {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* Header container RTL alignment */
+[dir="rtl"] header {
+  direction: rtl !important;
+}
+
+[dir="rtl"] header .container {
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+/* Header content RTL flow */
+[dir="rtl"] header .container {
+  flex-direction: row-reverse;
+  direction: rtl;
+}
+
+/* Header logo and title section RTL */
+[dir="rtl"] header .flex.items-center:first-of-type {
+  text-align: right;
+  direction: rtl;
+}
+
+[dir="rtl"] header h1 {
+  text-align: right !important;
+}
+
+[dir="rtl"] header p {
+  text-align: right !important;
+}
+
+/* Header search bar RTL */
+[dir="rtl"] header .relative input {
+  text-align: right;
+  padding-right: 2.5rem;
+  padding-left: 1rem;
+}
+
+[dir="rtl"] header .relative svg {
+  right: 0.75rem;
+  left: auto;
+}
+
+/* Header action buttons RTL */
+[dir="rtl"] header .flex.items-center:last-of-type {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Language toggle button RTL */
+[dir="rtl"] header button .gap-1 {
+  flex-direction: row-reverse;
+}
+
+/* Mobile menu button RTL */
+[dir="rtl"] header .md\\:hidden {
+  order: 2;
+}
+
+/* Header spacing for RTL */
+[dir="rtl"] header .space-x-4 > * {
+  margin-right: 1rem;
+  margin-left: 0;
+}
+
+[dir="rtl"] header .space-x-2 > * {
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+/* Notification badge positioning for RTL */
+[dir="rtl"] header .absolute.-top-1 {
+  left: -0.25rem;
+  right: auto;
+}
+
+/* Button content alignment for RTL */
+[dir="rtl"] header button span {
+  text-align: right;
+}
+
+/* Header flex container adjustments for RTL */
+[dir="rtl"] header .container > .flex {
+  justify-content: space-between;
+}
+
+/* Logo section RTL */
+[dir="rtl"] header .flex.items-center:first-child {
+  order: 1;
+}
+
+/* Action buttons section RTL */
+[dir="rtl"] header .ml-auto {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* BALANCED RTL Layout - Not overly aggressive */
+[dir="rtl"] body {
+  direction: rtl;
+}
+
+/* Layout containers RTL */
+[dir="rtl"] .min-h-screen {
+  direction: rtl;
+}
+
+/* Text alignment for content */
+[dir="rtl"] .font-arabic {
+  text-align: right !important;
+  direction: rtl;
+}
+
+/* Header specific - already defined above */
+
+/* Main content RTL */
+[dir="rtl"] main {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Navigation elements RTL - but preserve sidebar positioning */
+[dir="rtl"] nav.flex-1 {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Sidebar positioning and content for RTL */
+[dir="rtl"] nav {
+  text-align: right;
+}
+
+[dir="rtl"] .sidebar {
+  text-align: right;
+}
+
+/* Sidebar navigation links RTL alignment */
+[dir="rtl"] nav.flex-1 {
+  direction: rtl;
+}
+
+[dir="rtl"] nav.flex-1 a {
+  text-align: right;
+  direction: rtl;
+  justify-content: flex-start;
+}
+
+[dir="rtl"] nav.flex-1 .flex.items-center {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+[dir="rtl"] nav.flex-1 span {
+  text-align: right;
+}
+
+/* Sidebar header for mobile RTL */
+[dir="rtl"] .flex.items-center.justify-between {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Sidebar footer RTL */
+[dir="rtl"] .border-t {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Force sidebar navigation text alignment */
+[dir="rtl"] nav a span {
+  text-align: right !important;
+  width: 100%;
+}
+
+/* Sidebar navigation icons for RTL */
+[dir="rtl"] nav a svg {
+  order: 2;
+  margin-left: 0.75rem;
+  margin-right: 0;
+}
+
+/* Sidebar mobile header RTL */
+[dir="rtl"] .md\\:hidden h2 {
+  text-align: right;
+}
+
+/* Overall sidebar content RTL */
+[dir="rtl"] .w-64 {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .w-64 * {
+  text-align: right;
+}
+
+/* Breadcrumb navigation for RTL */
+[dir="rtl"] nav[role="navigation"] {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Page content spacing and alignment for RTL */
+[dir="rtl"] .space-y-4,
+[dir="rtl"] .space-y-6 {
+  text-align: right;
+}
+
+/* Button groups and action bars for RTL */
+[dir="rtl"] .flex.items-center.gap-4 {
+  direction: rtl;
+  justify-content: flex-start;
+}
+
+/* Back button alignment for RTL */
+[dir="rtl"] .flex.items-center.gap-2 {
+  flex-direction: row-reverse;
+}
+
+/* Main content area for RTL */
+[dir="rtl"] main {
+  direction: rtl;
+}
+
+/* Layout container RTL support */
+[dir="rtl"] .min-h-screen {
+  direction: rtl;
+}
+
+/* Flex layout RTL adjustments */
+[dir="rtl"] .flex:not(.flex-col):not(.flex-row) {
+  direction: rtl;
+}
+
+/* Page header sections for RTL */
+[dir="rtl"] .space-y-4 > div:first-child,
+[dir="rtl"] .space-y-6 > div:first-child {
+  text-align: right;
+  direction: rtl;
+}
+
 /* Custom utility for Arabic number formatting */
 .arabic-nums {
   font-feature-settings: 'lnum' 1;
