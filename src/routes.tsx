@@ -13,6 +13,7 @@ import { AddStudentPage } from './pages/AddStudentPage'
 import { EditStudentPage } from './pages/EditStudentPage'
 import { StudentDetailsPage } from './pages/StudentDetailsPage'
 import { CoursesPage } from './pages/CoursesPage'
+import { AddCoursePage } from './pages/AddCoursePage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
 
@@ -34,6 +35,7 @@ export const AppRoutes = () => {
         <Route path="students/edit/:id" element={<EditStudentPage />} />
         <Route path="students/:id" element={<StudentDetailsPage />} />
         <Route path="courses" element={<CoursesPage />} />
+        <Route path="courses/add" element={<AddCoursePage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

@@ -273,4 +273,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Version 1.0.8** - Enhanced Form System & Database Integration
 
+#Error handling could be improved (using alerts instead of proper toast notifications)
+
+#Some console.error statements for debugging (should be cleaned up for production)
+
+
 </div>
