@@ -68,193 +68,252 @@ export const DashboardPage = () => {
   }
 
   return (
-    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
-            {language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
-          </h1>
-          <p className={`text-sm sm:text-base text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-            {language === 'ar' 
-              ? 'نظرة عامة على البرامج العلاجية والإحصائيات'
-              : 'Overview of therapy programs and statistics'
-            }
-          </p>
+    <div className="dashboard-container" dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Welcome Section */}
+      <div className="welcome-section">
+        <div className="relative z-10">
+          <div className="flex items-start justify-between gap-8">
+            {/* LEFT SECTION: Action Buttons */}
+            <div className={`flex ${isRTL ? 'space-x-4 space-x-reverse order-last' : 'space-x-4 order-first'} md:flex hidden`}>
+              <Button 
+                className="bg-white/20 hover:bg-white/30 text-white border-white/20 rounded-xl px-6 py-3"
+                onClick={() => navigate('/plans')}
+              >
+                {language === 'ar' ? 'عرض البرامج' : 'View Programs'}
+              </Button>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 shadow-lg"
+                onClick={() => navigate('/plans/add')}
+              >
+                {language === 'ar' ? 'بدء العمل' : 'Get Started'}
+              </Button>
+            </div>
+            
+            {/* RIGHT SECTION: Welcome Text Content */}
+            <div className={`flex-1 ${isRTL ? 'text-right order-first' : 'text-right order-last'}`}>
+              <h1 className={`text-3xl font-bold mb-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'مرحباً بك في نظام إدارة مركز أركان النمو' : 'Welcome to Arkan Growth Center Management'}
+              </h1>
+              <p className={`text-xl opacity-90 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'لوحة التحكم الرئيسية - إدارة شاملة للمركز' : 'Main Dashboard - Comprehensive Center Management'}
+              </p>
+            </div>
+          </div>
+          
+          {/* Mobile Action Buttons */}
+          <div className={`flex md:hidden mt-6 ${isRTL ? 'space-x-4 space-x-reverse justify-end' : 'space-x-4 justify-start'}`}>
+            <Button 
+              className="bg-white/20 hover:bg-white/30 text-white border-white/20 rounded-xl px-4 py-2 text-sm"
+              onClick={() => navigate('/plans')}
+            >
+              {language === 'ar' ? 'عرض البرامج' : 'View Programs'}
+            </Button>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2 text-sm shadow-lg"
+              onClick={() => navigate('/plans/add')}
+            >
+              {language === 'ar' ? 'بدء العمل' : 'Get Started'}
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => navigate('/plans/add')}>
-            <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-            {language === 'ar' ? 'برنامج جديد' : 'New Plan'}
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/categories/add')}>
-            <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-            {language === 'ar' ? 'تصنيف جديد' : 'New Category'}
-          </Button>
-        </div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' ? 'إجمالي البرامج' : 'Total Plans'}
-            </CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPlans}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'برنامج علاجي' : 'therapy programs'}
-            </p>
+      <div className="stats-grid">
+        <Card className="stats-card stats-card-responsive">
+          <CardContent className="p-6">
+            <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +12%
+              </div>
+            </div>
+            <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {stats.totalPlans}
+              </h3>
+              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'إجمالي البرامج' : 'Total Plans'}
+              </p>
+              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'برنامج علاجي' : 'therapy programs'}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' ? 'البرامج النشطة' : 'Active Plans'}
-            </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.activePlans}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'برنامج نشط' : 'active programs'}
-            </p>
+        <Card className="stats-card stats-card-responsive">
+          <CardContent className="p-6">
+            <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl flex items-center justify-center">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +8%
+              </div>
+            </div>
+            <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {stats.activePlans}
+              </h3>
+              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'البرامج النشطة' : 'Active Plans'}
+              </p>
+              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'برنامج نشط' : 'active programs'}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' ? 'البرامج المميزة' : 'Featured'}
-            </CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.featuredPlans}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'برنامج مميز' : 'featured programs'}
-            </p>
+        <Card className="stats-card stats-card-responsive">
+          <CardContent className="p-6">
+            <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                <Star className="w-6 h-6 text-white" />
+              </div>
+              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +5%
+              </div>
+            </div>
+            <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {stats.featuredPlans}
+              </h3>
+              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'البرامج المميزة' : 'Featured Plans'}
+              </p>
+              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'برنامج مميز' : 'featured programs'}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' ? 'التصنيفات' : 'Categories'}
-            </CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.totalCategories}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'تصنيف' : 'categories'}
-            </p>
+        <Card className="stats-card stats-card-responsive">
+          <CardContent className="p-6">
+            <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                <FolderOpen className="w-6 h-6 text-white" />
+              </div>
+              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +3%
+              </div>
+            </div>
+            <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {stats.totalCategories}
+              </h3>
+              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'التصنيفات' : 'Categories'}
+              </p>
+              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'تصنيف' : 'categories'}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' ? 'متوسط السعر' : 'Avg Price'}
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.averagePrice)}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'متوسط السعر' : 'average price'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' ? 'إجمالي القيمة' : 'Total Value'}
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{formatCurrency(stats.totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'إجمالي القيمة' : 'total value'}
-            </p>
+        <Card className="stats-card stats-card-responsive">
+          <CardContent className="p-6">
+            <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +15%
+              </div>
+            </div>
+            <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {formatCurrency(stats.averagePrice)}
+              </h3>
+              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'متوسط السعر' : 'Average Price'}
+              </p>
+              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'متوسط السعر' : 'average price'}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/plans')}>
-          <CardHeader>
-            <CardTitle className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-              <FileText className="h-5 w-5 text-blue-600" />
-              <span>{language === 'ar' ? 'إدارة البرامج' : 'Manage Plans'}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' 
-                ? 'عرض وإدارة جميع البرامج العلاجية المتاحة'
-                : 'View and manage all available therapy programs'
-              }
-            </p>
-            <div className="mt-4">
-              <Button variant="outline" size="sm">
-                {language === 'ar' ? 'عرض البرامج' : 'View Plans'}
-              </Button>
+      <Card className="modern-card">
+        <CardHeader>
+          <CardTitle className={`text-xl font-bold ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+            {language === 'ar' ? 'الإجراءات السريعة' : 'Quick Actions'}
+          </CardTitle>
+          <p className={`text-gray-600 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+            {language === 'ar' ? 'المهام الأكثر استخداماً' : 'Most frequently used tasks'}
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div
+              className="action-card bg-gradient-to-br from-teal-500 to-blue-500 cursor-pointer hover:scale-105 transition-all duration-300"
+              onClick={() => navigate('/plans')}
+            >
+              <FileText className="w-8 h-8 mb-3 mx-auto" />
+              <h4 className={`font-semibold mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'إدارة البرامج' : 'Manage Plans'}
+              </h4>
+              <p className={`text-sm opacity-90 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'عرض البرامج' : 'View Programs'}
+              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/categories')}>
-          <CardHeader>
-            <CardTitle className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-              <FolderOpen className="h-5 w-5 text-green-600" />
-              <span>{language === 'ar' ? 'إدارة التصنيفات' : 'Manage Categories'}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' 
-                ? 'تنظيم وإدارة تصنيفات البرامج العلاجية'
-                : 'Organize and manage therapy program categories'
-              }
-            </p>
-            <div className="mt-4">
-              <Button variant="outline" size="sm">
-                {language === 'ar' ? 'عرض التصنيفات' : 'View Categories'}
-              </Button>
+            <div
+              className="action-card bg-gradient-to-br from-blue-500 to-purple-500 cursor-pointer hover:scale-105 transition-all duration-300"
+              onClick={() => navigate('/categories')}
+            >
+              <FolderOpen className="w-8 h-8 mb-3 mx-auto" />
+              <h4 className={`font-semibold mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'التصنيفات' : 'Categories'}
+              </h4>
+              <p className={`text-sm opacity-90 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'إدارة التصنيفات' : 'Manage Categories'}
+              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/plans/add')}>
-          <CardHeader>
-            <CardTitle className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-              <Plus className="h-5 w-5 text-purple-600" />
-              <span>{language === 'ar' ? 'إضافة برنامج جديد' : 'Add New Plan'}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' 
-                ? 'إنشاء برنامج علاجي جديد مع تفاصيل شاملة'
-                : 'Create a new therapy program with comprehensive details'
-              }
-            </p>
-            <div className="mt-4">
-              <Button variant="outline" size="sm">
-                {language === 'ar' ? 'إنشاء برنامج' : 'Create Plan'}
-              </Button>
+            <div
+              className="action-card bg-gradient-to-br from-green-500 to-teal-500 cursor-pointer hover:scale-105 transition-all duration-300"
+              onClick={() => navigate('/plans/add')}
+            >
+              <Plus className="w-8 h-8 mb-3 mx-auto" />
+              <h4 className={`font-semibold mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'برنامج جديد' : 'New Plan'}
+              </h4>
+              <p className={`text-sm opacity-90 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'إنشاء برنامج' : 'Create Program'}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <div
+              className="action-card bg-gradient-to-br from-orange-500 to-red-500 cursor-pointer hover:scale-105 transition-all duration-300"
+              onClick={() => navigate('/students')}
+            >
+              <Activity className="w-8 h-8 mb-3 mx-auto" />
+              <h4 className={`font-semibold mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'الطلاب' : 'Students'}
+              </h4>
+              <p className={`text-sm opacity-90 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'إدارة الطلاب' : 'Manage Students'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Activity / Welcome Message */}
       <Card>

@@ -236,20 +236,20 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
               console.error('❌ Form state:', form.formState)
             })} className="space-y-4 sm:space-y-6">
               <Tabs defaultValue="basic" className="w-full">
-                <TabsList className={`grid w-full grid-cols-4 ${language === 'ar' ? 'font-arabic' : ''} text-xs sm:text-sm`}>
-                  <TabsTrigger value="basic" className="px-1 sm:px-3">
+                <TabsList className={`tabs-list-enhanced grid w-full grid-cols-4 ${language === 'ar' ? 'font-arabic' : ''} text-sm gap-1`}>
+                  <TabsTrigger value="basic" className="tab-enhanced tab-focus px-2 sm:px-4">
                     <span className="hidden sm:inline">{language === 'ar' ? 'المعلومات الأساسية' : 'Basic Info'}</span>
                     <span className="sm:hidden">{language === 'ar' ? 'أساسي' : 'Basic'}</span>
                   </TabsTrigger>
-                  <TabsTrigger value="content" className="px-1 sm:px-3">
+                  <TabsTrigger value="content" className="tab-enhanced tab-focus px-2 sm:px-4">
                     <span className="hidden sm:inline">{language === 'ar' ? 'المحتوى' : 'Content'}</span>
                     <span className="sm:hidden">{language === 'ar' ? 'محتوى' : 'Content'}</span>
                   </TabsTrigger>
-                  <TabsTrigger value="details" className="px-1 sm:px-3">
+                  <TabsTrigger value="details" className="tab-enhanced tab-focus px-2 sm:px-4">
                     <span className="hidden sm:inline">{language === 'ar' ? 'التفاصيل' : 'Details'}</span>
                     <span className="sm:hidden">{language === 'ar' ? 'تفاصيل' : 'Details'}</span>
                   </TabsTrigger>
-                  <TabsTrigger value="pricing" className="px-1 sm:px-3">
+                  <TabsTrigger value="pricing" className="tab-enhanced tab-focus px-2 sm:px-4">
                     <span className="hidden sm:inline">{language === 'ar' ? 'التسعير' : 'Pricing'}</span>
                     <span className="sm:hidden">{language === 'ar' ? 'سعر' : 'Price'}</span>
                   </TabsTrigger>

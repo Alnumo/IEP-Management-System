@@ -1,331 +1,179 @@
 import { useState, useEffect } from 'react'
-import { User, Globe, Moon, Sun, Shield, Info, LogOut } from 'lucide-react'
+import { Settings, Save, Upload } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
+import { LogoUpload } from '@/components/ui/LogoUpload'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { supabase } from '@/lib/supabase'
 
 export const SettingsPage = () => {
-  const { language, isRTL, setLanguage } = useLanguage()
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [darkMode, setDarkMode] = useState(false)
-  
+  const { language, isRTL } = useLanguage()
+  const [headerLogo, setHeaderLogo] = useState<string | null>(null)
+  const [sidebarLogo, setSidebarLogo] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Load saved logos from localStorage on component mount
   useEffect(() => {
-    // Get current user
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-      
-      if (user) {
-        // Get user profile
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-          .then(({ data }) => {
-            setProfile(data)
-          })
-      }
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null)
-      }
-    )
-
-    // Check if dark mode is enabled
-    const isDark = document.documentElement.classList.contains('dark')
-    setDarkMode(isDark)
-
-    return () => subscription.unsubscribe()
+    const savedHeaderLogo = localStorage.getItem('header-logo')
+    const savedSidebarLogo = localStorage.getItem('sidebar-logo')
+    
+    if (savedHeaderLogo) {
+      setHeaderLogo(savedHeaderLogo)
+    }
+    if (savedSidebarLogo) {
+      setSidebarLogo(savedSidebarLogo)
+    }
   }, [])
 
-  const handleLanguageChange = (isArabic: boolean) => {
-    setLanguage(isArabic ? 'ar' : 'en')
-  }
-
-  const handleDarkModeToggle = (enabled: boolean) => {
-    setDarkMode(enabled)
-    if (enabled) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-    // Save preference to localStorage
-    localStorage.setItem('darkMode', enabled.toString())
-  }
-
-  const handleLogout = async () => {
-    const confirmed = window.confirm(
-      language === 'ar' 
-        ? 'هل أنت متأكد من تسجيل الخروج؟'
-        : 'Are you sure you want to logout?'
-    )
+  const handleSave = async () => {
+    setIsSaving(true)
     
-    if (confirmed) {
-      await supabase.auth.signOut()
-    }
-  }
+    try {
+      // Save logos to localStorage (in production, you'd save to your backend)
+      if (headerLogo) {
+        localStorage.setItem('header-logo', headerLogo)
+      } else {
+        localStorage.removeItem('header-logo')
+      }
+      
+      if (sidebarLogo) {
+        localStorage.setItem('sidebar-logo', sidebarLogo)
+      } else {
+        localStorage.removeItem('sidebar-logo')
+      }
 
-  // Show login message if not authenticated
-  if (!user) {
-    return (
-      <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="text-center">
-          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
-            {language === 'ar' ? 'الإعدادات' : 'Settings'}
-          </h1>
-          <p className={`text-muted-foreground mb-6 ${language === 'ar' ? 'font-arabic' : ''}`}>
-            {language === 'ar' 
-              ? 'يجب تسجيل الدخول للوصول للإعدادات'
-              : 'Please log in to access settings'
-            }
-          </p>
-        </div>
-      </div>
-    )
+      // Trigger a custom event to notify header/sidebar components
+      window.dispatchEvent(new CustomEvent('logo-updated'))
+      
+      // Show success message (you can replace this with a toast notification)
+      alert(language === 'ar' ? 'تم حفظ الإعدادات بنجاح' : 'Settings saved successfully')
+      
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      alert(language === 'ar' ? 'حدث خطأ أثناء حفظ الإعدادات' : 'Error saving settings')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div>
-        <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
-          {language === 'ar' ? 'الإعدادات' : 'Settings'}
-        </h1>
-        <p className={`text-sm sm:text-base text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-          {language === 'ar' 
-            ? 'إدارة إعدادات حسابك وتفضيلات التطبيق'
-            : 'Manage your account settings and application preferences'
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
+            {language === 'ar' ? 'الإعدادات' : 'Settings'}
+          </h1>
+          <p className={`text-sm sm:text-base text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+            {language === 'ar' 
+              ? 'إدارة شعارات المؤسسة وإعدادات النظام'
+              : 'Manage organization logos and system settings'
+            }
+          </p>
+        </div>
+        <Button onClick={handleSave} disabled={isSaving} className="w-fit">
+          <Save className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+          {isSaving 
+            ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') 
+            : (language === 'ar' ? 'حفظ الإعدادات' : 'Save Settings')
           }
-        </p>
+        </Button>
       </div>
 
-      {/* User Profile */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-            <User className="h-5 w-5" />
-            <span>{language === 'ar' ? 'الملف الشخصي' : 'Profile'}</span>
-          </CardTitle>
-          <CardDescription className={language === 'ar' ? 'font-arabic' : ''}>
-            {language === 'ar' 
-              ? 'معلومات حسابك الشخصي'
-              : 'Your personal account information'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className={language === 'ar' ? 'font-arabic' : ''}>
-                {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
-              </Label>
-              <p className="text-sm font-medium">{user.email}</p>
-            </div>
-            
-            <div>
-              <Label className={language === 'ar' ? 'font-arabic' : ''}>
-                {language === 'ar' ? 'الاسم' : 'Name'}
-              </Label>
-              <p className="text-sm font-medium">{profile?.name || user.email}</p>
-            </div>
-            
-            <div>
-              <Label className={language === 'ar' ? 'font-arabic' : ''}>
-                {language === 'ar' ? 'الدور' : 'Role'}
-              </Label>
-              <Badge variant="outline">
-                {profile?.role === 'admin' ? (language === 'ar' ? 'مدير' : 'Admin') :
-                 profile?.role === 'manager' ? (language === 'ar' ? 'مدير تنفيذي' : 'Manager') :
-                 profile?.role === 'therapist_lead' ? (language === 'ar' ? 'رئيس معالجين' : 'Therapist Lead') :
-                 profile?.role === 'receptionist' ? (language === 'ar' ? 'موظف استقبال' : 'Receptionist') :
-                 (language === 'ar' ? 'غير محدد' : 'Unknown')
-                }
-              </Badge>
-            </div>
-            
-            <div>
-              <Label className={language === 'ar' ? 'font-arabic' : ''}>
-                {language === 'ar' ? 'تاريخ الانضمام' : 'Member Since'}
-              </Label>
-              <p className="text-sm font-medium">
-                {new Date(user.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Language Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-            <Globe className="h-5 w-5" />
-            <span>{language === 'ar' ? 'اللغة والمنطقة' : 'Language & Region'}</span>
-          </CardTitle>
-          <CardDescription className={language === 'ar' ? 'font-arabic' : ''}>
-            {language === 'ar' 
-              ? 'اختر لغة التطبيق المفضلة'
-              : 'Choose your preferred application language'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className={`flex items-center justify-between`}>
-            <div className="space-y-1">
-              <Label className={`font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'اللغة العربية' : 'Arabic Language'}
-              </Label>
-              <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' 
-                  ? 'استخدام اللغة العربية كلغة أساسية'
-                  : 'Use Arabic as the primary language'
-                }
-              </p>
-            </div>
-            <Switch
-              checked={language === 'ar'}
-              onCheckedChange={handleLanguageChange}
+      {/* Logo Settings */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Header Logo */}
+        <Card className="modern-card">
+          <CardHeader>
+            <CardTitle className={`flex items-center ${language === 'ar' ? 'font-arabic space-x-2 space-x-reverse' : 'space-x-2'}`}>
+              <Upload className="h-5 w-5 text-teal-600" />
+              <span>{language === 'ar' ? 'شعار الرأسية' : 'Header Logo'}</span>
+            </CardTitle>
+            <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+              {language === 'ar' 
+                ? 'الشعار المعروض في شريط التنقل العلوي'
+                : 'Logo displayed in the top navigation bar'
+              }
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <LogoUpload
+              onLogoChange={setHeaderLogo}
+              currentLogo={headerLogo}
+              aspectRatio="horizontal"
+              maxSize={5}
             />
-          </div>
-          
-          <Separator />
-          
-          <div className="space-y-2">
-            <Label className={`font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' ? 'اللغة الحالية' : 'Current Language'}
-            </Label>
-            <Badge variant="secondary">
-              {language === 'ar' ? 'العربية (Arabic)' : 'English (إنجليزية)'}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Appearance Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-            {darkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-            <span>{language === 'ar' ? 'المظهر' : 'Appearance'}</span>
-          </CardTitle>
-          <CardDescription className={language === 'ar' ? 'font-arabic' : ''}>
-            {language === 'ar' 
-              ? 'تخصيص مظهر التطبيق'
-              : 'Customize the application appearance'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className={`flex items-center justify-between`}>
-            <div className="space-y-1">
-              <Label className={`font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'الوضع الليلي' : 'Dark Mode'}
-              </Label>
-              <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' 
-                  ? 'استخدام الألوان الداكنة لراحة العينين'
-                  : 'Use dark colors for better eye comfort'
-                }
-              </p>
+            <div className={`text-xs text-gray-500 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+              <p>{language === 'ar' ? 'الأبعاد المُوصى بها: 200×50 بكسل' : 'Recommended dimensions: 200×50 pixels'}</p>
+              <p>{language === 'ar' ? 'نسبة العرض إلى الارتفاع: 4:1' : 'Aspect ratio: 4:1'}</p>
             </div>
-            <Switch
-              checked={darkMode}
-              onCheckedChange={handleDarkModeToggle}
+          </CardContent>
+        </Card>
+
+        {/* Sidebar Logo */}
+        <Card className="modern-card">
+          <CardHeader>
+            <CardTitle className={`flex items-center ${language === 'ar' ? 'font-arabic space-x-2 space-x-reverse' : 'space-x-2'}`}>
+              <Settings className="h-5 w-5 text-blue-600" />
+              <span>{language === 'ar' ? 'شعار الشريط الجانبي' : 'Sidebar Logo'}</span>
+            </CardTitle>
+            <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+              {language === 'ar' 
+                ? 'الشعار المعروض في الشريط الجانبي'
+                : 'Logo displayed in the sidebar navigation'
+              }
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <LogoUpload
+              onLogoChange={setSidebarLogo}
+              currentLogo={sidebarLogo}
+              aspectRatio="square"
+              maxSize={5}
             />
-          </div>
-        </CardContent>
-      </Card>
+            <div className={`text-xs text-gray-500 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+              <p>{language === 'ar' ? 'الأبعاد المُوصى بها: 80×80 بكسل' : 'Recommended dimensions: 80×80 pixels'}</p>
+              <p>{language === 'ar' ? 'نسبة العرض إلى الارتفاع: 1:1 (مربع)' : 'Aspect ratio: 1:1 (square)'}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* System Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-            <Info className="h-5 w-5" />
-            <span>{language === 'ar' ? 'معلومات النظام' : 'System Information'}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className={language === 'ar' ? 'font-arabic' : ''}>
-                {language === 'ar' ? 'اسم التطبيق' : 'Application Name'}
-              </Label>
-              <p className="text-sm font-medium">
-                {language === 'ar' ? 'مدير البرامج العلاجية' : 'Therapy Plans Manager'}
-              </p>
-            </div>
-            
-            <div>
-              <Label className={language === 'ar' ? 'font-arabic' : ''}>
-                {language === 'ar' ? 'الإصدار' : 'Version'}
-              </Label>
-              <p className="text-sm font-medium">1.0.0</p>
-            </div>
-            
-            <div>
-              <Label className={language === 'ar' ? 'font-arabic' : ''}>
-                {language === 'ar' ? 'المركز' : 'Center'}
-              </Label>
-              <p className="text-sm font-medium">
-                {language === 'ar' ? 'مركز أركان النمو' : 'Arkan Al-Numo Center'}
-              </p>
-            </div>
-            
-            <div>
-              <Label className={language === 'ar' ? 'font-arabic' : ''}>
-                {language === 'ar' ? 'البيئة' : 'Environment'}
-              </Label>
-              <Badge variant="outline">
-                {import.meta.env.MODE === 'development' 
-                  ? (language === 'ar' ? 'تطوير' : 'Development')
-                  : (language === 'ar' ? 'إنتاج' : 'Production')
-                }
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Security */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-            <Shield className="h-5 w-5" />
-            <span>{language === 'ar' ? 'الأمان' : 'Security'}</span>
-          </CardTitle>
-          <CardDescription className={language === 'ar' ? 'font-arabic' : ''}>
-            {language === 'ar' 
-              ? 'إدارة إعدادات الأمان والجلسات'
-              : 'Manage security settings and sessions'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className={`flex items-center justify-between`}>
-            <div className="space-y-1">
-              <Label className={`font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
-              </Label>
-              <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' 
-                  ? 'تسجيل الخروج من جميع الأجهزة'
-                  : 'Sign out from all devices'
-                }
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-              {language === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
-            </Button>
-          </div>
+      {/* Instructions */}
+      <Card className="bg-gradient-to-r from-teal-50 to-blue-50 border-teal-200">
+        <CardContent className="p-6">
+          <h3 className={`font-semibold text-teal-800 mb-3 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+            {language === 'ar' ? 'تعليمات رفع الشعارات' : 'Logo Upload Instructions'}
+          </h3>
+          <ul className={`space-y-2 text-sm text-teal-700 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+            <li className={`flex ${isRTL ? 'flex-row-reverse' : ''} items-start`}>
+              <span className={`${isRTL ? 'ml-2' : 'mr-2'} text-teal-500`}>•</span>
+              {language === 'ar' 
+                ? 'استخدم صيغ PNG أو SVG للحصول على أفضل جودة'
+                : 'Use PNG or SVG formats for best quality'
+              }
+            </li>
+            <li className={`flex ${isRTL ? 'flex-row-reverse' : ''} items-start`}>
+              <span className={`${isRTL ? 'ml-2' : 'mr-2'} text-teal-500`}>•</span>
+              {language === 'ar' 
+                ? 'تأكد من أن الخلفية شفافة للحصول على مظهر احترافي'
+                : 'Ensure background is transparent for professional appearance'
+              }
+            </li>
+            <li className={`flex ${isRTL ? 'flex-row-reverse' : ''} items-start`}>
+              <span className={`${isRTL ? 'ml-2' : 'mr-2'} text-teal-500`}>•</span>
+              {language === 'ar' 
+                ? 'يمكنك سحب وإفلات الصور مباشرة في المنطقة المخصصة'
+                : 'You can drag and drop images directly into the upload area'
+              }
+            </li>
+            <li className={`flex ${isRTL ? 'flex-row-reverse' : ''} items-start`}>
+              <span className={`${isRTL ? 'ml-2' : 'mr-2'} text-teal-500`}>•</span>
+              {language === 'ar' 
+                ? 'سيتم تطبيق التغييرات فور حفظ الإعدادات'
+                : 'Changes will be applied immediately after saving settings'
+              }
+            </li>
+          </ul>
         </CardContent>
       </Card>
     </div>

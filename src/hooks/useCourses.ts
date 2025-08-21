@@ -19,8 +19,8 @@ export const useCourses = (filters?: CourseFilters) => {
         if (filters.status) {
           query = query.eq('status', filters.status)
         }
-        if (filters.instructor_id) {
-          query = query.eq('instructor_id', filters.instructor_id)
+        if (filters.therapist_id) {
+          query = query.eq('therapist_id', filters.therapist_id)
         }
         if (filters.start_date_from) {
           query = query.gte('start_date', filters.start_date_from)
@@ -29,7 +29,7 @@ export const useCourses = (filters?: CourseFilters) => {
           query = query.lte('start_date', filters.start_date_to)
         }
         if (filters.search) {
-          query = query.or(`name_ar.ilike.%${filters.search}%,name_en.ilike.%${filters.search}%,course_code.ilike.%${filters.search}%,instructor_name.ilike.%${filters.search}%`)
+          query = query.or(`name_ar.ilike.%${filters.search}%,name_en.ilike.%${filters.search}%,course_code.ilike.%${filters.search}%,therapist_name.ilike.%${filters.search}%`)
         }
         if (filters.price_min !== undefined) {
           query = query.gte('price', filters.price_min)

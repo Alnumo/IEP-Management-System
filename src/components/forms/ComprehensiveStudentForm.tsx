@@ -79,8 +79,7 @@ const comprehensiveStudentSchema = z.object({
   
   // Child Health Status (moved from Phase 3)
   takes_medication: z.boolean().optional(),
-  medical_conditions: z.array(z.string()).optional(),
-  other_medical_condition: z.string().optional(),
+  health_conditions: z.array(z.string()).optional(),
   
   // Family Health Status (moved from Phase 3)
   father_health_status: z.enum(['healthy', 'sick']).optional(),
@@ -124,8 +123,8 @@ const comprehensiveStudentSchema = z.object({
   educational_support_ar: z.string().optional(),
   
   // Guardian Detailed Information (remaining in Phase 4)
-  guardian_type: z.enum(['father', 'mother', 'other']).optional(),
-  guardian_relation: z.string().optional(),
+  guardian_title: z.string().optional(),
+  guardian_relation: z.enum(['father', 'mother', 'other']).optional(),
   guardian_full_name: z.string().optional(),
   guardian_national_id: z.string().optional(),
   guardian_mobile: z.string().optional(),
@@ -220,8 +219,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
       developmental_progress: initialData?.developmental_progress,
       birth_problems: initialData?.birth_problems || '',
       takes_medication: initialData?.takes_medication ?? false,
-      medical_conditions: initialData?.medical_conditions || [],
-      other_medical_condition: initialData?.other_medical_condition || '',
+      health_conditions: initialData?.health_conditions || [],
       
       // Family Health
       father_health_status: initialData?.father_health_status || 'healthy',
@@ -263,8 +261,8 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
       educational_support_ar: initialData?.educational_support_ar || '',
       
       // Guardian Information
-      guardian_type: initialData?.guardian_type || 'father',
-      guardian_relation: initialData?.guardian_relation || '',
+      guardian_title: initialData?.guardian_title || '',
+      guardian_relation: initialData?.guardian_relation,
       guardian_full_name: initialData?.guardian_full_name || '',
       guardian_national_id: initialData?.guardian_national_id || '',
       guardian_mobile: initialData?.guardian_mobile || '',
@@ -1544,7 +1542,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                     
                     <FormField
                       control={form.control}
-                      name="medical_conditions"
+                      name="health_conditions"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -1592,29 +1590,6 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                       )}
                     />
 
-                    {/* Other Medical Condition Text Field */}
-                    {form.watch('medical_conditions')?.includes('other') && (
-                      <FormField
-                        control={form.control}
-                        name="other_medical_condition"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className={language === 'ar' ? 'font-arabic' : ''}>
-                              {language === 'ar' ? 'اذكر المرض' : 'Specify the Disease'}
-                            </FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder={language === 'ar' ? 'اذكر المرض الآخر' : 'Specify other disease'} 
-                                dir={isRTL ? 'rtl' : 'ltr'}
-                                style={{ textAlign: isRTL ? 'right' : 'left' }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -2185,7 +2160,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="guardian_type"
+                      name="guardian_title"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className={language === 'ar' ? 'font-arabic' : ''}>

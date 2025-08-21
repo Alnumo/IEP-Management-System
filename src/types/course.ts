@@ -5,8 +5,8 @@ export interface Course {
   name_en?: string
   description_ar?: string
   description_en?: string
-  instructor_id?: string
-  instructor_name?: string
+  therapist_id?: string
+  therapist_name?: string
   start_date: string
   end_date: string
   schedule_days: string[] // ['monday', 'wednesday', 'friday']
@@ -28,7 +28,8 @@ export interface CreateCourseData {
   name_en?: string
   description_ar?: string
   description_en?: string
-  instructor_name?: string
+  therapist_id?: string
+  therapist_name?: string
   start_date: string
   end_date: string
   schedule_days: string[]
@@ -56,6 +57,21 @@ export interface CourseEnrollment {
   notes?: string
   created_at: string
   updated_at: string
+  // Related objects from joins
+  student?: {
+    id: string
+    first_name_ar: string
+    last_name_ar: string
+    first_name_en?: string
+    last_name_en?: string
+    registration_number: string
+  }
+  course?: {
+    id: string
+    course_code: string
+    name_ar: string
+    name_en?: string
+  }
 }
 
 export interface CourseStats {
@@ -69,29 +85,8 @@ export interface CourseStats {
   occupancyRate: number
 }
 
-export interface Instructor {
-  id: string
-  first_name_ar: string
-  last_name_ar: string
-  first_name_en?: string
-  last_name_en?: string
-  email?: string
-  phone?: string
-  address?: string
-  specialization_ar?: string
-  specialization_en?: string
-  qualifications: string[]
-  experience_years: number
-  hourly_rate?: number
-  employment_type: 'full_time' | 'part_time' | 'contract' | 'volunteer'
-  hire_date: string
-  status: 'active' | 'inactive' | 'on_leave' | 'terminated'
-  user_id?: string
-  created_at: string
-  updated_at: string
-  created_by?: string
-  updated_by?: string
-}
+// Note: Therapist interface moved to separate file: types/therapist.ts
+// This maintains backward compatibility while we transition
 
 export interface CourseSession {
   id: string
@@ -126,27 +121,7 @@ export interface CourseAttendance {
   recorded_by?: string
 }
 
-// Form and API types
-export interface CreateInstructorData {
-  first_name_ar: string
-  last_name_ar: string
-  first_name_en?: string
-  last_name_en?: string
-  email?: string
-  phone?: string
-  address?: string
-  specialization_ar?: string
-  specialization_en?: string
-  qualifications: string[]
-  experience_years?: number
-  hourly_rate?: number
-  employment_type?: 'full_time' | 'part_time' | 'contract' | 'volunteer'
-  hire_date?: string
-}
-
-export interface UpdateInstructorData extends Partial<CreateInstructorData> {
-  status?: 'active' | 'inactive' | 'on_leave' | 'terminated'
-}
+// Note: Therapist form types moved to types/therapist.ts
 
 export interface CreateCourseSessionData {
   course_id: string
@@ -169,7 +144,7 @@ export interface UpdateCourseSessionData extends Partial<CreateCourseSessionData
 // Filter and search types
 export interface CourseFilters {
   status?: 'planned' | 'active' | 'completed' | 'cancelled'
-  instructor_id?: string
+  therapist_id?: string
   start_date_from?: string
   start_date_to?: string
   search?: string

@@ -15,7 +15,11 @@
       "Bash(grep:*)",
       "Bash(npm run lint)",
       "Bash(npm run test:db:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(node:*)",
+      "Bash(cat:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": [],

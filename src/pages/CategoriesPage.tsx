@@ -188,17 +188,23 @@ export const CategoriesPage = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Header */}
-      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-        <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
-          {language === 'ar' ? 'إدارة الفئات' : 'Category Management'}
-        </h1>
+      {/* Header - Forced Positioning */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4" style={{ direction: 'ltr' }}>
+        {/* Button - Force to LEFT */}
+        <div className="order-2 sm:order-1" style={{ textAlign: 'left' }}>
+          <Button onClick={() => navigate('/categories/add')} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">{language === 'ar' ? 'إضافة فئة' : 'Add Category'}</span>
+            <span className="sm:hidden">{language === 'ar' ? 'إضافة' : 'Add'}</span>
+          </Button>
+        </div>
         
-        <Button onClick={() => navigate('/categories/add')} className="self-start sm:self-auto">
-          <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-          <span className="hidden sm:inline">{language === 'ar' ? 'إضافة فئة' : 'Add Category'}</span>
-          <span className="sm:hidden">{language === 'ar' ? 'إضافة' : 'Add'}</span>
-        </Button>
+        {/* Heading - Force to RIGHT */}
+        <div className="order-1 sm:order-2" style={{ textAlign: 'right' }}>
+          <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`} style={{ direction: 'rtl' }}>
+            {language === 'ar' ? 'إدارة الفئات' : 'Category Management'}
+          </h1>
+        </div>
       </div>
 
       {/* Search and View Options */}

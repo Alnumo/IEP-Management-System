@@ -14,6 +14,12 @@ import { EditStudentPage } from './pages/EditStudentPage'
 import { StudentDetailsPage } from './pages/StudentDetailsPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { AddCoursePage } from './pages/AddCoursePage'
+import { SessionsPage } from './pages/SessionsPage'
+import { AddSessionPage } from './pages/AddSessionPage'
+import { SessionCalendarPage } from './pages/SessionCalendarPage'
+import { TherapistsPage } from './pages/TherapistsPage'
+import { EnrollmentsPage } from './pages/EnrollmentsPage'
+import { AddEnrollmentPage } from './pages/AddEnrollmentPage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
 
@@ -36,6 +42,12 @@ export const AppRoutes = () => {
         <Route path="students/:id" element={<StudentDetailsPage />} />
         <Route path="courses" element={<CoursesPage />} />
         <Route path="courses/add" element={<AddCoursePage />} />
+        <Route path="sessions" element={<SessionsPage />} />
+        <Route path="sessions/add" element={<AddSessionPage />} />
+        <Route path="sessions/calendar" element={<SessionCalendarPage />} />
+        <Route path="therapists" element={<TherapistsPage />} />
+        <Route path="enrollments" element={<EnrollmentsPage />} />
+        <Route path="enrollments/add" element={<AddEnrollmentPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

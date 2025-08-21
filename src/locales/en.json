@@ -8,6 +8,9 @@
     "categories": "Categories",
     "students": "Students",
     "courses": "Courses",
+    "sessions": "Sessions",
+    "therapists": "Therapists",
+    "enrollments": "Enrollments",
     "users": "Users",
     "dashboard": "Dashboard",
     "settings": "Settings"

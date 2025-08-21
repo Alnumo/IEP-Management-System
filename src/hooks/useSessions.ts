@@ -7,14 +7,10 @@ import type {
   CreateSessionData, 
   UpdateSessionData,
   CreateSessionBookingData,
-  UpdateSessionBookingData,
-  CreateTimeSlotData,
-  UpdateTimeSlotData,
   SessionFilters,
   SessionBookingFilters,
   AvailabilityFilters,
-  SessionStats,
-  BookingStats
+  SessionStats
 } from '@/types/session'
 
 // Session Management Hooks

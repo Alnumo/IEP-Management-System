@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Calendar, Clock, Users, DollarSign } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreateCourse } from '@/hooks/useCourses'
+import { useTherapists } from '@/hooks/useTherapists'
 import type { CreateCourseData } from '@/types/course'
 
 // Form validation schema
@@ -21,7 +22,7 @@ const createCourseSchema = z.object({
   name_en: z.string().optional(),
   description_ar: z.string().optional(),
   description_en: z.string().optional(),
-  instructor_name: z.string().optional(),
+  therapist_id: z.string().optional(),
   start_date: z.string().min(1, 'تاريخ البداية مطلوب'),
   end_date: z.string().min(1, 'تاريخ النهاية مطلوب'),
   schedule_days: z.array(z.string()).min(1, 'يجب اختيار يوم واحد على الأقل'),
@@ -48,6 +49,7 @@ export const AddCoursePage = () => {
   const { language, isRTL } = useLanguage()
   const navigate = useNavigate()
   const createCourse = useCreateCourse()
+  const { data: therapists = [] } = useTherapists({ status: 'active' })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<CreateCourseFormData>({
@@ -57,7 +59,7 @@ export const AddCoursePage = () => {
       name_en: '',
       description_ar: '',
       description_en: '',
-      instructor_name: '',
+      therapist_id: '',
       start_date: '',
       end_date: '',
       schedule_days: [],
@@ -74,10 +76,21 @@ export const AddCoursePage = () => {
     try {
       console.log('🔍 AddCoursePage: Creating course with data:', data)
       
+      // Find selected therapist to get their name
+      const selectedTherapist = data.therapist_id 
+        ? therapists.find(therapist => therapist.id === data.therapist_id)
+        : null
+      
       const courseData: CreateCourseData = {
         ...data,
         max_students: Number(data.max_students),
         price: Number(data.price),
+        // Set therapist_name from selected therapist, don't include therapist_id until DB is fixed
+        therapist_name: selectedTherapist 
+          ? `${selectedTherapist.first_name_ar} ${selectedTherapist.last_name_ar}`
+          : undefined,
+        // Remove therapist_id from data to avoid foreign key constraint error
+        therapist_id: undefined
       }
 
       const newCourse = await createCourse.mutateAsync(courseData)
@@ -92,9 +105,10 @@ export const AddCoursePage = () => {
     }
   }
 
-  const handleDayToggle = (day: string, checked: boolean) => {
+  const handleDayToggle = (day: string, checked: string | boolean) => {
     const currentDays = form.getValues('schedule_days')
-    if (checked) {
+    const isChecked = checked === true || checked === 'true'
+    if (isChecked) {
       form.setValue('schedule_days', [...currentDays, day])
     } else {
       form.setValue('schedule_days', currentDays.filter(d => d !== day))
@@ -221,19 +235,46 @@ export const AddCoursePage = () => {
 
               <FormField
                 control={form.control}
-                name="instructor_name"
+                name="therapist_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className={language === 'ar' ? 'font-arabic' : ''}>
-                      {language === 'ar' ? 'اسم المدرب' : 'Instructor Name'}
+                      {language === 'ar' ? 'الأخصائية' : 'Therapist'}
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        {...field} 
-                        placeholder={language === 'ar' ? 'اسم المدرب المسؤول عن الدورة' : 'Name of course instructor'}
-                      />
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
+                          <SelectValue placeholder={language === 'ar' ? 'اختر الأخصائية' : 'Select Therapist'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">{language === 'ar' ? 'بدون أخصائية' : 'No Therapist'}</SelectItem>
+                          {therapists.map((therapist) => (
+                            <SelectItem key={therapist.id} value={therapist.id}>
+                              <div className={`flex flex-col ${language === 'ar' ? 'items-end' : 'items-start'}`}>
+                                <span className={language === 'ar' ? 'font-arabic' : ''}>
+                                  {language === 'ar' 
+                                    ? `${therapist.first_name_ar} ${therapist.last_name_ar}`
+                                    : `${therapist.first_name_en || therapist.first_name_ar} ${therapist.last_name_en || therapist.last_name_ar}`
+                                  }
+                                </span>
+                                {therapist.specialization_ar && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {language === 'ar' ? therapist.specialization_ar : (therapist.specialization_en || therapist.specialization_ar)}
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
+                    <p className={`text-xs text-muted-foreground mt-1 ${language === 'ar' ? 'font-arabic text-right' : 'text-left'}`}>
+                      {language === 'ar' 
+                        ? 'سيتم حفظ اسم الأخصائية فقط حالياً (قيد التطوير لربطه بملف الأخصائية)'
+                        : 'Therapist name will be saved for now (under development for full therapist linking)'
+                      }
+                    </p>
                   </FormItem>
                 )}
               />
@@ -292,26 +333,31 @@ export const AddCoursePage = () => {
               <FormField
                 control={form.control}
                 name="schedule_days"
-                render={() => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel className={language === 'ar' ? 'font-arabic' : ''}>
                       {language === 'ar' ? 'أيام الأسبوع *' : 'Schedule Days *'}
                     </FormLabel>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {WEEKDAYS.map((day) => (
-                        <div key={day.value} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={day.value}
-                            onCheckedChange={(checked) => handleDayToggle(day.value, checked)}
-                          />
-                          <label 
-                            htmlFor={day.value}
-                            className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}
-                          >
-                            {language === 'ar' ? day.label_ar : day.label_en}
-                          </label>
-                        </div>
-                      ))}
+                      {WEEKDAYS.map((day) => {
+                        const isChecked = field.value?.includes(day.value) || false
+                        return (
+                          <div key={day.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={day.value}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => handleDayToggle(day.value, checked)}
+                              className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                            />
+                            <label 
+                              htmlFor={day.value}
+                              className={`text-sm cursor-pointer select-none ${isChecked ? 'text-primary font-medium' : 'text-foreground'} ${language === 'ar' ? 'font-arabic' : ''}`}
+                            >
+                              {language === 'ar' ? day.label_ar : day.label_en}
+                            </label>
+                          </div>
+                        )
+                      })}
                     </div>
                     <FormMessage />
                   </FormItem>

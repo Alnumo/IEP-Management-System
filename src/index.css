@@ -4,48 +4,62 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    /* Modern Teal/Turquoise Design System */
+    --background: 248 250 252; /* Light gray-blue background */
+    --foreground: 15 23 42; /* Dark slate text */
+    --card: 255 255 255; /* Pure white cards */
+    --card-foreground: 15 23 42; /* Dark text on cards */
+    --popover: 255 255 255; /* White popovers */
+    --popover-foreground: 15 23 42; /* Dark text on popovers */
+    --primary: 20 184 166; /* Teal-500 primary */
+    --primary-foreground: 255 255 255; /* White text on primary */
+    --secondary: 241 245 249; /* Light gray secondary */
+    --secondary-foreground: 15 23 42; /* Dark text on secondary */
+    --muted: 241 245 249; /* Light gray muted */
+    --muted-foreground: 100 116 139; /* Medium gray muted text */
+    --accent: 56 189 248; /* Sky-400 accent */
+    --accent-foreground: 255 255 255; /* White text on accent */
+    --destructive: 239 68 68; /* Red-500 destructive */
+    --destructive-foreground: 255 255 255; /* White text on destructive */
+    --border: 226 232 240; /* Light gray border */
+    --input: 226 232 240; /* Light gray input border */
+    --ring: 20 184 166; /* Teal ring color */
+    --radius: 0.75rem; /* Slightly more rounded */
+    
+    /* Custom teal gradient colors */
+    --teal-50: 240 253 250;
+    --teal-100: 204 251 241;
+    --teal-200: 153 246 228;
+    --teal-300: 94 234 212;
+    --teal-400: 45 212 191;
+    --teal-500: 20 184 166;
+    --teal-600: 13 148 136;
+    --teal-700: 15 118 110;
+    --teal-800: 17 94 89;
+    --teal-900: 19 78 74;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    /* Dark mode with teal accents */
+    --background: 15 23 42; /* Dark slate background */
+    --foreground: 248 250 252; /* Light text */
+    --card: 30 41 59; /* Dark card background */
+    --card-foreground: 248 250 252; /* Light text on cards */
+    --popover: 30 41 59; /* Dark popover background */
+    --popover-foreground: 248 250 252; /* Light text on popovers */
+    --primary: 45 212 191; /* Teal-400 for dark mode */
+    --primary-foreground: 15 23 42; /* Dark text on primary */
+    --secondary: 51 65 85; /* Dark gray secondary */
+    --secondary-foreground: 248 250 252; /* Light text on secondary */
+    --muted: 51 65 85; /* Dark gray muted */
+    --muted-foreground: 148 163 184; /* Medium gray muted text */
+    --accent: 56 189 248; /* Sky-400 accent */
+    --accent-foreground: 255 255 255; /* White text on accent */
+    --destructive: 239 68 68; /* Red-500 destructive */
+    --destructive-foreground: 255 255 255; /* White text on destructive */
+    --border: 51 65 85; /* Dark border */
+    --input: 51 65 85; /* Dark input border */
+    --ring: 45 212 191; /* Teal ring for dark mode */
   }
 }
 
@@ -53,15 +67,339 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem; /* Account for fixed header */
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 text-foreground;
     font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+    min-height: 100vh;
   }
 }
 
 /* Arabic-specific styles */
 .font-arabic {
   font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+/* Modern Design System Utilities */
+.gradient-primary {
+  background: linear-gradient(135deg, rgb(20 184 166) 0%, rgb(56 189 248) 50%, rgb(59 130 246) 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(56, 189, 248, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Enhanced Card Styles */
+.modern-card {
+  @apply bg-white/90 backdrop-blur-sm border border-white/20 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
+}
+
+/* Dashboard Stats Cards */
+.stats-card {
+  @apply p-6 rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, rgba(56, 189, 248, 0.04) 100%);
+  backdrop-filter: blur(10px);
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, rgb(20 184 166), rgb(56 189 248));
+}
+
+/* Modern Button Styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white font-medium px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
+}
+
+.btn-secondary {
+  @apply bg-white/90 backdrop-blur-sm border border-teal-200 text-teal-700 hover:bg-teal-50 font-medium px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-300;
+}
+
+/* Header Gradient */
+.header-gradient {
+  background: linear-gradient(135deg, rgb(20 184 166) 0%, rgb(56 189 248) 50%, rgb(59 130 246) 100%);
+  backdrop-filter: blur(20px);
+}
+
+/* Sidebar Modern Design */
+.sidebar-modern {
+  @apply bg-white/95 backdrop-blur-xl border-r border-white/20;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+}
+
+/* Navigation Items */
+.nav-item {
+  @apply flex items-center px-4 py-3 rounded-xl mx-2 mb-2 text-slate-700 hover:text-teal-700 hover:bg-gradient-to-r hover:from-teal-50 hover:to-blue-50 transition-all duration-200 font-medium;
+}
+
+.nav-item.active {
+  @apply bg-gradient-to-r from-teal-500/15 to-blue-500/10 text-teal-700 shadow-sm;
+  border-left: 4px solid rgb(20 184 166);
+}
+
+/* Enhanced Form Styles */
+.form-modern {
+  @apply bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20;
+}
+
+/* Z-Index Layer Hierarchy */
+.z-layer-modal {
+  z-index: 1100;
+}
+
+.z-layer-header {
+  z-index: 1000;
+}
+
+.z-layer-mobile-backdrop {
+  z-index: 950;
+}
+
+.z-layer-sidebar {
+  z-index: 900;
+}
+
+.z-layer-content {
+  z-index: 100;
+}
+
+/* Layout Spacing for Fixed Elements */
+.main-content-wrapper {
+  @apply pt-20; /* Account for fixed header height */
+}
+
+.scroll-margin-header {
+  scroll-margin-top: 5rem; /* 80px - for content sections */
+}
+
+/* Enhanced Tab Styling */
+.tab-enhanced {
+  @apply relative overflow-hidden;
+}
+
+.tab-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, rgba(20, 184, 166, 0.3) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.tab-enhanced[data-state="active"]::before {
+  opacity: 1;
+  background: linear-gradient(90deg, rgb(20, 184, 166) 0%, rgb(56, 189, 248) 100%);
+}
+
+/* Tab List Enhanced */
+.tabs-list-enhanced {
+  @apply bg-gradient-to-r from-slate-50 via-white to-slate-50 p-1.5 rounded-xl shadow-inner border border-slate-200/80;
+  backdrop-filter: blur(10px);
+}
+
+/* Inactive Tab Enhanced Visibility */
+.tab-inactive {
+  @apply bg-white/70 text-slate-700 border border-slate-200 shadow-sm font-medium;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.9) 100%);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-inactive:hover {
+  @apply bg-white text-slate-800 border-slate-300 shadow-md transform scale-[1.02];
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 1) 100%);
+}
+
+/* Active Tab Enhanced */
+.tab-active {
+  @apply bg-white text-slate-900 border-teal-200 shadow-lg font-semibold;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(240, 253, 250, 0.8) 100%);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Focus States for Accessibility */
+.tab-focus:focus-visible {
+  @apply outline-none ring-2 ring-teal-500 ring-offset-2 ring-offset-white;
+}
+
+/* RTL Tab Support */
+[dir="rtl"] .tab-enhanced::before {
+  background: linear-gradient(-90deg, transparent 0%, rgba(20, 184, 166, 0.3) 50%, transparent 100%);
+}
+
+[dir="rtl"] .tab-enhanced[data-state="active"]::before {
+  background: linear-gradient(-90deg, rgb(20, 184, 166) 0%, rgb(56, 189, 248) 100%);
+}
+
+/* Dashboard Layout Improvements */
+.dashboard-container {
+  @apply space-y-8 animate-fade-in p-4 md:p-6;
+}
+
+.welcome-section {
+  @apply relative overflow-hidden rounded-3xl bg-gradient-primary p-6 md:p-8 text-white;
+}
+
+.stats-grid {
+  @apply flex flex-wrap gap-4 md:gap-6 justify-start items-start;
+}
+
+.stats-card-responsive {
+  @apply flex-1 min-w-[200px] max-w-[280px] w-full sm:w-auto;
+}
+
+/* Logo Responsive Styles */
+.header-logo-container {
+  @apply h-10 md:h-12 bg-white/10 rounded-xl p-2 backdrop-blur-sm;
+}
+
+.sidebar-logo-container {
+  @apply w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl p-1 shadow-sm flex items-center justify-center;
+}
+
+/* RTL Layout Improvements */
+[dir="rtl"] .welcome-text {
+  text-align: right;
+}
+
+[dir="rtl"] .action-buttons {
+  justify-content: flex-end;
+}
+
+[dir="ltr"] .welcome-text {
+  text-align: right;
+}
+
+[dir="ltr"] .action-buttons {
+  justify-content: flex-start;
+}
+
+/* Mobile Responsive Improvements */
+@media (max-width: 768px) {
+  .stats-grid {
+    @apply grid grid-cols-2 gap-4;
+  }
+  
+  .stats-card-responsive {
+    @apply min-w-0 max-w-none;
+  }
+  
+  .welcome-section {
+    @apply p-4;
+  }
+  
+  .header-logo-container img {
+    max-width: 120px;
+  }
+  
+  /* Mobile Tab Enhancements */
+  .tabs-list-enhanced {
+    @apply p-1 gap-0.5;
+  }
+  
+  .tab-enhanced {
+    @apply text-xs py-2 px-1;
+    min-height: 44px; /* Touch target size */
+  }
+  
+  .tab-enhanced:hover {
+    @apply transform-none; /* Disable scale on mobile */
+  }
+  
+  /* Mobile Layout Adjustments */
+  .main-content-spacing {
+    @apply pr-0 pl-0; /* Remove extra padding on mobile */
+  }
+  
+  /* Mobile Sidebar Z-Index Override */
+  .mobile-sidebar-open {
+    z-index: 1050 !important; /* Above header when open on mobile */
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tab-inactive {
+    @apply border-2 border-slate-400 text-slate-900;
+  }
+  
+  .tab-active {
+    @apply border-2 border-teal-600 bg-teal-50;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .tab-enhanced,
+  .tab-inactive,
+  .tab-enhanced::before {
+    transition: none;
+  }
+}
+
+.input-modern {
+  @apply bg-white/90 border-2 border-teal-100 rounded-xl px-4 py-3 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 transition-all duration-200;
+}
+
+/* Quick Action Cards */
+.action-card {
+  @apply p-6 rounded-2xl text-center cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.9) 0%, rgba(56, 189, 248, 0.8) 100%);
+  color: white;
+}
+
+/* Responsive Card Grid */
+.card-grid {
+  @apply grid gap-6;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* Loading Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Scroll bar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgb(20 184 166), rgb(56 189 248));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgb(13 148 136), rgb(14 165 233));
 }
 
 /* RTL-specific utilities */

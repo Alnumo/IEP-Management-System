@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ArrowLeft, Save, Calendar, Clock, FileText, Target } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Save, Calendar, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCourses } from '@/hooks/useCourses'
@@ -43,7 +43,7 @@ export const AddSessionPage = () => {
     formState: { errors, isSubmitting },
     setValue,
     watch,
-    reset
+    control
   } = useForm<CreateSessionData>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
@@ -52,6 +52,15 @@ export const AddSessionPage = () => {
       materials_needed: []
     }
   })
+
+  // Get date from URL params if coming from calendar
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const dateParam = urlParams.get('date')
+    if (dateParam) {
+      setValue('session_date', dateParam)
+    }
+  }, [setValue])
 
   const watchedObjectives = watch('objectives') || []
   const watchedMaterials = watch('materials_needed') || []
@@ -83,14 +92,40 @@ export const AddSessionPage = () => {
   }
 
   const onSubmit = async (data: CreateSessionData) => {
+    console.log('🚀 FORM SUBMITTED!')
+    console.log('📋 Form data received:', data)
+    
+    // Simple validation
+    if (!data.course_id) {
+      alert('Please select a course')
+      return
+    }
+    
+    if (!data.session_number) {
+      alert('Please enter session number')
+      return
+    }
+    
+    if (!data.session_date) {
+      alert('Please select session date')
+      return
+    }
+    
+    if (!data.session_time) {
+      alert('Please select session time')
+      return
+    }
+    
     try {
-      console.log('🔍 Creating session with data:', data)
-      await createSessionMutation.mutateAsync(data)
+      console.log('📡 Calling API to create session...')
+      const result = await createSessionMutation.mutateAsync(data)
+      console.log('✅ Session created:', result)
       
-      // Success - redirect to sessions page
+      alert('Session created successfully!')
       window.location.href = '/sessions'
     } catch (error) {
-      console.error('❌ Error creating session:', error)
+      console.error('❌ API Error:', error)
+      alert('Failed to create session. Check console for details.')
     }
   }
 
@@ -142,28 +177,34 @@ export const AddSessionPage = () => {
                 <Label className={language === 'ar' ? 'font-arabic' : ''}>
                   {language === 'ar' ? 'الدورة' : 'Course'} *
                 </Label>
-                <Select onValueChange={(value) => setValue('course_id', value)}>
-                  <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
-                    <SelectValue placeholder={language === 'ar' ? 'اختر الدورة' : 'Select course'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {coursesLoading ? (
-                      <SelectItem value="" disabled>
-                        {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-                      </SelectItem>
-                    ) : courses.length === 0 ? (
-                      <SelectItem value="" disabled>
-                        {language === 'ar' ? 'لا توجد دورات متاحة' : 'No courses available'}
-                      </SelectItem>
-                    ) : (
-                      courses.map((course) => (
-                        <SelectItem key={course.id} value={course.id}>
-                          {course.course_code} - {language === 'ar' ? course.name_ar : (course.name_en || course.name_ar)}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="course_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
+                        <SelectValue placeholder={language === 'ar' ? 'اختر الدورة' : 'Select course'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {coursesLoading ? (
+                          <SelectItem value="" disabled>
+                            {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+                          </SelectItem>
+                        ) : courses.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            {language === 'ar' ? 'لا توجد دورات متاحة' : 'No courses available'}
+                          </SelectItem>
+                        ) : (
+                          courses.map((course) => (
+                            <SelectItem key={course.id} value={course.id}>
+                              {course.course_code} - {language === 'ar' ? course.name_ar : (course.name_en || course.name_ar)}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.course_id && (
                   <p className="text-sm text-destructive">{errors.course_id.message}</p>
                 )}
@@ -206,18 +247,24 @@ export const AddSessionPage = () => {
                 <Label className={language === 'ar' ? 'font-arabic' : ''}>
                   {language === 'ar' ? 'وقت الجلسة' : 'Session Time'} *
                 </Label>
-                <Select onValueChange={(value) => setValue('session_time', value)}>
-                  <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
-                    <SelectValue placeholder={language === 'ar' ? 'اختر الوقت' : 'Select time'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {generateTimeSlots().map((slot) => (
-                      <SelectItem key={slot} value={slot}>
-                        {slot}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="session_time"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
+                        <SelectValue placeholder={language === 'ar' ? 'اختر الوقت' : 'Select time'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {generateTimeSlots().map((slot) => (
+                          <SelectItem key={slot} value={slot}>
+                            {slot}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.session_time && (
                   <p className="text-sm text-destructive">{errors.session_time.message}</p>
                 )}
@@ -361,7 +408,10 @@ export const AddSessionPage = () => {
           <Button type="button" variant="outline" onClick={() => window.history.back()}>
             {language === 'ar' ? 'إلغاء' : 'Cancel'}
           </Button>
-          <Button type="submit" disabled={isSubmitting || createSessionMutation.isPending}>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting || createSessionMutation.isPending}
+          >
             <Save className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
             {isSubmitting || createSessionMutation.isPending 
               ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...')
