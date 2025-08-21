@@ -18,6 +18,7 @@ import { SessionsPage } from './pages/SessionsPage'
 import { AddSessionPage } from './pages/AddSessionPage'
 import { SessionCalendarPage } from './pages/SessionCalendarPage'
 import { TherapistsPage } from './pages/TherapistsPage'
+import { AddTherapistPage } from './pages/AddTherapistPage'
 import { EnrollmentsPage } from './pages/EnrollmentsPage'
 import { AddEnrollmentPage } from './pages/AddEnrollmentPage'
 import { UsersPage } from './pages/UsersPage'
@@ -46,6 +47,7 @@ export const AppRoutes = () => {
         <Route path="sessions/add" element={<AddSessionPage />} />
         <Route path="sessions/calendar" element={<SessionCalendarPage />} />
         <Route path="therapists" element={<TherapistsPage />} />
+        <Route path="therapists/add" element={<AddTherapistPage />} />
         <Route path="enrollments" element={<EnrollmentsPage />} />
         <Route path="enrollments/add" element={<AddEnrollmentPage />} />
         <Route path="users" element={<UsersPage />} />

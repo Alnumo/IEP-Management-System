@@ -22,38 +22,39 @@ export default {
         'sans': ['Tajawal', 'Cairo', 'system-ui', 'sans-serif'],
       },
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        /* Use rgb(var(--token)) so we can add alpha channels easily */
+        border: "rgb(var(--border))",
+        input: "rgb(var(--input))",
+        ring: "rgb(var(--ring))",
+        background: "rgb(var(--background))",
+        foreground: "rgb(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "rgb(var(--primary))",
+          foreground: "rgb(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "rgb(var(--secondary))",
+          foreground: "rgb(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "rgb(var(--destructive))",
+          foreground: "rgb(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "rgb(var(--muted))",
+          foreground: "rgb(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "rgb(var(--accent))",
+          foreground: "rgb(var(--accent-foreground))",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "rgb(var(--popover))",
+          foreground: "rgb(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "rgb(var(--card))",
+          foreground: "rgb(var(--card-foreground))",
         },
         // Custom teal colors matching the design
         teal: {
@@ -67,6 +68,32 @@ export default {
           700: 'rgb(15 118 110)',
           800: 'rgb(17 94 89)',
           900: 'rgb(19 78 74)',
+        },
+        // Override gray colors to use nearly black
+        gray: {
+          50: 'rgb(249 250 251)',
+          100: 'rgb(243 244 246)',
+          200: 'rgb(229 231 235)',
+          300: 'rgb(209 213 219)',
+          400: 'rgb(156 163 175)',
+          500: 'rgb(107 114 128)',
+          600: 'rgb(75 85 99)',
+          700: 'rgb(31 41 55)', // Nearly black for text
+          800: 'rgb(31 41 55)', // Nearly black for text
+          900: 'rgb(31 41 55)', // Nearly black for text
+        },
+        // Override slate colors to use nearly black
+        slate: {
+          50: 'rgb(248 250 252)',
+          100: 'rgb(241 245 249)',
+          200: 'rgb(226 232 240)',
+          300: 'rgb(203 213 225)',
+          400: 'rgb(148 163 184)',
+          500: 'rgb(100 116 139)',
+          600: 'rgb(71 85 105)',
+          700: 'rgb(31 41 55)', // Nearly black for text
+          800: 'rgb(31 41 55)', // Nearly black for text
+          900: 'rgb(31 41 55)', // Nearly black for text
         },
       },
       borderRadius: {

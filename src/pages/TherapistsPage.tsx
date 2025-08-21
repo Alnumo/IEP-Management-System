@@ -24,7 +24,7 @@ export const TherapistsPage = () => {
   const handleFilterChange = (key: keyof TherapistFilters, value: string) => {
     setFilters(prev => ({
       ...prev,
-      [key]: value || undefined
+      [key]: value === 'all' ? undefined : value
     }))
   }
 
@@ -191,12 +191,12 @@ export const TherapistsPage = () => {
             </div>
 
             {/* Status Filter */}
-            <Select value={filters.status || ''} onValueChange={(value) => handleFilterChange('status', value)}>
+            <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
               <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                 <SelectValue placeholder={language === 'ar' ? 'الحالة' : 'Status'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
+                <SelectItem value="all">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
                 <SelectItem value="active">{language === 'ar' ? 'نشطة' : 'Active'}</SelectItem>
                 <SelectItem value="inactive">{language === 'ar' ? 'غير نشطة' : 'Inactive'}</SelectItem>
                 <SelectItem value="on_leave">{language === 'ar' ? 'في إجازة' : 'On Leave'}</SelectItem>
@@ -205,12 +205,12 @@ export const TherapistsPage = () => {
             </Select>
 
             {/* Employment Type Filter */}
-            <Select value={filters.employment_type || ''} onValueChange={(value) => handleFilterChange('employment_type', value)}>
+            <Select value={filters.employment_type || 'all'} onValueChange={(value) => handleFilterChange('employment_type', value)}>
               <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                 <SelectValue placeholder={language === 'ar' ? 'نوع العمل' : 'Employment Type'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{language === 'ar' ? 'جميع الأنواع' : 'All Types'}</SelectItem>
+                <SelectItem value="all">{language === 'ar' ? 'جميع الأنواع' : 'All Types'}</SelectItem>
                 <SelectItem value="full_time">{language === 'ar' ? 'دوام كامل' : 'Full Time'}</SelectItem>
                 <SelectItem value="part_time">{language === 'ar' ? 'دوام جزئي' : 'Part Time'}</SelectItem>
                 <SelectItem value="contract">{language === 'ar' ? 'تعاقد' : 'Contract'}</SelectItem>

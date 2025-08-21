@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react'
 import { Menu, Search, Bell, User, Settings, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslation } from '@/hooks/useTranslation'
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -12,25 +10,6 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { language, isRTL, toggleLanguage } = useLanguage()
-  const { t } = useTranslation()
-  const [headerLogo, setHeaderLogo] = useState<string | null>(null)
-
-  // Load header logo from localStorage
-  useEffect(() => {
-    const savedLogo = localStorage.getItem('header-logo')
-    if (savedLogo) {
-      setHeaderLogo(savedLogo)
-    }
-
-    // Listen for logo updates
-    const handleLogoUpdate = () => {
-      const updatedLogo = localStorage.getItem('header-logo')
-      setHeaderLogo(updatedLogo)
-    }
-
-    window.addEventListener('logo-updated', handleLogoUpdate)
-    return () => window.removeEventListener('logo-updated', handleLogoUpdate)
-  }, [])
 
       return (
       <header 
@@ -117,7 +96,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             <Input
               type="search"
               placeholder={language === 'ar' ? 'البحث...' : 'Search...'}
-              className={`w-full bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-xl h-12 backdrop-blur-sm focus:bg-white/20 focus:border-white/40 ${isRTL ? 'pr-10 text-right' : 'pl-10'}`}
+              className={`w-full bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-full h-11 backdrop-blur-sm focus:bg-white/20 focus:border-white/40 ${isRTL ? 'pr-10 text-right' : 'pl-10'}`}
               style={{ 
                 direction: isRTL ? 'rtl' : 'ltr',
                 textAlign: isRTL ? 'right' : 'left'
@@ -128,32 +107,25 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
         {/* RIGHT SECTION: Logo and Branding */}
         <div className={`flex items-center ${isRTL ? 'space-x-2 md:space-x-4 space-x-reverse' : 'space-x-2 md:space-x-4'} order-3`}>
-          {/* Custom Logo or Default Icon */}
-          {headerLogo ? (
-            <div className="header-logo-container">
-              <img
-                src={headerLogo}
-                alt={language === 'ar' ? 'شعار المؤسسة' : 'Organization Logo'}
-                className="h-full w-auto object-contain"
-                style={{ maxWidth: '180px' }}
-              />
-            </div>
-          ) : (
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+          {/* Logo Image */}
+          <div className="flex items-center">
+            <img
+              src="/imgs/logo system.png"
+              alt={language === 'ar' ? 'شعار مركز أركان النمو' : 'Arkan Growth Center Logo'}
+              className="h-12 md:h-16 w-auto object-contain"
+              onError={(e) => {
+                // Fallback if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            {/* Fallback icon if image fails */}
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm hidden">
               <div className="w-6 h-6 md:w-8 md:h-8 bg-white rounded-xl flex items-center justify-center">
                 <div className="w-4 h-4 md:w-6 md:h-6 bg-gradient-to-br from-teal-500 to-blue-500 rounded-lg"></div>
               </div>
             </div>
-          )}
-          
-          {/* Organization Name */}
-          <div className="flex flex-col" style={{ textAlign: isRTL ? 'right' : 'left' }}>
-            <h1 className={`text-lg md:text-xl font-bold text-white ${language === 'ar' ? 'font-arabic' : ''}`} style={{ textAlign: isRTL ? 'right' : 'left' }}>
-              {t('app.title')}
-            </h1>
-            <p className={`text-xs md:text-sm text-white/80 ${language === 'ar' ? 'font-arabic' : ''} hidden sm:block`} style={{ textAlign: isRTL ? 'right' : 'left' }}>
-              {t('app.subtitle')}
-            </p>
           </div>
         </div>
       </div>

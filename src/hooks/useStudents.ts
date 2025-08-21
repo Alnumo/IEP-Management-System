@@ -108,7 +108,7 @@ export const useCreateStudent = () => {
       
       const filteredData: any = {}
       validStudentFields.forEach(field => {
-        if (data.hasOwnProperty(field) && data[field as keyof CreateStudentData] !== undefined) {
+        if (Object.prototype.hasOwnProperty.call(data, field) && data[field as keyof CreateStudentData] !== undefined) {
           filteredData[field] = data[field as keyof CreateStudentData]
         }
       })

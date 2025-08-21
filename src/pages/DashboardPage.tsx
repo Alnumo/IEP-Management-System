@@ -128,19 +128,19 @@ export const DashboardPage = () => {
               <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                 <FileText className="w-6 h-6 text-white" />
               </div>
-              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex items-center text-primary text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <TrendingUp className="w-4 h-4 mr-1" />
                 +12%
               </div>
             </div>
             <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
-              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <h3 className={`text-2xl font-bold text-foreground mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {stats.totalPlans}
               </h3>
-              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <p className={`text-muted-foreground font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'إجمالي البرامج' : 'Total Plans'}
               </p>
-              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'برنامج علاجي' : 'therapy programs'}
               </p>
             </div>
@@ -153,19 +153,19 @@ export const DashboardPage = () => {
               <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl flex items-center justify-center">
                 <Activity className="w-6 h-6 text-white" />
               </div>
-              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex items-center text-primary text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <TrendingUp className="w-4 h-4 mr-1" />
                 +8%
               </div>
             </div>
             <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
-              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <h3 className={`text-2xl font-bold text-foreground mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {stats.activePlans}
               </h3>
-              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <p className={`text-muted-foreground font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'البرامج النشطة' : 'Active Plans'}
               </p>
-              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'برنامج نشط' : 'active programs'}
               </p>
             </div>
@@ -178,19 +178,19 @@ export const DashboardPage = () => {
               <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
                 <Star className="w-6 h-6 text-white" />
               </div>
-              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex items-center text-primary text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <TrendingUp className="w-4 h-4 mr-1" />
                 +5%
               </div>
             </div>
             <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
-              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <h3 className={`text-2xl font-bold text-foreground mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {stats.featuredPlans}
               </h3>
-              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <p className={`text-muted-foreground font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'البرامج المميزة' : 'Featured Plans'}
               </p>
-              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'برنامج مميز' : 'featured programs'}
               </p>
             </div>
@@ -203,19 +203,19 @@ export const DashboardPage = () => {
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
                 <FolderOpen className="w-6 h-6 text-white" />
               </div>
-              <div className={`flex items-center text-green-600 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex items-center text-primary text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <TrendingUp className="w-4 h-4 mr-1" />
                 +3%
               </div>
             </div>
             <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
-              <h3 className={`text-2xl font-bold text-gray-900 mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <h3 className={`text-2xl font-bold text-foreground mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {stats.totalCategories}
               </h3>
-              <p className={`text-gray-600 font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <p className={`text-muted-foreground font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'التصنيفات' : 'Categories'}
               </p>
-              <p className={`text-sm text-gray-500 ${language === 'ar' ? 'font-arabic' : ''}`}>
+              <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'تصنيف' : 'categories'}
               </p>
             </div>
@@ -254,7 +254,7 @@ export const DashboardPage = () => {
           <CardTitle className={`text-xl font-bold ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
             {language === 'ar' ? 'الإجراءات السريعة' : 'Quick Actions'}
           </CardTitle>
-          <p className={`text-gray-600 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+          <p className={`text-muted-foreground ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
             {language === 'ar' ? 'المهام الأكثر استخداماً' : 'Most frequently used tasks'}
           </p>
         </CardHeader>

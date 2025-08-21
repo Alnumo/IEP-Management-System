@@ -53,6 +53,9 @@ coverage/
 tmp/
 temp/
 
+# Claude AI settings
+.claude/
+
 # Netlify
 .netlify/
 

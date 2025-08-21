@@ -187,11 +187,11 @@ export const AddSessionPage = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {coursesLoading ? (
-                          <SelectItem value="" disabled>
+                          <SelectItem value="loading" disabled>
                             {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
                           </SelectItem>
                         ) : courses.length === 0 ? (
-                          <SelectItem value="" disabled>
+                          <SelectItem value="no-courses" disabled>
                             {language === 'ar' ? 'لا توجد دورات متاحة' : 'No courses available'}
                           </SelectItem>
                         ) : (

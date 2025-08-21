@@ -24,7 +24,7 @@ export const EnrollmentsPage = () => {
   const handleFilterChange = (key: keyof EnrollmentFilters, value: string) => {
     setFilters(prev => ({
       ...prev,
-      [key]: value || undefined
+      [key]: value && value !== 'all' ? value : undefined
     }))
   }
 
@@ -191,12 +191,12 @@ export const EnrollmentsPage = () => {
             </div>
 
             {/* Status Filter */}
-            <Select value={filters.status || ''} onValueChange={(value) => handleFilterChange('status', value)}>
+            <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
               <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                 <SelectValue placeholder={language === 'ar' ? 'حالة التسجيل' : 'Enrollment Status'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
+                <SelectItem value="all">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
                 <SelectItem value="enrolled">{language === 'ar' ? 'مسجل' : 'Enrolled'}</SelectItem>
                 <SelectItem value="completed">{language === 'ar' ? 'مكتمل' : 'Completed'}</SelectItem>
                 <SelectItem value="dropped">{language === 'ar' ? 'منسحب' : 'Dropped'}</SelectItem>
@@ -205,12 +205,12 @@ export const EnrollmentsPage = () => {
             </Select>
 
             {/* Payment Status Filter */}
-            <Select value={filters.payment_status || ''} onValueChange={(value) => handleFilterChange('payment_status', value)}>
+            <Select value={filters.payment_status || 'all'} onValueChange={(value) => handleFilterChange('payment_status', value)}>
               <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                 <SelectValue placeholder={language === 'ar' ? 'حالة الدفع' : 'Payment Status'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{language === 'ar' ? 'جميع حالات الدفع' : 'All Payment Statuses'}</SelectItem>
+                <SelectItem value="all">{language === 'ar' ? 'جميع حالات الدفع' : 'All Payment Statuses'}</SelectItem>
                 <SelectItem value="paid">{language === 'ar' ? 'مدفوع' : 'Paid'}</SelectItem>
                 <SelectItem value="partial">{language === 'ar' ? 'جزئي' : 'Partial'}</SelectItem>
                 <SelectItem value="pending">{language === 'ar' ? 'معلق' : 'Pending'}</SelectItem>

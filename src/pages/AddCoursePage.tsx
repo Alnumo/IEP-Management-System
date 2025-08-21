@@ -22,7 +22,7 @@ const createCourseSchema = z.object({
   name_en: z.string().optional(),
   description_ar: z.string().optional(),
   description_en: z.string().optional(),
-  therapist_id: z.string().optional(),
+  therapist_id: z.string().default('none'),
   start_date: z.string().min(1, 'تاريخ البداية مطلوب'),
   end_date: z.string().min(1, 'تاريخ النهاية مطلوب'),
   schedule_days: z.array(z.string()).min(1, 'يجب اختيار يوم واحد على الأقل'),
@@ -59,7 +59,7 @@ export const AddCoursePage = () => {
       name_en: '',
       description_ar: '',
       description_en: '',
-      therapist_id: '',
+      therapist_id: 'none',
       start_date: '',
       end_date: '',
       schedule_days: [],
@@ -77,7 +77,7 @@ export const AddCoursePage = () => {
       console.log('🔍 AddCoursePage: Creating course with data:', data)
       
       // Find selected therapist to get their name
-      const selectedTherapist = data.therapist_id 
+      const selectedTherapist = data.therapist_id && data.therapist_id !== 'none'
         ? therapists.find(therapist => therapist.id === data.therapist_id)
         : null
       
@@ -247,7 +247,7 @@ export const AddCoursePage = () => {
                           <SelectValue placeholder={language === 'ar' ? 'اختر الأخصائية' : 'Select Therapist'} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">{language === 'ar' ? 'بدون أخصائية' : 'No Therapist'}</SelectItem>
+                          <SelectItem value="none">{language === 'ar' ? 'بدون أخصائية' : 'No Therapist'}</SelectItem>
                           {therapists.map((therapist) => (
                             <SelectItem key={therapist.id} value={therapist.id}>
                               <div className={`flex flex-col ${language === 'ar' ? 'items-end' : 'items-start'}`}>
