@@ -10,7 +10,15 @@ import {
   BookOpen,
   Calendar,
   UserCheck,
-  ClipboardList
+  ClipboardList,
+  Brain,
+  UserCog,
+  Archive,
+  Activity,
+  Stethoscope,
+  Target,
+  TrendingUp,
+  FileSearch
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -23,56 +31,116 @@ interface SidebarProps {
 }
 
 const navigation = [
+  // Dashboard
   {
     key: 'navigation.dashboard',
     href: '/',
     icon: LayoutDashboard,
+    category: 'main'
   },
-  {
-    key: 'navigation.plans',
-    href: '/plans',
-    icon: FileText,
-  },
-  {
-    key: 'navigation.categories',
-    href: '/categories',
-    icon: FolderOpen,
-  },
+  
+  // Student Management
   {
     key: 'navigation.students',
     href: '/students',
     icon: GraduationCap,
-  },
-  {
-    key: 'navigation.courses',
-    href: '/courses',
-    icon: BookOpen,
-  },
-  {
-    key: 'navigation.sessions',
-    href: '/sessions',
-    icon: Calendar,
-  },
-  {
-    key: 'navigation.therapists',
-    href: '/therapists',
-    icon: UserCheck,
+    category: 'students'
   },
   {
     key: 'navigation.enrollments',
     href: '/enrollments',
     icon: ClipboardList,
+    category: 'students'
+  },
+  
+  // Therapy Programs
+  {
+    key: 'navigation.plans',
+    href: '/plans',
+    icon: FileText,
+    category: 'therapy'
+  },
+  {
+    key: 'navigation.therapy_programs',
+    href: '/therapy-programs',
+    icon: Brain,
+    category: 'therapy'
+  },
+  {
+    key: 'navigation.courses',
+    href: '/courses',
+    icon: BookOpen,
+    category: 'therapy'
+  },
+  {
+    key: 'navigation.sessions',
+    href: '/sessions',
+    icon: Calendar,
+    category: 'therapy'
+  },
+  
+  // Medical & Assessment
+  {
+    key: 'navigation.medical_records',
+    href: '/medical-records',
+    icon: Stethoscope,
+    category: 'medical'
+  },
+  {
+    key: 'navigation.assessments',
+    href: '/assessments',
+    icon: FileSearch,
+    category: 'medical'
+  },
+  {
+    key: 'navigation.goals',
+    href: '/therapeutic-goals',
+    icon: Target,
+    category: 'medical'
+  },
+  {
+    key: 'navigation.progress',
+    href: '/progress-tracking',
+    icon: TrendingUp,
+    category: 'medical'
+  },
+  
+  // Staff Management
+  {
+    key: 'navigation.therapists',
+    href: '/therapists',
+    icon: UserCheck,
+    category: 'staff'
   },
   {
     key: 'navigation.users',
     href: '/users',
     icon: Users,
+    category: 'staff'
+  },
+  
+  // System
+  {
+    key: 'navigation.categories',
+    href: '/categories',
+    icon: FolderOpen,
+    category: 'system'
   },
   {
     key: 'navigation.settings',
     href: '/settings',
     icon: Settings,
+    category: 'system'
   },
+]
+
+const navigationCategories = [
+  { key: 'main', icon: LayoutDashboard },
+  { key: 'students', icon: GraduationCap },
+  { key: 'therapy', icon: Brain },
+  { key: 'medical', icon: Activity },
+  { key: 'staff', icon: UserCog },
+  { key: 'system', icon: Archive }
 ]
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
@@ -100,10 +168,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {/* Sidebar header */}
           <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'rgb(var(--border))' }}>
             <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
-              {/* Compact emblem only (no duplicated header logo) */}
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center brand-icon">
-                <div className="w-6 h-6 bg-white rounded-lg"></div>
-              </div>
+              {/* Logo image */}
+              <img 
+                src="/imgs/Final-Logo-01.png" 
+                alt="Arkan Logo" 
+                className="w-16 h-12 object-contain"
+              />
             </div>
             <Button
               variant="ghost"
@@ -117,30 +187,50 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href || (item.href === '/' && location.pathname === '/dashboard')
-                const Icon = item.icon
+            <div className="space-y-6">
+              {navigationCategories.map((category) => {
+                const categoryItems = navigation.filter(item => item.category === category.key)
+                if (categoryItems.length === 0) return null
                 
                 return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    onClick={onClose}
-                    className={cn(
-                      "nav-item",
-                      isActive && "active"
+                  <div key={category.key} className="space-y-2">
+                    {/* Category Header - Skip for main dashboard */}
+                    {category.key !== 'main' && (
+                      <div className={`flex items-center px-2 py-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <category.icon className={`w-4 h-4 text-muted-foreground ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                        <span className={`text-xs font-semibold text-muted-foreground uppercase tracking-wider ${language === 'ar' ? 'font-arabic' : ''} ${isRTL ? 'text-right' : 'text-left'}`}>
+                          {t(`navigation.category.${category.key}`)}
+                        </span>
+                      </div>
                     )}
-                    style={{
-                      flexDirection: isRTL ? 'row-reverse' : 'row',
-                      textAlign: isRTL ? 'right' : 'left'
-                    }}
-                  >
-                    <Icon className={`w-5 h-5 ${isRTL ? 'ml-3' : 'mr-3'}`} />
-                    <span className={`flex-1 font-medium ${language === 'ar' ? 'font-arabic' : ''} ${isRTL ? 'text-right' : 'text-left'}`}>
-                      {t(item.key)}
-                    </span>
-                  </Link>
+                    
+                    {/* Category Items */}
+                    {categoryItems.map((item) => {
+                      const isActive = location.pathname === item.href || (item.href === '/' && location.pathname === '/dashboard')
+                      const Icon = item.icon
+                      
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          onClick={onClose}
+                          className={cn(
+                            "nav-item",
+                            isActive && "active"
+                          )}
+                          style={{
+                            flexDirection: isRTL ? 'row-reverse' : 'row',
+                            textAlign: isRTL ? 'right' : 'left'
+                          }}
+                        >
+                          <Icon className={`w-5 h-5 ${isRTL ? 'ml-3' : 'mr-3'}`} />
+                          <span className={`flex-1 font-medium ${language === 'ar' ? 'font-arabic' : ''} ${isRTL ? 'text-right' : 'text-left'}`}>
+                            {t(item.key)}
+                          </span>
+                        </Link>
+                      )
+                    })}
+                  </div>
                 )
               })}
             </div>
@@ -148,7 +238,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
           {/* Sidebar footer */}
           <div className="p-4 border-t" style={{ borderColor: 'rgb(var(--border))' }}>
-            <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl p-4">
+            <div className="bg-gradient-to-r from-teal-50 to-green-50 rounded-xl p-4">
               <h3 className={`font-semibold text-foreground mb-2 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
                 {language === 'ar' ? 'المؤسسات الكبرى القائمة' : 'Major Established Institutions'}
               </h3>

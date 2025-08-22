@@ -13,7 +13,23 @@
     "enrollments": "Enrollments",
     "users": "Users",
     "dashboard": "Dashboard",
-    "settings": "Settings"
+    "settings": "Settings",
+    "medical_records": "Medical Records",
+    "health_metrics": "Health Metrics",
+    "diagnoses": "Diagnoses",
+    "therapy_programs": "Therapy Programs",
+    "assessments": "Assessments",
+    "goals": "Therapeutic Goals",
+    "progress": "Progress Tracking",
+    "reports": "Reports",
+    "analytics": "Analytics",
+    "category": {
+      "students": "Student Management",
+      "therapy": "Therapy Programs", 
+      "medical": "Medical & Assessment",
+      "staff": "Staff Management",
+      "system": "System Management"
+    }
   },
   "plans": {
     "title": "Therapy Plans",

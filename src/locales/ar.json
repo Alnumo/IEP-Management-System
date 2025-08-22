@@ -13,7 +13,23 @@
     "enrollments": "التسجيلات",
     "users": "المستخدمون",
     "dashboard": "لوحة التحكم",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "medical_records": "السجلات الطبية",
+    "health_metrics": "المؤشرات الصحية",
+    "diagnoses": "التشخيصات",
+    "therapy_programs": "البرامج العلاجية",
+    "assessments": "التقييمات",
+    "goals": "الأهداف العلاجية",
+    "progress": "تتبع التقدم",
+    "reports": "التقارير",
+    "analytics": "التحليلات",
+    "category": {
+      "students": "إدارة الطلاب",
+      "therapy": "البرامج العلاجية",
+      "medical": "الطب والتقييم",
+      "staff": "إدارة الموظفين",
+      "system": "إدارة النظام"
+    }
   },
   "plans": {
     "title": "البرامج العلاجية",
