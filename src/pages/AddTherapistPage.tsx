@@ -301,14 +301,14 @@ export const AddTherapistPage = () => {
           </Card>
 
           {/* Professional Information */}
-          <Card>
+          <Card className="overflow-visible">
             <CardHeader>
               <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 <GraduationCap className="h-5 w-5" />
                 {language === 'ar' ? 'المعلومات المهنية' : 'Professional Information'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 overflow-visible">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -319,13 +319,27 @@ export const AddTherapistPage = () => {
                         {language === 'ar' ? 'التخصص' : 'Specialization'}
                       </FormLabel>
                       <FormControl>
-                        <Select onValueChange={handleSpecializationSelect}>
+                        <Select 
+                          onValueChange={handleSpecializationSelect}
+                          value={field.value ? THERAPY_SPECIALIZATIONS.find(s => s.label_ar === field.value)?.value || '' : ''}
+                        >
                           <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
-                            <SelectValue placeholder={language === 'ar' ? 'اختر التخصص' : 'Select specialization'} />
+                            <SelectValue 
+                              placeholder={language === 'ar' ? 'اختر التخصص' : 'Select specialization'}
+                              className={language === 'ar' ? 'font-arabic' : ''}
+                            />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent 
+                            className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto"
+                            position="popper"
+                            sideOffset={4}
+                          >
                             {THERAPY_SPECIALIZATIONS.map((spec) => (
-                              <SelectItem key={spec.value} value={spec.value}>
+                              <SelectItem 
+                                key={spec.value} 
+                                value={spec.value}
+                                className={language === 'ar' ? 'font-arabic' : ''}
+                              >
                                 {language === 'ar' ? spec.label_ar : spec.label_en}
                               </SelectItem>
                             ))}

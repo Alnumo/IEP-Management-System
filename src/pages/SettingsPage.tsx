@@ -113,7 +113,7 @@ export const SettingsPage = () => {
         <Card className="modern-card">
           <CardHeader>
             <CardTitle className={`flex items-center ${language === 'ar' ? 'font-arabic space-x-2 space-x-reverse' : 'space-x-2'}`}>
-              <Settings className="h-5 w-5 text-blue-600" />
+              <Settings className="h-5 w-5 text-green-600" />
               <span>{language === 'ar' ? 'شعار الشريط الجانبي' : 'Sidebar Logo'}</span>
             </CardTitle>
             <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
@@ -139,7 +139,7 @@ export const SettingsPage = () => {
       </div>
 
       {/* Instructions */}
-      <Card className="bg-gradient-to-r from-teal-50 to-blue-50 border-teal-200">
+      <Card className="bg-gradient-to-r from-teal-50 to-green-50 border-teal-200">
         <CardContent className="p-6">
           <h3 className={`font-semibold text-teal-800 mb-3 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
             {language === 'ar' ? 'تعليمات رفع الشعارات' : 'Logo Upload Instructions'}

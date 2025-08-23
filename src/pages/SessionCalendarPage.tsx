@@ -122,7 +122,7 @@ export const SessionCalendarPage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'scheduled': return 'bg-green-100 text-green-800 border-green-200'
       case 'completed': return 'bg-green-100 text-green-800 border-green-200'
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200'
       case 'rescheduled': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
@@ -213,8 +213,8 @@ export const SessionCalendarPage = () => {
                   className={`
                     min-h-[100px] p-1 border border-gray-100 cursor-pointer transition-colors hover:bg-gray-50
                     ${day.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
-                    ${day.isToday ? 'ring-2 ring-blue-500' : ''}
-                    ${day.isSelected ? 'bg-blue-50 border-blue-200' : ''}
+                    ${day.isToday ? 'ring-2 ring-green-500' : ''}
+                    ${day.isSelected ? 'bg-green-50 border-green-200' : ''}
                   `}
                   onClick={() => setSelectedDate(day.date)}
                 >

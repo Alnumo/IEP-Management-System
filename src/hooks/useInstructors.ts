@@ -262,8 +262,8 @@ export const useCourseAssignments = (filters?: { instructor_id?: string; course_
         .from('courses')
         .select(`
           id,
-          instructor_id,
-          instructor_name,
+          therapist_id,
+          therapist_name,
           name_ar,
           name_en,
           course_code,
@@ -306,7 +306,7 @@ export const useCourseAssignments = (filters?: { instructor_id?: string; course_
       // Transform the data to match CourseAssignment interface
       const assignments: CourseAssignment[] = (data || []).map(course => ({
         id: `assignment-${course.id}`,
-        instructor_id: course.instructor_id,
+        instructor_id: course.therapist_id,
         course_id: course.id,
         assigned_date: course.created_at,
         status: course.status === 'active' ? 'active' : 'completed',

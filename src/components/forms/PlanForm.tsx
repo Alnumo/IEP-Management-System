@@ -219,7 +219,7 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-0" dir={isRTL ? 'rtl' : 'ltr'}>
-      <Card>
+              <Card className="overflow-visible">
         <CardHeader className="pb-4 sm:pb-6">
           <CardTitle className={`text-xl sm:text-2xl ${language === 'ar' ? 'font-arabic' : ''}`}>
             {initialData 
@@ -315,7 +315,7 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
                               <SelectValue placeholder={language === 'ar' ? "اختر التصنيف" : "Select category"} />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                             {categories.map((category) => (
                               <SelectItem key={category.id} value={category.id}>
                                 <div className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'}`}>
@@ -430,7 +430,7 @@ export const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }: PlanFor
                                   <SelectTrigger>
                                     <SelectValue />
                                   </SelectTrigger>
-                                  <SelectContent>
+                                  <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                                     {sessionTypeOptions.map((option) => (
                                       <SelectItem key={option.value} value={option.value}>
                                         <span className={language === 'ar' ? 'font-arabic' : ''}>

@@ -123,7 +123,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             {/* Fallback icon if image fails */}
             <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm hidden">
               <div className="w-6 h-6 md:w-8 md:h-8 bg-white rounded-xl flex items-center justify-center">
-                <div className="w-4 h-4 md:w-6 md:h-6 bg-gradient-to-br from-teal-500 to-blue-500 rounded-lg"></div>
+                <div className="w-4 h-4 md:w-6 md:h-6 bg-gradient-to-br from-teal-500 to-green-400 rounded-lg"></div>
               </div>
             </div>
           </div>

@@ -109,7 +109,7 @@ export const useUpdateMedicalRecord = () => {
     mutationFn: async ({ id, data }: { id: string; data: UpdateMedicalRecordData }): Promise<MedicalRecord> => {
       const { data: { user } } = await supabase.auth.getUser()
       
-      const { id: dataId, ...updateFields } = data
+      const { ...updateFields } = data
       const updateData = {
         ...updateFields,
         updated_by: user?.id,

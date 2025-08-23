@@ -24,12 +24,20 @@
       "Bash(git tag:*)",
       "Bash(git push:*)",
       "Bash(rm:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(timeout:*)",
+      "Bash(cp:*)",
+      "Bash(set -a)",
+      "Bash(source .env)",
+      "Bash(set +a)",
+      "Bash(sed:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "E:\\app"
+      "E:\\app",
+      "E:\\E\\app"
     ]
   }
 }

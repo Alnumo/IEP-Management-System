@@ -10,15 +10,20 @@ import {
   Phone, 
   Mail, 
   MapPin, 
-  GraduationCap,
-  Stethoscope,
-  Calendar,
-  FileText
+  FileText,
+  Brain,
+  Target,
+  TrendingUp,
+  Heart,
+  Users,
+  BookOpen,
+  Plus
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -32,15 +37,27 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useStudent, useDeleteStudent } from '@/hooks/useStudents'
+import { useMedicalRecords } from '@/hooks/useMedical'
+import { useProgramEnrollments } from '@/hooks/useTherapyPrograms'
+import { useAssessmentResults, useTherapeuticGoals, useProgressTracking } from '@/hooks/useAssessments'
 
 export const StudentDetailsPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { language, isRTL } = useLanguage()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
   
+  // Main student data
   const { data: student, isLoading, error } = useStudent(id!)
   const deleteStudent = useDeleteStudent()
+  
+  // Additional data for enhanced profile
+  const { data: medicalRecords = [] } = useMedicalRecords({ student_id: id })
+  const { data: programEnrollments = [] } = useProgramEnrollments({ student_id: id })
+  const { data: assessmentResults = [] } = useAssessmentResults({ student_id: id })
+  const { data: therapeuticGoals = [] } = useTherapeuticGoals({ student_id: id })
+  const { data: progressTracking = [] } = useProgressTracking({ student_id: id })
 
   const calculateAge = (birthDate: string) => {
     const birth = new Date(birthDate)
@@ -75,14 +92,6 @@ export const StudentDetailsPage = () => {
     return statusLabels[status as keyof typeof statusLabels] || status
   }
 
-  const getSeverityLabel = (severity: string) => {
-    const severityLabels = {
-      mild: language === 'ar' ? 'خفيفة' : 'Mild',
-      moderate: language === 'ar' ? 'متوسطة' : 'Moderate',
-      severe: language === 'ar' ? 'شديدة' : 'Severe'
-    }
-    return severityLabels[severity as keyof typeof severityLabels] || severity
-  }
 
   const getDisplayName = (student: any) => {
     return language === 'ar' 
@@ -96,16 +105,12 @@ export const StudentDetailsPage = () => {
 
   const handleDelete = async () => {
     try {
-      console.log('🔍 StudentDetailsPage: Deleting student:', id)
       await deleteStudent.mutateAsync(id!)
-      
       toast.success(
         language === 'ar' ? 'تم حذف الطالب بنجاح' : 'Student deleted successfully'
       )
-      
       navigate('/students')
     } catch (error: any) {
-      console.error('❌ StudentDetailsPage: Error deleting student:', error)
       toast.error(
         language === 'ar' ? 'خطأ في حذف الطالب' : 'Error deleting student',
         {
@@ -144,6 +149,10 @@ export const StudentDetailsPage = () => {
     )
   }
 
+  const activeEnrollments = programEnrollments.filter(e => e.enrollment_status === 'active')
+  const activeGoals = therapeuticGoals.filter(g => g.status === 'active')
+  const recentAssessments = assessmentResults.slice(0, 3)
+
   return (
     <div className="space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
@@ -155,11 +164,7 @@ export const StudentDetailsPage = () => {
             onClick={() => navigate('/students')}
             className="flex items-center gap-2"
           >
-            {isRTL ? (
-              <ArrowRight className="h-4 w-4" />
-            ) : (
-              <ArrowLeft className="h-4 w-4" />
-            )}
+            {isRTL ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
             {language === 'ar' ? 'العودة' : 'Back'}
           </Button>
           <div>
@@ -215,320 +220,553 @@ export const StudentDetailsPage = () => {
         </div>
       </div>
 
-      {/* Status Badge */}
-      <div>
-        <Badge variant={getStatusBadgeVariant(student.status)} className="text-sm">
+      {/* Status Badge and Quick Stats */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <Badge variant={getStatusBadgeVariant(student.status)} className="text-sm w-fit">
           {getStatusLabel(student.status)}
         </Badge>
+        
+        <div className="flex gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Users className="h-4 w-4" />
+            <span>{activeEnrollments.length} {language === 'ar' ? 'برامج نشطة' : 'Active Programs'}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Target className="h-4 w-4" />
+            <span>{activeGoals.length} {language === 'ar' ? 'أهداف نشطة' : 'Active Goals'}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <BookOpen className="h-4 w-4" />
+            <span>{recentAssessments.length} {language === 'ar' ? 'تقييمات' : 'Assessments'}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Student Information Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Personal Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
-              <User className="h-5 w-5" />
-              {language === 'ar' ? 'المعلومات الشخصية' : 'Personal Information'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
-              </h4>
-              <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' 
-                  ? `${student.first_name_ar} ${student.last_name_ar}`
-                  : `${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar}`
-                }
-              </p>
-              {((language === 'ar' && student.first_name_en) || (language === 'en' && student.first_name_ar)) && (
-                <p className="text-xs text-muted-foreground">
-                  {language === 'ar' 
-                    ? `${student.first_name_en} ${student.last_name_en}`
-                    : `${student.first_name_ar} ${student.last_name_ar}`
-                  }
+      {/* Enhanced Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+          <TabsTrigger value="overview" className={language === 'ar' ? 'font-arabic' : ''}>
+            <User className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'نظرة عامة' : 'Overview'}
+          </TabsTrigger>
+          <TabsTrigger value="medical" className={language === 'ar' ? 'font-arabic' : ''}>
+            <Heart className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'طبي' : 'Medical'}
+          </TabsTrigger>
+          <TabsTrigger value="programs" className={language === 'ar' ? 'font-arabic' : ''}>
+            <Brain className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'البرامج' : 'Programs'}
+          </TabsTrigger>
+          <TabsTrigger value="goals" className={language === 'ar' ? 'font-arabic' : ''}>
+            <Target className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'الأهداف' : 'Goals'}
+          </TabsTrigger>
+          <TabsTrigger value="assessments" className={language === 'ar' ? 'font-arabic' : ''}>
+            <FileText className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'التقييمات' : 'Assessments'}
+          </TabsTrigger>
+          <TabsTrigger value="progress" className={language === 'ar' ? 'font-arabic' : ''}>
+            <TrendingUp className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'التقدم' : 'Progress'}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Personal Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  <User className="h-5 w-5" />
+                  {language === 'ar' ? 'المعلومات الشخصية' : 'Personal Information'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+                  </h4>
+                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' 
+                      ? `${student.first_name_ar} ${student.last_name_ar}`
+                      : `${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar}`
+                    }
+                  </p>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'تاريخ الميلاد' : 'Date of Birth'}
+                  </h4>
+                  <p className="text-sm">
+                    {new Date(student.date_of_birth).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'الجنس' : 'Gender'}
+                  </h4>
+                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {student.gender === 'male' ? (language === 'ar' ? 'ذكر' : 'Male') : (language === 'ar' ? 'أنثى' : 'Female')}
+                  </p>
+                </div>
+                
+                {student.national_id && (
+                  <div>
+                    <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'رقم الهوية/الإقامة' : 'National ID/Iqama'}
+                    </h4>
+                    <p className="text-sm">{student.national_id}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Contact Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  <Phone className="h-5 w-5" />
+                  {language === 'ar' ? 'معلومات الاتصال' : 'Contact Information'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {student.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
+                      </h4>
+                      <p className="text-sm">{student.phone}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {student.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}
+                      </h4>
+                      <p className="text-sm">{student.email}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {student.address_ar && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                    <div>
+                      <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'العنوان' : 'Address'}
+                      </h4>
+                      <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? student.address_ar : student.address_en}
+                      </p>
+                      {student.city_ar && (
+                        <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? student.city_ar : student.city_en}
+                          {student.postal_code && `, ${student.postal_code}`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Medical Tab */}
+        <TabsContent value="medical" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
+              {language === 'ar' ? 'السجلات الطبية' : 'Medical Records'}
+            </h3>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة سجل طبي' : 'Add Medical Record'}
+            </Button>
+          </div>
+
+          {medicalRecords.length > 0 ? (
+            <div className="grid gap-4">
+              {medicalRecords.map((record) => (
+                <Card key={record.id}>
+                  <CardHeader>
+                    <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'سجل طبي' : 'Medical Record'} - {record.medical_record_number}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {record.primary_diagnosis_code && record.primary_diagnosis_code.length > 0 && (
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'التشخيص الأساسي' : 'Primary Diagnosis'}
+                        </h4>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {record.primary_diagnosis_code.map((code, index) => (
+                            <Badge key={index} variant="outline">{code}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {record.allergies && record.allergies.length > 0 && (
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'الحساسيات' : 'Allergies'}
+                        </h4>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {record.allergies.map((allergy, index) => (
+                            <Badge key={index} variant="destructive">{allergy}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {record.weight_kg && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'الوزن' : 'Weight'}
+                          </h4>
+                          <p className="text-sm">{record.weight_kg} kg</p>
+                        </div>
+                        {record.height_cm && (
+                          <div>
+                            <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                              {language === 'ar' ? 'الطول' : 'Height'}
+                            </h4>
+                            <p className="text-sm">{record.height_cm} cm</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <Heart className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className={`text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  {language === 'ar' ? 'لا توجد سجلات طبية' : 'No medical records found'}
                 </p>
-              )}
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Programs Tab */}
+        <TabsContent value="programs" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
+              {language === 'ar' ? 'البرامج العلاجية' : 'Therapy Programs'}
+            </h3>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'تسجيل في برنامج' : 'Enroll in Program'}
+            </Button>
+          </div>
+
+          {programEnrollments.length > 0 ? (
+            <div className="grid gap-4">
+              {programEnrollments.map((enrollment) => (
+                <Card key={enrollment.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'برنامج علاجي' : 'Therapy Program'}
+                      </CardTitle>
+                      <Badge variant={enrollment.enrollment_status === 'active' ? 'default' : 'secondary'}>
+                        {enrollment.enrollment_status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'تاريخ التسجيل' : 'Enrollment Date'}
+                        </h4>
+                        <p className="text-sm">
+                          {new Date(enrollment.enrollment_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'الجلسات المكتملة' : 'Sessions Completed'}
+                        </h4>
+                        <p className="text-sm">{enrollment.sessions_completed || 0}</p>
+                      </div>
+                    </div>
+                    
+                    {enrollment.current_mastery_level && (
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'مستوى الإتقان' : 'Mastery Level'}
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-secondary rounded-full h-2">
+                            <div 
+                              className="bg-primary rounded-full h-2" 
+                              style={{ width: `${enrollment.current_mastery_level}%` }}
+                            />
+                          </div>
+                          <span className="text-sm">{enrollment.current_mastery_level}%</span>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            
-            <Separator />
-            
-            <div>
-              <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'تاريخ الميلاد' : 'Date of Birth'}
-              </h4>
-              <p className="text-sm">
-                {new Date(student.date_of_birth).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
-              </p>
-            </div>
-            
-            <div>
-              <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'الجنس' : 'Gender'}
-              </h4>
-              <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {student.gender === 'male' ? (language === 'ar' ? 'ذكر' : 'Male') : (language === 'ar' ? 'أنثى' : 'Female')}
-              </p>
-            </div>
-            
-            {student.national_id && (
-              <div>
-                <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                  {language === 'ar' ? 'رقم الهوية/الإقامة' : 'National ID/Iqama'}
-                </h4>
-                <p className="text-sm">{student.national_id}</p>
-              </div>
-            )}
-            
-            {student.nationality_ar && (
-              <div>
-                <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                  {language === 'ar' ? 'الجنسية' : 'Nationality'}
-                </h4>
-                <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                  {language === 'ar' ? student.nationality_ar : student.nationality_en}
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <Brain className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className={`text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  {language === 'ar' ? 'لم يتم التسجيل في أي برامج' : 'No program enrollments found'}
                 </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-        {/* Contact Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
-              <Phone className="h-5 w-5" />
-              {language === 'ar' ? 'معلومات الاتصال' : 'Contact Information'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {student.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
-                  </h4>
-                  <p className="text-sm">{student.phone}</p>
-                </div>
-              </div>
-            )}
-            
-            {student.email && (
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}
-                  </h4>
-                  <p className="text-sm">{student.email}</p>
-                </div>
-              </div>
-            )}
-            
-            {student.address_ar && (
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'العنوان' : 'Address'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.address_ar : student.address_en}
-                  </p>
-                  {student.city_ar && (
-                    <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
-                      {language === 'ar' ? student.city_ar : student.city_en}
-                      {student.postal_code && `, ${student.postal_code}`}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Goals Tab */}
+        <TabsContent value="goals" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
+              {language === 'ar' ? 'الأهداف العلاجية' : 'Therapeutic Goals'}
+            </h3>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة هدف' : 'Add Goal'}
+            </Button>
+          </div>
 
-        {/* Medical Information */}
-        {(student.diagnosis_ar || student.allergies_ar || student.medications_ar) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
-                <Stethoscope className="h-5 w-5" />
-                {language === 'ar' ? 'المعلومات الطبية' : 'Medical Information'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {student.diagnosis_ar && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'التشخيص' : 'Diagnosis'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.diagnosis_ar : student.diagnosis_en}
-                  </p>
-                  {student.severity_level && (
-                    <Badge variant="outline" className="mt-1">
-                      {getSeverityLabel(student.severity_level)}
-                    </Badge>
-                  )}
-                </div>
-              )}
-              
-              {student.allergies_ar && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'الحساسيات' : 'Allergies'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.allergies_ar : student.allergies_en}
-                  </p>
-                </div>
-              )}
-              
-              {student.medications_ar && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'الأدوية' : 'Medications'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.medications_ar : student.medications_en}
-                  </p>
-                </div>
-              )}
-              
-              {student.special_needs_ar && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'الاحتياجات الخاصة' : 'Special Needs'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.special_needs_ar : student.special_needs_en}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Educational Information */}
-        {(student.school_name_ar || student.educational_support_ar) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
-                <GraduationCap className="h-5 w-5" />
-                {language === 'ar' ? 'المعلومات التعليمية' : 'Educational Information'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {student.school_name_ar && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'اسم المدرسة' : 'School Name'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.school_name_ar : student.school_name_en}
-                  </p>
-                </div>
-              )}
-              
-              {student.grade_level && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'الصف الدراسي' : 'Grade Level'}
-                  </h4>
-                  <p className="text-sm">{student.grade_level}</p>
-                </div>
-              )}
-              
-              {student.educational_support_ar && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'الدعم التعليمي' : 'Educational Support'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.educational_support_ar : student.educational_support_en}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Therapy Information */}
-        {(student.referral_source_ar || student.therapy_goals_ar) && (
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
-                <FileText className="h-5 w-5" />
-                {language === 'ar' ? 'معلومات العلاج' : 'Therapy Information'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {student.referral_source_ar && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'مصدر الإحالة' : 'Referral Source'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.referral_source_ar : student.referral_source_en}
-                  </p>
-                </div>
-              )}
-              
-              {student.therapy_goals_ar && (
-                <div>
-                  <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? 'أهداف العلاج' : 'Therapy Goals'}
-                  </h4>
-                  <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {language === 'ar' ? student.therapy_goals_ar : student.therapy_goals_en}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* System Information */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
-              <Calendar className="h-5 w-5" />
-              {language === 'ar' ? 'معلومات النظام' : 'System Information'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'تاريخ التسجيل' : 'Enrollment Date'}
-              </h4>
-              <p className="text-sm">
-                {new Date(student.enrollment_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
-              </p>
+          {therapeuticGoals.length > 0 ? (
+            <div className="grid gap-4">
+              {therapeuticGoals.map((goal) => (
+                <Card key={goal.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'هدف' : 'Goal'} #{goal.goal_number}
+                      </CardTitle>
+                      <Badge variant={goal.status === 'active' ? 'default' : goal.status === 'achieved' ? 'outline' : 'secondary'}>
+                        {goal.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'بيان الهدف' : 'Goal Statement'}
+                      </h4>
+                      <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {goal.goal_statement_ar}
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'الفئة' : 'Category'}
+                        </h4>
+                        <p className="text-sm">{goal.goal_category}</p>
+                      </div>
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'التقدم' : 'Progress'}
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-secondary rounded-full h-2">
+                            <div 
+                              className="bg-primary rounded-full h-2" 
+                              style={{ width: `${goal.progress_percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-sm">{goal.progress_percentage}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            
-            <div>
-              <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'تاريخ الإنشاء' : 'Created Date'}
-              </h4>
-              <p className="text-sm">
-                {new Date(student.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
-              </p>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <Target className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className={`text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  {language === 'ar' ? 'لا توجد أهداف محددة' : 'No therapeutic goals found'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Assessments Tab */}
+        <TabsContent value="assessments" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
+              {language === 'ar' ? 'التقييمات' : 'Assessments'}
+            </h3>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة تقييم' : 'Add Assessment'}
+            </Button>
+          </div>
+
+          {assessmentResults.length > 0 ? (
+            <div className="grid gap-4">
+              {assessmentResults.map((assessment) => (
+                <Card key={assessment.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'تقييم' : 'Assessment'}
+                      </CardTitle>
+                      <Badge variant="outline">
+                        {assessment.assessment_purpose}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'تاريخ التقييم' : 'Assessment Date'}
+                        </h4>
+                        <p className="text-sm">
+                          {new Date(assessment.assessment_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
+                        </p>
+                      </div>
+                      {assessment.overall_score && (
+                        <div>
+                          <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'النتيجة الإجمالية' : 'Overall Score'}
+                          </h4>
+                          <p className="text-sm">{assessment.overall_score}</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {assessment.interpretation_summary_ar && (
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'ملخص التفسير' : 'Interpretation Summary'}
+                        </h4>
+                        <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? assessment.interpretation_summary_ar : assessment.interpretation_summary_en}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            
-            <div>
-              <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {language === 'ar' ? 'آخر تحديث' : 'Last Updated'}
-              </h4>
-              <p className="text-sm">
-                {new Date(student.updated_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
-              </p>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <FileText className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className={`text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  {language === 'ar' ? 'لا توجد تقييمات' : 'No assessments found'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Progress Tab */}
+        <TabsContent value="progress" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
+              {language === 'ar' ? 'تتبع التقدم' : 'Progress Tracking'}
+            </h3>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة تقرير تقدم' : 'Add Progress Report'}
+            </Button>
+          </div>
+
+          {progressTracking.length > 0 ? (
+            <div className="grid gap-4">
+              {progressTracking.map((progress) => (
+                <Card key={progress.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'تقرير التقدم' : 'Progress Report'}
+                      </CardTitle>
+                      <Badge variant={progress.trend_direction === 'improving' ? 'default' : progress.trend_direction === 'declining' ? 'destructive' : 'secondary'}>
+                        {progress.trend_direction}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'فترة التتبع' : 'Tracking Period'}
+                        </h4>
+                        <p className="text-sm">
+                          {new Date(progress.tracking_period_start).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')} - {new Date(progress.tracking_period_end).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
+                        </p>
+                      </div>
+                      {progress.goal_achievement_percentage && (
+                        <div>
+                          <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'نسبة تحقيق الأهداف' : 'Goal Achievement'}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-secondary rounded-full h-2">
+                              <div 
+                                className="bg-primary rounded-full h-2" 
+                                style={{ width: `${progress.goal_achievement_percentage}%` }}
+                              />
+                            </div>
+                            <span className="text-sm">{progress.goal_achievement_percentage}%</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {progress.progress_summary_ar && (
+                      <div>
+                        <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'ملخص التقدم' : 'Progress Summary'}
+                        </h4>
+                        <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? progress.progress_summary_ar : progress.progress_summary_en}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <TrendingUp className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className={`text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  {language === 'ar' ? 'لا توجد تقارير تقدم' : 'No progress reports found'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -159,7 +159,7 @@ export const useUpdateAssessmentResult = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateAssessmentResultData }): Promise<AssessmentResult> => {
-      const { id: dataId, ...updateFields } = data
+      const { ...updateFields } = data
       const updateData = {
         ...updateFields,
         updated_at: new Date().toISOString(),
@@ -272,7 +272,7 @@ export const useUpdateTherapeuticGoal = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateTherapeuticGoalData }): Promise<TherapeuticGoal> => {
-      const { id: dataId, ...updateFields } = data
+      const { ...updateFields } = data
       const updateData = {
         ...updateFields,
         updated_at: new Date().toISOString(),

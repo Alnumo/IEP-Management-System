@@ -99,7 +99,7 @@ export const SearchFilter = ({
             <SelectTrigger className="w-48">
               <SelectValue placeholder="جميع التصنيفات" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
               <SelectItem value="all">جميع التصنيفات</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
@@ -149,7 +149,7 @@ export const SearchFilter = ({
                   <SelectTrigger>
                     <SelectValue placeholder="جميع الحالات" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                     <SelectItem value="all">جميع الحالات</SelectItem>
                     <SelectItem value="active">نشط</SelectItem>
                     <SelectItem value="inactive">غير نشط</SelectItem>
@@ -170,7 +170,7 @@ export const SearchFilter = ({
                   <SelectTrigger>
                     <SelectValue placeholder="جميع البرامج" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                     <SelectItem value="all">جميع البرامج</SelectItem>
                     <SelectItem value="featured">مميز فقط</SelectItem>
                     <SelectItem value="not_featured">غير مميز</SelectItem>

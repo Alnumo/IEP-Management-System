@@ -6,7 +6,7 @@ export interface Session {
     name_ar: string
     name_en?: string
     course_code: string
-    instructor_name?: string
+    therapist_name?: string
   }
   session_number: number
   session_date: string
@@ -60,8 +60,8 @@ export interface TimeSlot {
   duration_minutes: number
   available_slots: number
   booked_slots: number
-  instructor_id?: string
-  instructor_name?: string
+  therapist_id?: string
+  therapist_name?: string
   location?: string
   status: 'available' | 'fully_booked' | 'unavailable'
 }
@@ -115,8 +115,8 @@ export interface CreateTimeSlotData {
   start_time: string
   end_time: string
   available_slots: number
-  instructor_id?: string
-  instructor_name?: string
+  therapist_id?: string
+  therapist_name?: string
   location?: string
 }
 

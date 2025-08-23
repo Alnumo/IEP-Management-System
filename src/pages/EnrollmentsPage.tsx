@@ -30,7 +30,7 @@ export const EnrollmentsPage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'enrolled': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'enrolled': return 'bg-green-100 text-green-800 border-green-200'
       case 'completed': return 'bg-green-100 text-green-800 border-green-200'
       case 'dropped': return 'bg-red-100 text-red-800 border-red-200'
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
@@ -90,7 +90,7 @@ export const EnrollmentsPage = () => {
   return (
     <div className="space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 gap-4">
         <div>
           <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
             {language === 'ar' ? 'إدارة التسجيلات' : 'Enrollments Management'}
@@ -109,13 +109,13 @@ export const EnrollmentsPage = () => {
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
               <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'إجمالي التسجيلات' : 'Total Enrollments'}
               </CardTitle>
               <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-2xl font-bold">{stats.total}</div>
               <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'مسجل حالياً' : 'Currently enrolled'}: {stats.enrolled}
@@ -124,13 +124,13 @@ export const EnrollmentsPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
               <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'معدل الإكمال' : 'Completion Rate'}
               </CardTitle>
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-2xl font-bold">{stats.completionRate.toFixed(1)}%</div>
               <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {stats.completed} {language === 'ar' ? 'مكتمل' : 'completed'}
@@ -139,13 +139,13 @@ export const EnrollmentsPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
               <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'معدل الدفع' : 'Payment Rate'}
               </CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-2xl font-bold">{stats.paymentCompletionRate.toFixed(1)}%</div>
               <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {stats.paidFull} {language === 'ar' ? 'مدفوع كاملاً' : 'fully paid'}
@@ -154,13 +154,13 @@ export const EnrollmentsPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
               <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}
               </CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()} {language === 'ar' ? 'ر.س' : 'SAR'}</div>
               <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'من جميع التسجيلات' : 'from all enrollments'}
@@ -195,7 +195,7 @@ export const EnrollmentsPage = () => {
               <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                 <SelectValue placeholder={language === 'ar' ? 'حالة التسجيل' : 'Enrollment Status'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                 <SelectItem value="all">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
                 <SelectItem value="enrolled">{language === 'ar' ? 'مسجل' : 'Enrolled'}</SelectItem>
                 <SelectItem value="completed">{language === 'ar' ? 'مكتمل' : 'Completed'}</SelectItem>
@@ -209,7 +209,7 @@ export const EnrollmentsPage = () => {
               <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                 <SelectValue placeholder={language === 'ar' ? 'حالة الدفع' : 'Payment Status'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                 <SelectItem value="all">{language === 'ar' ? 'جميع حالات الدفع' : 'All Payment Statuses'}</SelectItem>
                 <SelectItem value="paid">{language === 'ar' ? 'مدفوع' : 'Paid'}</SelectItem>
                 <SelectItem value="partial">{language === 'ar' ? 'جزئي' : 'Partial'}</SelectItem>
@@ -268,7 +268,7 @@ export const EnrollmentsPage = () => {
                   className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
                   onClick={() => window.location.href = `/enrollments/${enrollment.id}`}
                 >
-                  <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+                  <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
                     <div className="flex-1">
                       <div className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <h3 className={`font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>

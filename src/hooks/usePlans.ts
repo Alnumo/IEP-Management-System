@@ -96,7 +96,7 @@ const createPlan = async (data: CreatePlanData): Promise<TherapyPlan> => {
   }
   
   // Filter out non-database fields before sending to Supabase
-  const { session_types, program_price, price_includes_followup, ...dbData } = data
+  const { session_types, program_price, ...dbData } = data
   
   // Calculate price_per_session from program_price if provided
   const totalSessions = session_types?.reduce((total: number, type: any) => {

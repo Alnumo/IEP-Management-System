@@ -139,14 +139,14 @@ export const AddCoursePage = () => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           {/* Basic Information */}
-          <Card>
+          <Card className="overflow-visible">
             <CardHeader>
               <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 <BookOpen className="h-5 w-5" />
                 {language === 'ar' ? 'معلومات أساسية' : 'Basic Information'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 overflow-visible">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -246,7 +246,7 @@ export const AddCoursePage = () => {
                         <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                           <SelectValue placeholder={language === 'ar' ? 'اختر الأخصائية' : 'Select Therapist'} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                           <SelectItem value="none">{language === 'ar' ? 'بدون أخصائية' : 'No Therapist'}</SelectItem>
                           {therapists.map((therapist) => (
                             <SelectItem key={therapist.id} value={therapist.id}>
@@ -282,14 +282,14 @@ export const AddCoursePage = () => {
           </Card>
 
           {/* Schedule Information */}
-          <Card>
+          <Card className="overflow-visible">
             <CardHeader>
               <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 <Calendar className="h-5 w-5" />
                 {language === 'ar' ? 'معلومات الجدولة' : 'Schedule Information'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 overflow-visible">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -386,14 +386,14 @@ export const AddCoursePage = () => {
           </Card>
 
           {/* Capacity and Pricing */}
-          <Card>
+          <Card className="overflow-visible">
             <CardHeader>
               <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 <Users className="h-5 w-5" />
                 {language === 'ar' ? 'السعة والتسعير' : 'Capacity & Pricing'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 overflow-visible">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

@@ -73,7 +73,7 @@ export const InstructorsPage = () => {
   return (
     <div className="space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 gap-4">
         <div>
           <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
             {language === 'ar' ? 'المدربون' : 'Instructors'}
@@ -108,13 +108,13 @@ export const InstructorsPage = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
             <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'إجمالي المدربين' : 'Total Instructors'}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold">
               {statsLoading ? '...' : stats?.total_instructors || 0}
             </div>
@@ -125,13 +125,13 @@ export const InstructorsPage = () => {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
             <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'المدربون النشطون' : 'Active Instructors'}
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-green-600">
               {statsLoading ? '...' : stats?.active_instructors || 0}
             </div>
@@ -142,14 +142,14 @@ export const InstructorsPage = () => {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
             <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'متوسط الخبرة' : 'Average Experience'}
             </CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+          <CardContent className="text-center">
+            <div className="text-2xl font-bold text-green-600">
               {statsLoading ? '...' : stats?.average_experience || 0}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -159,13 +159,13 @@ export const InstructorsPage = () => {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
             <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'معدل الأجر/ساعة' : 'Avg Hourly Rate'}
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-purple-600">
               {statsLoading ? '...' : `${stats?.average_hourly_rate || 0} ${language === 'ar' ? 'ر.س' : 'SAR'}`}
             </div>
@@ -183,7 +183,7 @@ export const InstructorsPage = () => {
             {language === 'ar' ? 'قائمة المدربين' : 'Instructors List'}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="text-center">
           {instructorsError ? (
             <div className="text-center py-8">
               <p className="text-destructive text-sm">
@@ -196,7 +196,7 @@ export const InstructorsPage = () => {
           ) : instructorsLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={i} className="flex items-center justify-center gap-2 p-4 border rounded-lg">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
                     <div className="space-y-2">
@@ -227,7 +227,7 @@ export const InstructorsPage = () => {
               {instructors.map((instructor) => (
                 <div
                   key={instructor.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="flex items-center justify-center gap-2 p-4 border rounded-lg hover:bg-custom-accent transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">

@@ -128,62 +128,74 @@ export const StudentsPage = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
             <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'إجمالي الطلاب' : 'Total Students'}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'طالب مسجل' : 'registered students'}
-            </p>
+          <CardContent className="text-center py-4">
+            <div className="w-full">
+              <div className="text-2xl font-bold block w-full">{stats.total}</div>
+              <br />
+              <div className="text-xs text-muted-foreground block w-full">
+                {language === 'ar' ? 'طالب مسجل' : 'registered students'}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
             <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'الطلاب النشطون' : 'Active Students'}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'طالب نشط' : 'active students'}
-            </p>
+          <CardContent className="text-center py-4">
+            <div className="w-full">
+              <div className="text-2xl font-bold text-green-600 block w-full">{stats.active}</div>
+              <br />
+              <div className="text-xs text-muted-foreground block w-full">
+                {language === 'ar' ? 'طالب نشط' : 'active students'}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
             <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'الذكور' : 'Male Students'}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.male}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'طالب ذكر' : 'male students'}
-            </p>
+          <CardContent className="text-center py-4">
+            <div className="w-full">
+              <div className="text-2xl font-bold text-green-600 block w-full">{stats.male}</div>
+              <br />
+              <div className="text-xs text-muted-foreground block w-full">
+                {language === 'ar' ? 'طالب ذكر' : 'male students'}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
             <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'الإناث' : 'Female Students'}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-pink-600">{stats.female}</div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ar' ? 'طالبة أنثى' : 'female students'}
-            </p>
+          <CardContent className="text-center py-4">
+            <div className="w-full">
+              <div className="text-2xl font-bold text-pink-600 block w-full">{stats.female}</div>
+              <br />
+              <div className="text-xs text-muted-foreground block w-full">
+                {language === 'ar' ? 'طالبة أنثى' : 'female students'}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -229,12 +241,26 @@ export const StudentsPage = () => {
               {filteredStudents.map((student: Student) => (
                 <div
                   key={student.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-custom-accent transition-colors"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-primary" />
+                  {/* Right side: Action buttons and Status badge */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/students/edit/${student.id}`)}>
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">{language === 'ar' ? 'تعديل' : 'Edit'}</span>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/students/${student.id}`)}>
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">{language === 'ar' ? 'عرض' : 'View'}</span>
+                      </Button>
                     </div>
+                    <Badge variant={getStatusBadgeVariant(student.status)}>
+                      {getStatusLabel(student.status)}
+                    </Badge>
+                  </div>
+                  {/* Left side: Text and Icon */}
+                  <div className="flex items-center gap-4">
                     <div>
                       <h3 className={`font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
                         {getDisplayName(student)}
@@ -248,20 +274,8 @@ export const StudentsPage = () => {
                         </p>
                       )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant={getStatusBadgeVariant(student.status)}>
-                      {getStatusLabel(student.status)}
-                    </Badge>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/students/${student.id}`)}>
-                        <Eye className="h-4 w-4" />
-                        <span className="sr-only">{language === 'ar' ? 'عرض' : 'View'}</span>
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/students/edit/${student.id}`)}>
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">{language === 'ar' ? 'تعديل' : 'Edit'}</span>
-                      </Button>
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-primary" />
                     </div>
                   </div>
                 </div>

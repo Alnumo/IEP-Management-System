@@ -23,6 +23,9 @@
     "progress": "تتبع التقدم",
     "reports": "التقارير",
     "analytics": "التحليلات",
+    "qr_attendance": "نظام الحضور QR",
+    "whatsapp": "إدارة WhatsApp",
+    "insurance": "التأمين والفواتير",
     "category": {
       "students": "إدارة الطلاب",
       "therapy": "البرامج العلاجية",

@@ -161,7 +161,7 @@ export const useUpdateStudent = () => {
         // Don't throw error, continue without auth
       }
 
-      const { id: dataId, ...updateFields } = data
+      const { ...updateFields } = data
       const updateData = {
         ...updateFields,
         updated_by: user?.id,

@@ -359,7 +359,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
             {/* Phase 1: Student Information */}
             <TabsContent value="phase1" className="space-y-6">
               {/* Admission Information */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     {language === 'ar' ? 'معلومات القبول' : 'Admission Information'}
@@ -424,7 +424,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Student Information */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     👤 {language === 'ar' ? 'معلومات الطالب' : 'Student Information'}
@@ -530,7 +530,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                                 <SelectValue placeholder={language === 'ar' ? 'اختر البلد' : 'Select Country'} />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                               {/* Gulf Countries */}
                               <SelectItem value="saudi_arabia">{language === 'ar' ? 'المملكة العربية السعودية' : 'Saudi Arabia'}</SelectItem>
                               <SelectItem value="uae">{language === 'ar' ? 'الإمارات العربية المتحدة' : 'United Arab Emirates'}</SelectItem>
@@ -686,7 +686,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                                 <SelectValue placeholder={language === 'ar' ? 'اختر فصيلة الدم' : 'Select Blood Type'} />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                               {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(type => (
                                 <SelectItem key={type} value={type}>{type}</SelectItem>
                               ))}
@@ -701,13 +701,13 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Parents & Family Information */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     👨‍👩‍👧‍👦 {language === 'ar' ? 'معلومات الوالدين والأسرة' : 'Parents & Family Information'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 overflow-visible">
                   {/* Father Information */}
                   <div>
                     <h4 className={`text-lg font-semibold mb-4 ${language === 'ar' ? 'font-arabic' : ''}`}>
@@ -776,7 +776,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                                   <SelectValue placeholder={language === 'ar' ? 'اختر المستوى التعليمي' : 'Select Education Level'} />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                                 <SelectItem value="literate">{language === 'ar' ? 'يقرأ و يكتب' : 'Literate'}</SelectItem>
                                 <SelectItem value="elementary">{language === 'ar' ? 'الابتدائية' : 'Elementary'}</SelectItem>
                                 <SelectItem value="middle">{language === 'ar' ? 'المتوسطة' : 'Middle School'}</SelectItem>
@@ -928,7 +928,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                                   <SelectValue placeholder={language === 'ar' ? 'اختر المستوى التعليمي' : 'Select Education Level'} />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                                 <SelectItem value="literate">{language === 'ar' ? 'يقرأ و يكتب' : 'Literate'}</SelectItem>
                                 <SelectItem value="elementary">{language === 'ar' ? 'الابتدائية' : 'Elementary'}</SelectItem>
                                 <SelectItem value="middle">{language === 'ar' ? 'المتوسطة' : 'Middle School'}</SelectItem>
@@ -1098,7 +1098,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Housing Information */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     🏠 {language === 'ar' ? 'معلومات السكن' : 'Housing Information'}
@@ -1276,7 +1276,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
             {/* Phase 2: Medical History */}
             <TabsContent value="phase2" className="space-y-6">
               {/* Developmental History */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     👶 {language === 'ar' ? 'التاريخ النمائي' : 'Developmental History'}
@@ -1447,7 +1447,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Child Health Status */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     🩺 {language === 'ar' ? 'الحالة الصحية للطفل' : 'Child Health Status'}
@@ -1595,13 +1595,13 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Family Health Status */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     👨‍👩‍👧‍👦 {language === 'ar' ? 'الحالة الصحية للأسرة' : 'Family Health Status'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 overflow-visible">
                   {/* Father Health */}
                   <div className="space-y-4">
                     <h4 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
@@ -1936,7 +1936,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
             {/* Phase 3: Diagnosis */}
             <TabsContent value="phase3" className="space-y-6">
               {/* Diagnosis Information */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     🔍 {language === 'ar' ? 'معلومات التشخيص' : 'Diagnosis Information'}
@@ -2005,7 +2005,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Assessment Interview */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     📅 {language === 'ar' ? 'مقابلة التقييم' : 'Assessment Interview'}
@@ -2069,13 +2069,13 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Special Needs Types & Difficulties */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     🎯 {language === 'ar' ? 'أنواع الاحتياجات الخاصة والصعوبات' : 'Special Needs Types & Difficulties'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 overflow-visible">
                   {/* Special Needs Types */}
                   <div>
                     <Label className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
@@ -2150,7 +2150,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
             {/* Phase 4: Education & Therapy */}
             <TabsContent value="phase4" className="space-y-6">
               {/* Guardian Detailed Information - MOVED TO FIRST */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     📇 {language === 'ar' ? 'بيانات ولي الأمر التفصيلية' : 'Detailed Guardian Information'}
@@ -2172,7 +2172,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                                 <SelectValue placeholder={language === 'ar' ? 'اختر ولي الأمر' : 'Select Guardian'} />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                               <SelectItem value="father">{language === 'ar' ? 'الأب' : 'Father'}</SelectItem>
                               <SelectItem value="mother">{language === 'ar' ? 'الأم' : 'Mother'}</SelectItem>
                               <SelectItem value="other">{language === 'ar' ? 'أخرى' : 'Other'}</SelectItem>
@@ -2340,7 +2340,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Education & Therapy */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     📚 {language === 'ar' ? 'التعليم والعلاج' : 'Education & Therapy'}
@@ -2472,7 +2472,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
             {/* Phase 5: Address Information (NEW PHASE) */}
             <TabsContent value="phase5" className="space-y-6">
               {/* Address Information */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     📍 {language === 'ar' ? 'معلومات العنوان' : 'Address Information'}
@@ -2548,7 +2548,7 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
               </Card>
 
               {/* Registration Status */}
-              <Card>
+              <Card className="overflow-visible">
                 <CardHeader>
                   <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
                     ✅ {language === 'ar' ? 'حالة التسجيل' : 'Registration Status'}

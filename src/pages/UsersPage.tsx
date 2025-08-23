@@ -120,7 +120,7 @@ export const UsersPage = () => {
   return (
     <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 gap-4">
         <div>
           <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
             {language === 'ar' ? 'إدارة المستخدمين' : 'User Management'}
@@ -159,25 +159,25 @@ export const UsersPage = () => {
       {/* Statistics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
             <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'إجمالي المستخدمين' : 'Total Users'}
             </CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold">{users.length}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
             <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'المديرين' : 'Admins'}
             </CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-red-600">
               {users.filter(u => u.role === 'admin').length}
             </div>
@@ -185,27 +185,27 @@ export const UsersPage = () => {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
             <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'المدراء التنفيذيين' : 'Managers'}
             </CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+          <CardContent className="text-center">
+            <div className="text-2xl font-bold text-green-600">
               {users.filter(u => u.role === 'manager').length}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-center gap-2 space-y-0 pb-2">
             <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'الموظفين' : 'Staff'}
             </CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-green-600">
               {users.filter(u => ['therapist_lead', 'receptionist'].includes(u.role)).length}
             </div>
@@ -234,7 +234,7 @@ export const UsersPage = () => {
           {filteredUsers.map((user) => (
             <Card key={user.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-center gap-2">
                   <div className="space-y-1">
                     <h3 className={`font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
                       {user.name || user.email}

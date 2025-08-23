@@ -131,7 +131,7 @@ export const StudentForm = ({ initialData, onSubmit, onCancel, isLoading = false
 
   return (
     <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
-      <Card>
+              <Card className="overflow-visible">
         <CardHeader>
           <CardTitle className={language === 'ar' ? 'font-arabic' : ''}>
             {initialData 
@@ -276,7 +276,7 @@ export const StudentForm = ({ initialData, onSubmit, onCancel, isLoading = false
                                 <SelectValue placeholder={language === 'ar' ? 'اختر الجنس' : 'Select gender'} />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                               <SelectItem value="male">
                                 {language === 'ar' ? 'ذكر' : 'Male'}
                               </SelectItem>
@@ -471,7 +471,7 @@ export const StudentForm = ({ initialData, onSubmit, onCancel, isLoading = false
                                 <SelectValue placeholder={language === 'ar' ? 'اختر درجة الشدة' : 'Select severity'} />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                               <SelectItem value="mild">
                                 {language === 'ar' ? 'خفيفة' : 'Mild'}
                               </SelectItem>

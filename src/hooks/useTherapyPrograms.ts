@@ -113,7 +113,7 @@ export const useUpdateTherapyProgram = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateTherapyProgramData }): Promise<TherapyProgram> => {
-      const { id: dataId, ...updateFields } = data
+      const { ...updateFields } = data
       const updateData = {
         ...updateFields,
         updated_at: new Date().toISOString(),

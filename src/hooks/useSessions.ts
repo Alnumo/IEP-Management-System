@@ -31,7 +31,7 @@ export const useSessions = (filters?: SessionFilters) => {
             name_ar,
             name_en,
             course_code,
-            instructor_name
+            therapist_name
           )
         `)
         .order('session_date', { ascending: true })
@@ -85,7 +85,7 @@ export const useSession = (id: string) => {
             name_ar,
             name_en,
             course_code,
-            instructor_name
+            therapist_name
           )
         `)
         .eq('id', id)
@@ -140,7 +140,7 @@ export const useCreateSession = () => {
             name_ar,
             name_en,
             course_code,
-            instructor_name
+            therapist_name
           )
         `)
         .single()
@@ -192,7 +192,7 @@ export const useUpdateSession = () => {
             name_ar,
             name_en,
             course_code,
-            instructor_name
+            therapist_name
           )
         `)
         .single()
@@ -455,7 +455,7 @@ export const useAvailableTimeSlots = (filters: AvailabilityFilters) => {
           duration_minutes: 120, // Default 2 hours
           available_slots: course.max_students - course.enrolled_students,
           booked_slots: course.enrolled_students,
-          instructor_name: course.instructor_name,
+          therapist_name: course.therapist_name,
           location: course.location,
           status: course.enrolled_students < course.max_students ? 'available' : 'fully_booked'
         }

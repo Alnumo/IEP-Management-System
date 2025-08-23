@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_APP_DOMAIN: string
 }
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv
+declare global {
+  interface ImportMeta {
+    readonly env: ImportMetaEnv
+  }
 }

@@ -205,49 +205,49 @@ export const PlansPage = () => {
       {!isLoading && stats.total > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
               <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'إجمالي البرامج' : 'Total Programs'}
               </CardTitle>
               <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-lg sm:text-2xl font-bold">{stats.total}</div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
               <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'البرامج النشطة' : 'Active Programs'}
               </CardTitle>
               <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
               <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'البرامج المميزة' : 'Featured Programs'}
               </CardTitle>
               <Star className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-lg sm:text-2xl font-bold text-yellow-600">{stats.featured}</div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
               <CardTitle className={`text-xs sm:text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'متوسط السعر' : 'Average Price'}
               </CardTitle>
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-lg sm:text-2xl font-bold">{formatCurrency(stats.averagePrice)}</div>
             </CardContent>
           </Card>

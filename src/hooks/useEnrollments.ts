@@ -38,7 +38,7 @@ export const useEnrollments = (filters?: EnrollmentFilters) => {
           *,
           student:students(
             id,
-            student_code,
+            registration_number,
             first_name_ar,
             last_name_ar,
             first_name_en,
@@ -106,7 +106,7 @@ export const useEnrollment = (id: string) => {
           *,
           student:students(
             id,
-            student_code,
+            registration_number,
             first_name_ar,
             last_name_ar,
             first_name_en,
@@ -114,8 +114,7 @@ export const useEnrollment = (id: string) => {
             phone,
             email,
             date_of_birth,
-            address_city,
-            guardian_name
+            city_ar
           ),
           course:courses(
             id,
@@ -131,7 +130,7 @@ export const useEnrollment = (id: string) => {
             price,
             max_students,
             enrolled_students,
-            instructor_name,
+            therapist_name,
             location
           )
         `)

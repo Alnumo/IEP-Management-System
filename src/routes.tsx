@@ -21,8 +21,21 @@ import { TherapistsPage } from './pages/TherapistsPage'
 import { AddTherapistPage } from './pages/AddTherapistPage'
 import { EnrollmentsPage } from './pages/EnrollmentsPage'
 import { AddEnrollmentPage } from './pages/AddEnrollmentPage'
+import { MedicalRecordsPage } from './pages/MedicalRecordsPage'
+import { TherapyProgramsPage } from './pages/TherapyProgramsPage'
+import { AssessmentsPage } from './pages/AssessmentsPage'
+import { QRAttendancePage } from './pages/QRAttendancePage'
+import { WhatsAppPage } from './pages/WhatsAppPage'
+import { InsurancePage } from './pages/InsurancePage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
+import ParentLoginPage from './pages/ParentLoginPage'
+import ParentRegisterPage from './pages/ParentRegisterPage'
+import ParentDashboardPage from './pages/ParentDashboardPage'
+import ParentMessagesPage from './pages/ParentMessagesPage'
+import ParentHomeProgramsPage from './pages/ParentHomeProgramsPage'
+import ParentAppointmentsPage from './pages/ParentAppointmentsPage'
+import ParentDocumentsPage from './pages/ParentDocumentsPage'
 
 export const AppRoutes = () => {
   return (
@@ -50,9 +63,24 @@ export const AppRoutes = () => {
         <Route path="therapists/add" element={<AddTherapistPage />} />
         <Route path="enrollments" element={<EnrollmentsPage />} />
         <Route path="enrollments/add" element={<AddEnrollmentPage />} />
+        <Route path="medical-records" element={<MedicalRecordsPage />} />
+        <Route path="therapy-programs" element={<TherapyProgramsPage />} />
+        <Route path="assessments" element={<AssessmentsPage />} />
+        <Route path="qr-attendance" element={<QRAttendancePage />} />
+        <Route path="whatsapp" element={<WhatsAppPage />} />
+        <Route path="insurance" element={<InsurancePage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
+      
+      {/* Parent Portal Routes */}
+      <Route path="/parent-login" element={<ParentLoginPage />} />
+      <Route path="/parent-register" element={<ParentRegisterPage />} />
+      <Route path="/parent-dashboard" element={<ParentDashboardPage />} />
+      <Route path="/parent-messages" element={<ParentMessagesPage />} />
+      <Route path="/parent-home-programs" element={<ParentHomeProgramsPage />} />
+      <Route path="/parent-appointments" element={<ParentAppointmentsPage />} />
+      <Route path="/parent-documents" element={<ParentDocumentsPage />} />
     </Routes>
   )
 }

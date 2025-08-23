@@ -119,14 +119,14 @@ export const AddEnrollmentPage = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Student and Course Selection */}
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic flex-row-reverse' : ''}`}>
               <User className="h-5 w-5" />
               {language === 'ar' ? 'معلومات التسجيل' : 'Enrollment Information'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 overflow-visible">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Student Selection */}
               <div className="space-y-2">
@@ -141,7 +141,7 @@ export const AddEnrollmentPage = () => {
                       <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                         <SelectValue placeholder={language === 'ar' ? 'اختر الطالب' : 'Select Student'} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                         {students.map((student) => (
                           <SelectItem key={student.id} value={student.id}>
                             <div className={`flex flex-col ${language === 'ar' ? 'items-end' : 'items-start'}`}>
@@ -179,7 +179,7 @@ export const AddEnrollmentPage = () => {
                       <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                         <SelectValue placeholder={language === 'ar' ? 'اختر الدورة' : 'Select Course'} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                         {courses.map((course) => (
                           <SelectItem key={course.id} value={course.id}>
                             <div className={`flex flex-col ${language === 'ar' ? 'items-end' : 'items-start'}`}>
@@ -226,14 +226,14 @@ export const AddEnrollmentPage = () => {
         </Card>
 
         {/* Payment Information */}
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic flex-row-reverse' : ''}`}>
               <CreditCard className="h-5 w-5" />
               {language === 'ar' ? 'معلومات الدفع' : 'Payment Information'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 overflow-visible">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Payment Status */}
               <div className="space-y-2">
@@ -248,7 +248,7 @@ export const AddEnrollmentPage = () => {
                       <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                         <SelectItem value="pending">{language === 'ar' ? 'معلق' : 'Pending'}</SelectItem>
                         <SelectItem value="paid">{language === 'ar' ? 'مدفوع' : 'Paid'}</SelectItem>
                         <SelectItem value="partial">{language === 'ar' ? 'جزئي' : 'Partial'}</SelectItem>
@@ -292,7 +292,7 @@ export const AddEnrollmentPage = () => {
         </Card>
 
         {/* Notes */}
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic flex-row-reverse' : ''}`}>
               <CalendarDays className="h-5 w-5" />

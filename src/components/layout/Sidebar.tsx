@@ -18,7 +18,10 @@ import {
   Stethoscope,
   Target,
   TrendingUp,
-  FileSearch
+  FileSearch,
+  QrCode,
+  MessageCircle,
+  CreditCard
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -105,6 +108,26 @@ const navigation = [
     category: 'medical'
   },
   
+  // Integration Systems
+  {
+    key: 'navigation.qr_attendance',
+    href: '/qr-attendance',
+    icon: QrCode,
+    category: 'system'
+  },
+  {
+    key: 'navigation.whatsapp',
+    href: '/whatsapp',
+    icon: MessageCircle,
+    category: 'system'
+  },
+  {
+    key: 'navigation.insurance',
+    href: '/insurance',
+    icon: CreditCard,
+    category: 'system'
+  },
+  
   // Staff Management
   {
     key: 'navigation.therapists',
@@ -117,6 +140,15 @@ const navigation = [
     href: '/users',
     icon: Users,
     category: 'staff'
+  },
+  
+  
+  // Parent Portal
+  {
+    key: 'navigation.parent_login',
+    href: '/parent-login',
+    icon: UserCheck,
+    category: 'parent'
   },
   
   // System
@@ -140,6 +172,7 @@ const navigationCategories = [
   { key: 'therapy', icon: Brain },
   { key: 'medical', icon: Activity },
   { key: 'staff', icon: UserCog },
+  { key: 'parent', icon: UserCheck },
   { key: 'system', icon: Archive }
 ]
 

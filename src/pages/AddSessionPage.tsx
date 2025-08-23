@@ -163,14 +163,14 @@ export const AddSessionPage = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Information */}
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
               <Calendar className="h-5 w-5" />
               {language === 'ar' ? 'المعلومات الأساسية' : 'Basic Information'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 overflow-visible">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Course Selection */}
               <div className="space-y-2">
@@ -185,7 +185,7 @@ export const AddSessionPage = () => {
                       <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                         <SelectValue placeholder={language === 'ar' ? 'اختر الدورة' : 'Select course'} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                         {coursesLoading ? (
                           <SelectItem value="loading" disabled>
                             {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
@@ -255,7 +255,7 @@ export const AddSessionPage = () => {
                       <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                         <SelectValue placeholder={language === 'ar' ? 'اختر الوقت' : 'Select time'} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                         {generateTimeSlots().map((slot) => (
                           <SelectItem key={slot} value={slot}>
                             {slot}
@@ -293,14 +293,14 @@ export const AddSessionPage = () => {
         </Card>
 
         {/* Session Content */}
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
               <FileText className="h-5 w-5" />
               {language === 'ar' ? 'محتوى الجلسة' : 'Session Content'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 overflow-visible">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Topic in Arabic */}
               <div className="space-y-2">

@@ -40,7 +40,7 @@ export const TherapistsPage = () => {
 
   const getEmploymentTypeColor = (type: string) => {
     switch (type) {
-      case 'full_time': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'full_time': return 'bg-green-100 text-green-800 border-green-200'
       case 'part_time': return 'bg-purple-100 text-purple-800 border-purple-200'
       case 'contract': return 'bg-orange-100 text-orange-800 border-orange-200'
       case 'volunteer': return 'bg-pink-100 text-pink-800 border-pink-200'
@@ -109,13 +109,13 @@ export const TherapistsPage = () => {
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
               <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'إجمالي الاخصائيات' : 'Total Therapists'}
               </CardTitle>
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-2xl font-bold">{stats.total}</div>
               <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'نشطة' : 'Active'}: {stats.active}
@@ -124,13 +124,13 @@ export const TherapistsPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
               <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'متوسط الخبرة' : 'Average Experience'}
               </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-2xl font-bold">{stats.average_experience.toFixed(1)}</div>
               <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'سنوات خبرة' : 'years experience'}
@@ -139,13 +139,13 @@ export const TherapistsPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
               <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'الدورات المسندة' : 'Assigned Courses'}
               </CardTitle>
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-2xl font-bold">{stats.total_courses_assigned}</div>
               <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'دورة نشطة' : 'active courses'}
@@ -154,13 +154,13 @@ export const TherapistsPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2 gap-2">
               <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'دوام كامل' : 'Full Time'}
               </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <div className="text-2xl font-bold">{stats.full_time}</div>
               <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'من إجمالي' : 'of total'} {stats.total}
@@ -195,7 +195,7 @@ export const TherapistsPage = () => {
               <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                 <SelectValue placeholder={language === 'ar' ? 'الحالة' : 'Status'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                 <SelectItem value="all">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
                 <SelectItem value="active">{language === 'ar' ? 'نشطة' : 'Active'}</SelectItem>
                 <SelectItem value="inactive">{language === 'ar' ? 'غير نشطة' : 'Inactive'}</SelectItem>
@@ -209,7 +209,7 @@ export const TherapistsPage = () => {
               <SelectTrigger className={language === 'ar' ? 'font-arabic' : ''}>
                 <SelectValue placeholder={language === 'ar' ? 'نوع العمل' : 'Employment Type'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[9999] bg-white border shadow-lg max-h-60 overflow-y-auto" position="popper" sideOffset={4}>
                 <SelectItem value="all">{language === 'ar' ? 'جميع الأنواع' : 'All Types'}</SelectItem>
                 <SelectItem value="full_time">{language === 'ar' ? 'دوام كامل' : 'Full Time'}</SelectItem>
                 <SelectItem value="part_time">{language === 'ar' ? 'دوام جزئي' : 'Part Time'}</SelectItem>
@@ -269,6 +269,16 @@ export const TherapistsPage = () => {
                   onClick={() => window.location.href = `/therapists/${therapist.id}`}
                 >
                   <div className={`flex items-start justify-between mb-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    {/* Left side: Badges */}
+                    <div className="flex gap-2">
+                      <Badge variant="outline" className={getStatusColor(therapist.status)}>
+                        {getStatusText(therapist.status)}
+                      </Badge>
+                      <Badge variant="outline" className={getEmploymentTypeColor(therapist.employment_type)}>
+                        {getEmploymentTypeText(therapist.employment_type)}
+                      </Badge>
+                    </div>
+                    {/* Right side: Name and Specialization */}
                     <div>
                       <h3 className={`font-medium text-lg ${language === 'ar' ? 'font-arabic' : ''}`}>
                         {language === 'ar' 
@@ -280,28 +290,20 @@ export const TherapistsPage = () => {
                         {language === 'ar' ? therapist.specialization_ar : (therapist.specialization_en || therapist.specialization_ar)}
                       </p>
                     </div>
-                    <div className="flex gap-2">
-                      <Badge variant="outline" className={getStatusColor(therapist.status)}>
-                        {getStatusText(therapist.status)}
-                      </Badge>
-                      <Badge variant="outline" className={getEmploymentTypeColor(therapist.employment_type)}>
-                        {getEmploymentTypeText(therapist.employment_type)}
-                      </Badge>
-                    </div>
                   </div>
                   
                   <div className={`space-y-2 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
-                    <div className={`flex items-center gap-2 text-sm text-muted-foreground ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <Clock className="h-4 w-4" />
+                    <div className={`flex items-center gap-2 text-sm text-muted-foreground justify-end ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <span className={language === 'ar' ? 'font-arabic' : ''}>
                         {therapist.experience_years} {language === 'ar' ? 'سنوات خبرة' : 'years experience'}
                       </span>
+                      <Clock className="h-4 w-4" />
                     </div>
                     
                     {therapist.phone && (
-                      <div className={`flex items-center gap-2 text-sm text-muted-foreground ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <Phone className="h-4 w-4" />
+                      <div className={`flex items-center gap-2 text-sm text-muted-foreground justify-end ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <span>{therapist.phone}</span>
+                        <Phone className="h-4 w-4" />
                       </div>
                     )}
                     
