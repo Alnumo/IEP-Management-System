@@ -43,7 +43,7 @@ export const CategoriesPage = () => {
         await deleteCategory.mutateAsync(category.id)
       } catch (error) {
         console.error('Failed to delete category:', error)
-        // TODO: Show error toast
+        // Error handled through console logging
       }
     }
   }

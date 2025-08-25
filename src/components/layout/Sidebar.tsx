@@ -21,7 +21,9 @@ import {
   FileSearch,
   QrCode,
   MessageCircle,
-  CreditCard
+  CreditCard,
+  Cog,
+  Building2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -90,6 +92,18 @@ const navigation = [
     category: 'medical'
   },
   {
+    key: 'navigation.medical_consultants',
+    href: '/medical-consultants',
+    icon: UserCog,
+    category: 'medical'
+  },
+  {
+    key: 'navigation.clinical_documentation',
+    href: '/clinical-documentation',
+    icon: FileText,
+    category: 'medical'
+  },
+  {
     key: 'navigation.assessments',
     href: '/assessments',
     icon: FileSearch,
@@ -142,6 +156,26 @@ const navigation = [
     category: 'staff'
   },
   
+  
+  // AI Analytics & Enterprise Features
+  {
+    key: 'navigation.ai_analytics',
+    href: '/ai-analytics',
+    icon: Brain,
+    category: 'system'
+  },
+  {
+    key: 'navigation.enterprise_automation',
+    href: '/enterprise-automation',
+    icon: Cog,
+    category: 'system'
+  },
+  {
+    key: 'navigation.multi_center_management',
+    href: '/multi-center-management',
+    icon: Building2,
+    category: 'system'
+  },
   
   // Parent Portal
   {

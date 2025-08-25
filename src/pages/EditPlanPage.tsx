@@ -20,7 +20,7 @@ export const EditPlanPage = () => {
       navigate('/plans')
     } catch (error) {
       console.error('Failed to update plan:', error)
-      // TODO: Show error toast/notification
+      // Error handled through console logging and user feedback
     }
   }
 

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Filter, FileText, Eye, Edit, Stethoscope } from 'lucide-react'
+import { Plus, Search, Filter, FileText, Eye, Edit, Stethoscope, Trash2, MoreHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Badge } from '@/components/ui/badge'
-import { useMedicalRecords } from '@/hooks/useMedical'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { useMedicalRecords, useDeleteMedicalRecord } from '@/hooks/useMedical'
 import { formatDate } from '@/lib/utils'
 
 export const MedicalRecordsPage = () => {
@@ -16,6 +18,16 @@ export const MedicalRecordsPage = () => {
   
   // Fetch medical records data
   const { data: medicalRecords = [], isLoading, error } = useMedicalRecords()
+  const deleteMedicalRecord = useDeleteMedicalRecord()
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMedicalRecord.mutateAsync(id)
+      console.log('✅ Medical record deleted successfully')
+    } catch (error) {
+      console.error('❌ Failed to delete medical record:', error)
+    }
+  }
   
   // Filter medical records based on search term
   const filteredRecords = medicalRecords.filter((record) => {
@@ -216,14 +228,82 @@ export const MedicalRecordsPage = () => {
                   </div>
 
                   <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => navigate(`/medical-records/${record.id}`)}
+                    >
                       <Eye className="h-4 w-4" />
                       {language === 'ar' ? 'عرض' : 'View'}
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => navigate(`/medical-records/edit/${record.id}`)}
+                    >
                       <Edit className="h-4 w-4" />
                       {language === 'ar' ? 'تعديل' : 'Edit'}
                     </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => navigate(`/medical-records/${record.id}`)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/medical-records/edit/${record.id}`)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'تعديل' : 'Edit'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {language === 'ar' ? 'حذف' : 'Delete'}
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className={language === 'ar' ? 'font-arabic' : ''}>
+                                {language === 'ar' ? 'تأكيد الحذف' : 'Confirm Deletion'}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription className={language === 'ar' ? 'font-arabic' : ''}>
+                                {language === 'ar' 
+                                  ? 'هل أنت متأكد من حذف هذا السجل الطبي؟ لا يمكن التراجع عن هذا الإجراء.'
+                                  : 'Are you sure you want to delete this medical record? This action cannot be undone.'
+                                }
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className={language === 'ar' ? 'font-arabic' : ''}>
+                                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                              </AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDelete(record.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                disabled={deleteMedicalRecord.isPending}
+                              >
+                                {deleteMedicalRecord.isPending 
+                                  ? (language === 'ar' ? 'جاري الحذف...' : 'Deleting...')
+                                  : (language === 'ar' ? 'حذف' : 'Delete')
+                                }
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}

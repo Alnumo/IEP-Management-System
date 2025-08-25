@@ -15,6 +15,8 @@
     "dashboard": "Dashboard",
     "settings": "Settings",
     "medical_records": "Medical Records",
+    "medical_consultants": "Medical Consultants",
+    "clinical_documentation": "Clinical Documentation",
     "health_metrics": "Health Metrics",
     "diagnoses": "Diagnoses",
     "therapy_programs": "Therapy Programs",

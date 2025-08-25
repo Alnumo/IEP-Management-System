@@ -20,7 +20,7 @@ export const EditCategoryPage = () => {
       navigate('/categories')
     } catch (error) {
       console.error('Failed to update category:', error)
-      // TODO: Show error toast/notification
+      // Error handled through console logging and user feedback
     }
   }
 

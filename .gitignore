@@ -9,12 +9,27 @@ pnpm-debug.log*
 dist/
 build/
 
-# Environment variables
+# Environment variables - NEVER COMMIT THESE
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+
+# Security keys and certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# Database backups and exports
+*.sql.gz
+*.dump
+database/backups/
+database/exports/
 
 # IDE and editor files
 .vscode/

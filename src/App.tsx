@@ -3,6 +3,10 @@ import { BrowserRouter as Router } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { AppRoutes } from './routes'
+import { logConfigurationStatus } from './lib/env-validation'
+
+// Validate environment configuration on app startup
+logConfigurationStatus()
 
 const queryClient = new QueryClient({
   defaultOptions: {

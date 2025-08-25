@@ -1,24 +1,12 @@
-import { useState, useEffect } from 'react'
-import { QrCode, Users, Clock, MapPin, CheckCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { QrCode, Users, Clock, MapPin, CheckCircle, Camera, Wifi, WifiOff } from 'lucide-react'
+import { Html5QrcodeScanner } from 'html5-qrcode'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { toast } from 'sonner'
-
-interface AttendanceRecord {
-  id: string
-  studentId: string
-  studentName: string
-  sessionId?: string
-  sessionType: string
-  checkInTime: string
-  checkOutTime?: string
-  roomNumber?: string
-  therapistId?: string
-  therapistName?: string
-  status: 'checked_in' | 'in_session' | 'checked_out'
-}
+import { useAttendanceRecords, useAttendanceStats, useCheckInStudent, useStartSession, useRealTimeAttendance } from '@/hooks/useAttendance'
 
 interface QRAttendanceSystemProps {
   mode: 'student' | 'therapist' | 'session' | 'room'
@@ -26,44 +14,42 @@ interface QRAttendanceSystemProps {
 
 export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
   const { language, isRTL } = useLanguage()
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
   const [isScanning, setIsScanning] = useState(false)
-  const [, setCurrentSession] = useState<any>(null)
+  const [showScanner, setShowScanner] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [scanError, setScanError] = useState<string>('')
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null)
+  const scannerElementId = 'qr-reader-' + mode
+  
+  // Hooks for data management
+  const { data: attendanceRecords = [], isLoading } = useAttendanceRecords()
+  const { data: stats } = useAttendanceStats()
+  const checkInMutation = useCheckInStudent()
+  const startSessionMutation = useStartSession()
+  const liveUpdates = useRealTimeAttendance()
 
-  // Mock data for demo
+  // Monitor online status and cleanup scanner
   useEffect(() => {
-    const mockRecords: AttendanceRecord[] = [
-      {
-        id: '1',
-        studentId: 'std-001',
-        studentName: 'أحمد محمد الأحمد',
-        sessionId: 'sess-001',
-        sessionType: 'ABA Therapy',
-        checkInTime: '2025-01-22T09:00:00',
-        roomNumber: 'A-101',
-        therapistId: 'th-001',
-        therapistName: 'د. سارة أحمد',
-        status: 'in_session'
-      },
-      {
-        id: '2',
-        studentId: 'std-002',
-        studentName: 'فاطمة علي السالم',
-        sessionId: 'sess-002',
-        sessionType: 'Speech Therapy',
-        checkInTime: '2025-01-22T10:30:00',
-        checkOutTime: '2025-01-22T11:15:00',
-        roomNumber: 'B-205',
-        therapistId: 'th-002',
-        therapistName: 'أ. نور الدين',
-        status: 'checked_out'
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+      
+      // Cleanup scanner on unmount
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(console.error)
       }
-    ]
-    setAttendanceRecords(mockRecords)
+    }
   }, [])
 
   const handleQRScan = async (qrData: string) => {
     setIsScanning(true)
+    setShowScanner(false)
     
     try {
       // Parse QR code data
@@ -86,52 +72,96 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
       
       toast.success(language === 'ar' ? 'تم تسجيل الحضور بنجاح' : 'Attendance recorded successfully')
     } catch (error) {
+      console.error('QR Scan Error:', error)
       toast.error(language === 'ar' ? 'خطأ في قراءة الرمز' : 'Error reading QR code')
     } finally {
       setIsScanning(false)
     }
   }
 
-  const handleStudentAttendance = async (qrInfo: any) => {
-    // Student check-in/check-out logic
-    const existingRecord = attendanceRecords.find(r => 
-      r.studentId === qrInfo.studentId && 
-      r.status !== 'checked_out'
-    )
+  const handleScanError = (error: any) => {
+    console.error('Scanner Error:', error)
+    setScanError(error?.message || 'Camera error')
+    toast.error(language === 'ar' ? 'خطأ في تشغيل الكاميرا' : 'Camera error')
+  }
 
-    if (existingRecord) {
-      // Check out
-      const updatedRecords = attendanceRecords.map(record =>
-        record.id === existingRecord.id
-          ? { ...record, checkOutTime: new Date().toISOString(), status: 'checked_out' as const }
-          : record
-      )
-      setAttendanceRecords(updatedRecords)
-    } else {
-      // Check in
-      const newRecord: AttendanceRecord = {
-        id: Date.now().toString(),
-        studentId: qrInfo.studentId,
-        studentName: qrInfo.studentName,
-        sessionType: qrInfo.sessionType || 'General',
-        checkInTime: new Date().toISOString(),
-        status: 'checked_in',
-        roomNumber: qrInfo.roomNumber
+  const handleScanSuccess = (decodedText: string) => {
+    handleQRScan(decodedText)
+    stopScanning()
+  }
+
+  const startScanning = () => {
+    setShowScanner(true)
+    setScanError('')
+    
+    // Initialize scanner after DOM element is available
+    setTimeout(() => {
+      try {
+        scannerRef.current = new Html5QrcodeScanner(
+          scannerElementId,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+            disableFlip: false,
+          },
+          false
+        )
+        
+        scannerRef.current.render(handleScanSuccess, handleScanError)
+      } catch (error) {
+        console.error('Error initializing scanner:', error)
+        handleScanError(error)
       }
-      setAttendanceRecords([...attendanceRecords, newRecord])
+    }, 100)
+  }
+
+  const stopScanning = () => {
+    if (scannerRef.current) {
+      scannerRef.current.clear().catch(console.error)
+      scannerRef.current = null
+    }
+    setShowScanner(false)
+    setScanError('')
+  }
+
+  const handleStudentAttendance = async (qrInfo: any) => {
+    try {
+      await checkInMutation.mutateAsync(qrInfo)
+      const existingRecord = attendanceRecords.find(r => 
+        r.student_id === qrInfo.studentId && 
+        r.status !== 'checked_out'
+      )
+      
+      if (existingRecord) {
+        toast.success(
+          language === 'ar' 
+            ? `تم تسجيل خروج ${qrInfo.studentName}` 
+            : `${qrInfo.studentName} checked out`
+        )
+      } else {
+        toast.success(
+          language === 'ar' 
+            ? `تم تسجيل دخول ${qrInfo.studentName}` 
+            : `${qrInfo.studentName} checked in`
+        )
+      }
+    } catch (error) {
+      throw error
     }
   }
 
   const handleSessionAttendance = async (qrInfo: any) => {
-    // Session-specific attendance
-    setCurrentSession(qrInfo)
-    
-    const updatedRecords = attendanceRecords.map(record =>
-      record.studentId === qrInfo.studentId
-        ? { ...record, sessionId: qrInfo.sessionId, status: 'in_session' as const }
-        : record
-    )
-    setAttendanceRecords(updatedRecords)
+    try {
+      await startSessionMutation.mutateAsync(qrInfo)
+      toast.success(
+        language === 'ar' 
+          ? `تم بدء الجلسة للطالب ${qrInfo.studentName}` 
+          : `Session started for ${qrInfo.studentName}`
+      )
+    } catch (error) {
+      throw error
+    }
   }
 
   const handleTherapistAttendance = async (_qrInfo: any) => {
@@ -177,32 +207,88 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
           <CardTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />
             {language === 'ar' ? 'نظام الحضور بالرمز المربع' : 'QR Attendance System'}
+            <div className="ml-auto flex items-center gap-2">
+              {isOnline ? (
+                <div className="flex items-center gap-1 text-green-600">
+                  <Wifi className="h-4 w-4" />
+                  <span className="text-xs">
+                    {language === 'ar' ? 'متصل' : 'Online'}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-red-600">
+                  <WifiOff className="h-4 w-4" />
+                  <span className="text-xs">
+                    {language === 'ar' ? 'غير متصل' : 'Offline'}
+                  </span>
+                </div>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
-            <QrCode className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">
-              {language === 'ar' ? 'امسح رمز الحضور' : 'Scan Attendance QR Code'}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {language === 'ar' 
-                ? 'وجه الكاميرا نحو رمز الحضور المربع'
-                : 'Point camera at the attendance QR code'
-              }
-            </p>
-            <Button 
-              onClick={() => handleQRScan('{"studentId":"std-003","studentName":"محمد أحمد","sessionType":"OT","roomNumber":"C-301"}')}
-              disabled={isScanning}
-              className="gap-2"
-            >
-              <QrCode className="h-4 w-4" />
-              {isScanning 
-                ? (language === 'ar' ? 'جاري المسح...' : 'Scanning...')
-                : (language === 'ar' ? 'بدء المسح' : 'Start Scan')
-              }
-            </Button>
-          </div>
+          {showScanner ? (
+            <div className="relative rounded-lg overflow-hidden">
+              <div 
+                id={scannerElementId}
+                className="w-full"
+              />
+              <div className="flex justify-center mt-4">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={stopScanning}
+                  className="gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  {language === 'ar' ? 'إيقاف المسح' : 'Stop Scanning'}
+                </Button>
+              </div>
+              {scanError && (
+                <div className="mt-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm">
+                  <p className="font-semibold mb-1">
+                    {language === 'ar' ? 'خطأ في المسح' : 'Scan Error'}
+                  </p>
+                  <p>{scanError}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
+              <Camera className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                {language === 'ar' ? 'امسح رمز الحضور' : 'Scan Attendance QR Code'}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {language === 'ar' 
+                  ? 'اضغط لفتح الكاميرا ومسح رمز الحضور'
+                  : 'Click to open camera and scan attendance QR code'
+                }
+              </p>
+              <div className="space-x-2">
+                <Button 
+                  onClick={startScanning}
+                  disabled={isScanning}
+                  className="gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  {isScanning 
+                    ? (language === 'ar' ? 'جاري المسح...' : 'Scanning...')
+                    : (language === 'ar' ? 'فتح الكاميرا' : 'Open Camera')
+                  }
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => handleQRScan('{"studentId":"std-003","studentName":"محمد أحمد","sessionType":"OT","roomNumber":"C-301"}')}
+                  disabled={isScanning}
+                  className="gap-2"
+                >
+                  <QrCode className="h-4 w-4" />
+                  {language === 'ar' ? 'اختبار (وهمي)' : 'Test (Demo)'}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Mode Selection */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -235,33 +321,75 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {attendanceRecords.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+            </div>
+          ) : attendanceRecords.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {language === 'ar' ? 'لا يوجد سجلات حضور' : 'No attendance records'}
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Live Updates */}
+              {liveUpdates.slice(0, 3).map((record) => (
+                <div 
+                  key={`live-${record.id}`} 
+                  className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg animate-pulse"
+                >
+                  <div className="space-y-1">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      {record.student_name}
+                      <Badge variant="secondary" className="text-xs">
+                        {language === 'ar' ? 'جديد' : 'NEW'}
+                      </Badge>
+                    </h4>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(record.check_in_time).toLocaleTimeString(
+                          language === 'ar' ? 'ar-SA' : 'en-US'
+                        )}
+                      </span>
+                      {record.room_number && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {record.room_number}
+                        </span>
+                      )}
+                      <span>{record.session_type}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={getStatusBadgeVariant(record.status)}>
+                      {getStatusText(record.status)}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Regular Records */}
               {attendanceRecords.map((record) => (
                 <div 
                   key={record.id} 
                   className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
                 >
                   <div className="space-y-1">
-                    <h4 className="font-semibold">{record.studentName}</h4>
+                    <h4 className="font-semibold">{record.student_name}</h4>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {new Date(record.checkInTime).toLocaleTimeString(
+                        {new Date(record.check_in_time).toLocaleTimeString(
                           language === 'ar' ? 'ar-SA' : 'en-US'
                         )}
                       </span>
-                      {record.roomNumber && (
+                      {record.room_number && (
                         <span className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
-                          {record.roomNumber}
+                          {record.room_number}
                         </span>
                       )}
-                      <span>{record.sessionType}</span>
+                      <span>{record.session_type}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -285,12 +413,12 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
       </Card>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {attendanceRecords.filter(r => r.status === 'in_session').length}
+                {stats?.inSession || 0}
               </div>
               <p className="text-sm text-muted-foreground">
                 {language === 'ar' ? 'في الجلسة' : 'In Session'}
@@ -303,10 +431,10 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
           <CardContent className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {attendanceRecords.filter(r => r.status === 'checked_in').length}
+                {stats?.presentStudents || 0}
               </div>
               <p className="text-sm text-muted-foreground">
-                {language === 'ar' ? 'في الانتظار' : 'Waiting'}
+                {language === 'ar' ? 'حاضر اليوم' : 'Present Today'}
               </p>
             </div>
           </CardContent>
@@ -316,7 +444,7 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
           <CardContent className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-600">
-                {attendanceRecords.filter(r => r.status === 'checked_out').length}
+                {stats?.checkedOut || 0}
               </div>
               <p className="text-sm text-muted-foreground">
                 {language === 'ar' ? 'تم الانصراف' : 'Completed'}
@@ -328,11 +456,24 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold">
-                {attendanceRecords.length}
+              <div className="text-2xl font-bold text-purple-600">
+                {stats?.activeTherapists || 0}
               </div>
               <p className="text-sm text-muted-foreground">
-                {language === 'ar' ? 'إجمالي اليوم' : 'Total Today'}
+                {language === 'ar' ? 'معالجين نشطين' : 'Active Staff'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {stats?.attendanceRate || 0}%
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {language === 'ar' ? 'معدل الحضور' : 'Attendance Rate'}
               </p>
             </div>
           </CardContent>

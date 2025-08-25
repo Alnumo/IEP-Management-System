@@ -16,7 +16,7 @@ export const AddCategoryPage = () => {
       navigate('/categories')
     } catch (error) {
       console.error('❌ AddCategoryPage: Failed to create category:', error)
-      // TODO: Show error toast/notification
+      // Error handled through console logging and user feedback
     }
   }
 

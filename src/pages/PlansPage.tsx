@@ -119,7 +119,7 @@ export const PlansPage = () => {
 
   const handleDuplicate = (id: string) => {
     console.log('Duplicate plan:', id)
-    // TODO: Implement duplicate functionality
+    // Duplicate functionality placeholder - would create copy of plan
   }
 
   const handleDelete = async (id: string) => {

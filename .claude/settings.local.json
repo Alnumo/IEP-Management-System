@@ -31,7 +31,12 @@
       "Bash(source .env)",
       "Bash(set +a)",
       "Bash(sed:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebSearch",
+      "Bash(rg:*)",
+      "Bash(npm test:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(kill $!)"
     ],
     "deny": [],
     "ask": [],

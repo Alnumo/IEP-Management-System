@@ -15,6 +15,8 @@
     "dashboard": "لوحة التحكم",
     "settings": "الإعدادات",
     "medical_records": "السجلات الطبية",
+    "medical_consultants": "الاستشاريين الطبيين",
+    "clinical_documentation": "التوثيق الإكلينيكي",
     "health_metrics": "المؤشرات الصحية",
     "diagnoses": "التشخيصات",
     "therapy_programs": "البرامج العلاجية",
@@ -26,6 +28,9 @@
     "qr_attendance": "نظام الحضور QR",
     "whatsapp": "إدارة WhatsApp",
     "insurance": "التأمين والفواتير",
+    "ai_analytics": "التحليلات الذكية",
+    "smart_recommendations": "التوصيات الذكية",
+    "progress_predictions": "تنبؤات التقدم",
     "category": {
       "students": "إدارة الطلاب",
       "therapy": "البرامج العلاجية",

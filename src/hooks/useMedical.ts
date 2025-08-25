@@ -173,6 +173,28 @@ export const useMedicalConsultants = (filters?: MedicalConsultantFilters) => {
   })
 }
 
+export const useMedicalConsultant = (id: string) => {
+  return useQuery({
+    queryKey: ['medical-consultants', id],
+    queryFn: async (): Promise<MedicalConsultant> => {
+      const { data, error } = await supabase
+        .from('medical_consultants')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error) {
+        console.error('❌ Error fetching medical consultant:', error)
+        throw error
+      }
+
+      return data
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
 export const useCreateMedicalConsultant = () => {
   const queryClient = useQueryClient()
 
@@ -190,6 +212,53 @@ export const useCreateMedicalConsultant = () => {
       }
 
       return newConsultant
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medical-consultants'] })
+    },
+  })
+}
+
+export const useUpdateMedicalConsultant = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }): Promise<MedicalConsultant> => {
+      const { data: updatedConsultant, error } = await supabase
+        .from('medical_consultants')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Error updating medical consultant:', error)
+        throw error
+      }
+
+      return updatedConsultant
+    },
+    onSuccess: (updatedConsultant) => {
+      queryClient.invalidateQueries({ queryKey: ['medical-consultants'] })
+      queryClient.invalidateQueries({ queryKey: ['medical-consultants', updatedConsultant.id] })
+    },
+  })
+}
+
+export const useDeleteMedicalConsultant = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const { error } = await supabase
+        .from('medical_consultants')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('❌ Error deleting medical consultant:', error)
+        throw error
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medical-consultants'] })
@@ -239,6 +308,28 @@ export const useClinicalDocumentation = (filters?: ClinicalDocumentationFilters)
   })
 }
 
+export const useClinicalDocument = (id: string) => {
+  return useQuery({
+    queryKey: ['clinical-documentation', id],
+    queryFn: async (): Promise<ClinicalDocumentation> => {
+      const { data, error } = await supabase
+        .from('clinical_documentation')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error) {
+        console.error('❌ Error fetching clinical documentation:', error)
+        throw error
+      }
+
+      return data
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
 export const useCreateClinicalDocumentation = () => {
   const queryClient = useQueryClient()
 
@@ -266,6 +357,82 @@ export const useCreateClinicalDocumentation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinical-documentation'] })
+    },
+  })
+}
+
+export const useUpdateClinicalDocumentation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }): Promise<ClinicalDocumentation> => {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      const updateData = {
+        ...data,
+        updated_by: user?.id,
+        updated_at: new Date().toISOString(),
+      }
+
+      const { data: updatedDoc, error } = await supabase
+        .from('clinical_documentation')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Error updating clinical documentation:', error)
+        throw error
+      }
+
+      return updatedDoc
+    },
+    onSuccess: (updatedDoc) => {
+      queryClient.invalidateQueries({ queryKey: ['clinical-documentation'] })
+      queryClient.invalidateQueries({ queryKey: ['clinical-documentation', updatedDoc.id] })
+    },
+  })
+}
+
+export const useDeleteClinicalDocumentation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const { error } = await supabase
+        .from('clinical_documentation')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('❌ Error deleting clinical documentation:', error)
+        throw error
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clinical-documentation'] })
+    },
+  })
+}
+
+export const useDeleteMedicalRecord = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const { error } = await supabase
+        .from('medical_records')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('❌ Error deleting medical record:', error)
+        throw error
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medical-records'] })
     },
   })
 }
