@@ -1,10 +1,11 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Edit, Mail, Phone, Calendar, Award, Building2, Clock } from 'lucide-react'
+import { ArrowLeft, Edit, Mail, Phone, Calendar, Award, Building2, Clock, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useTherapist } from '@/hooks/useTherapists'
+import { AssignmentWorkflowWidget } from '@/components/communication/AssignmentWorkflowWidget'
 import { toast } from 'sonner'
 import { useEffect } from 'react'
 
@@ -98,7 +99,9 @@ export default function TherapistDetailsPage() {
           
           <div className="space-y-1">
             <h1 className={`text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {language === 'ar' ? (therapist.name_ar || therapist.name_en) : (therapist.name_en || therapist.name_ar)}
+              {language === 'ar' 
+                ? `${therapist.first_name_ar} ${therapist.last_name_ar}` 
+                : `${therapist.first_name_en || therapist.first_name_ar} ${therapist.last_name_en || therapist.last_name_ar}`}
             </h1>
             <p className="text-muted-foreground">
               {language === 'ar' ? 'تفاصيل المعالج' : 'Therapist Details'}
@@ -116,7 +119,7 @@ export default function TherapistDetailsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Basic Information */}
+        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -132,7 +135,7 @@ export default function TherapistDetailsPage() {
                     {language === 'ar' ? 'الاسم بالعربية' : 'Name (Arabic)'}
                   </label>
                   <p className="text-lg font-semibold">
-                    {therapist.name_ar || '-'}
+                    {`${therapist.first_name_ar} ${therapist.last_name_ar}` || '-'}
                   </p>
                 </div>
                 
@@ -141,7 +144,9 @@ export default function TherapistDetailsPage() {
                     {language === 'ar' ? 'الاسم بالإنجليزية' : 'Name (English)'}
                   </label>
                   <p className="text-lg font-semibold">
-                    {therapist.name_en || '-'}
+                    {therapist.first_name_en && therapist.last_name_en 
+                      ? `${therapist.first_name_en} ${therapist.last_name_en}` 
+                      : '-'}
                   </p>
                 </div>
 
@@ -150,7 +155,9 @@ export default function TherapistDetailsPage() {
                     {language === 'ar' ? 'التخصص' : 'Specialization'}
                   </label>
                   <Badge variant="outline" className="text-sm">
-                    {therapist.specialization || '-'}
+                    {language === 'ar' 
+                      ? (therapist.specialization_ar || therapist.specialization_en || '-')
+                      : (therapist.specialization_en || therapist.specialization_ar || '-')}
                   </Badge>
                 </div>
 
@@ -159,7 +166,9 @@ export default function TherapistDetailsPage() {
                     {language === 'ar' ? 'المؤهل' : 'Qualification'}
                   </label>
                   <p className="text-sm">
-                    {therapist.qualification || '-'}
+                    {therapist.qualifications?.length > 0 
+                      ? therapist.qualifications.join(', ')
+                      : '-'}
                   </p>
                 </div>
 
@@ -173,6 +182,7 @@ export default function TherapistDetailsPage() {
                   </div>
                 </div>
 
+                {/* License number field - Add to Therapist type if needed
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">
                     {language === 'ar' ? 'رقم الترخيص' : 'License Number'}
@@ -181,6 +191,7 @@ export default function TherapistDetailsPage() {
                     {therapist.license_number || '-'}
                   </p>
                 </div>
+                */}
               </div>
             </CardContent>
           </Card>
@@ -195,6 +206,7 @@ export default function TherapistDetailsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Department field - Add to Therapist type if needed
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">
                     {language === 'ar' ? 'القسم' : 'Department'}
@@ -203,6 +215,7 @@ export default function TherapistDetailsPage() {
                     {therapist.department || '-'}
                   </Badge>
                 </div>
+                */}
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">
@@ -215,7 +228,7 @@ export default function TherapistDetailsPage() {
                   <label className="text-sm font-medium text-muted-foreground">
                     {language === 'ar' ? 'الحالة' : 'Status'}
                   </label>
-                  {getStatusBadge(therapist.is_active)}
+                  {getStatusBadge(therapist.status === 'active')}
                 </div>
 
                 <div className="space-y-2">
@@ -237,9 +250,25 @@ export default function TherapistDetailsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Assignment Workflow Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                <Calendar className="w-5 h-5" />
+                {language === 'ar' ? 'إدارة التكليفات والجدولة' : 'Assignment & Scheduling Management'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AssignmentWorkflowWidget 
+                therapistId={id!} 
+                language={language as 'ar' | 'en'} 
+              />
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Contact Information & Actions */}
+        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -310,6 +339,18 @@ export default function TherapistDetailsPage() {
               >
                 <Award className="w-4 h-4" />
                 {language === 'ar' ? 'عرض الطلاب' : 'View Students'}
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={() => {
+                  // TODO: Navigate to therapist messaging interface
+                  console.log('Opening therapist messaging for:', id)
+                }}
+              >
+                <MessageCircle className="w-4 h-4" />
+                {language === 'ar' ? 'الرسائل والتواصل' : 'Messages & Communication'}
               </Button>
             </CardContent>
           </Card>

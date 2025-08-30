@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Plus, Search, Filter, BookOpen, Users, DollarSign, TrendingUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Search, Filter, BookOpen, Users, DollarSign, TrendingUp, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,6 +11,7 @@ import type { CourseFilters } from '@/types/course'
 
 export const CoursesPage = () => {
   const { language, isRTL } = useLanguage()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   
   // Prepare filters for courses query
@@ -66,7 +68,7 @@ export const CoursesPage = () => {
             {language === 'ar' ? 'إدارة الدورات التدريبية' : 'Manage training courses'}
           </p>
         </div>
-        <Button onClick={() => window.location.href = '/courses/add'}>
+        <Button onClick={() => navigate('/courses/add')}>
           <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
           {language === 'ar' ? 'إضافة دورة' : 'Add Course'}
         </Button>
@@ -215,8 +217,20 @@ export const CoursesPage = () => {
                 >
                   {/* Right side: Action buttons and Status badge */}
                   <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate(`/courses/${course.id}`)}
+                    >
                       {language === 'ar' ? 'عرض' : 'View'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate(`/courses/edit/${course.id}`)}
+                    >
+                      <Edit className="h-4 w-4" />
+                      {language === 'ar' ? 'تعديل' : 'Edit'}
                     </Button>
                     <Badge variant={getStatusBadgeVariant(course.status)}>
                       {getStatusLabel(course.status)}

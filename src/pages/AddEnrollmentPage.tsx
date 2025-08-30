@@ -30,7 +30,15 @@ export const AddEnrollmentPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { data: students = [] } = useStudents()
-  const { data: courses = [] } = useCourses({ status: 'active' })
+  const { data: allCourses = [] } = useCourses() // Get all courses
+  const courses = allCourses.filter(course => 
+    course.status === 'planned' || course.status === 'active'
+  ) // Show only courses available for enrollment
+  
+  // Debug logging
+  console.log('🔍 AddEnrollmentPage: All courses:', allCourses.length)
+  console.log('🔍 AddEnrollmentPage: Filtered courses:', courses.length)
+  console.log('🔍 AddEnrollmentPage: Courses:', courses)
   const createEnrollment = useCreateEnrollment()
 
   const {

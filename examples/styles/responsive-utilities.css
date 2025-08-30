@@ -1,0 +1,416 @@
+/**
+ * Responsive Design Utilities
+ * 
+ * Why: Demonstrates mobile-first responsive patterns for therapy applications:
+ * - Touch-friendly sizing (44px minimum touch targets)
+ * - Responsive typography scaling for Arabic and English
+ * - Mobile-optimized spacing and layout utilities
+ * - Breakpoint-specific component behaviors
+ * - Safe area handling for mobile devices
+ * - Container queries for component-level responsiveness
+ */
+
+/* Mobile-First Breakpoints */
+:root {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* Touch Target Sizes */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  --touch-target-large: 56px;
+  
+  /* Mobile Spacing Scale */
+  --spacing-mobile-xs: 0.25rem; /* 4px */
+  --spacing-mobile-sm: 0.5rem;  /* 8px */
+  --spacing-mobile-md: 1rem;    /* 16px */
+  --spacing-mobile-lg: 1.5rem;  /* 24px */
+  --spacing-mobile-xl: 2rem;    /* 32px */
+  
+  /* Desktop Spacing Scale */
+  --spacing-desktop-xs: 0.5rem;  /* 8px */
+  --spacing-desktop-sm: 0.75rem; /* 12px */
+  --spacing-desktop-md: 1.5rem;  /* 24px */
+  --spacing-desktop-lg: 2rem;    /* 32px */
+  --spacing-desktop-xl: 3rem;    /* 48px */
+}
+
+/* Touch-Friendly Interactive Elements */
+.touch-target {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-target-comfortable {
+  min-height: var(--touch-target-comfortable);
+  min-width: var(--touch-target-comfortable);
+}
+
+.touch-target-large {
+  min-height: var(--touch-target-large);
+  min-width: var(--touch-target-large);
+}
+
+/* Mobile-First Typography */
+.text-responsive-xs {
+  font-size: 0.75rem; /* 12px mobile */
+  line-height: 1.5;
+}
+
+.text-responsive-sm {
+  font-size: 0.875rem; /* 14px mobile */
+  line-height: 1.6;
+}
+
+.text-responsive-base {
+  font-size: 1rem; /* 16px mobile */
+  line-height: 1.6;
+}
+
+.text-responsive-lg {
+  font-size: 1.125rem; /* 18px mobile */
+  line-height: 1.7;
+}
+
+.text-responsive-xl {
+  font-size: 1.25rem; /* 20px mobile */
+  line-height: 1.7;
+}
+
+.text-responsive-2xl {
+  font-size: 1.5rem; /* 24px mobile */
+  line-height: 1.6;
+}
+
+/* Tablet and Desktop Typography Scaling */
+@media (min-width: 768px) {
+  .text-responsive-xs { font-size: 0.875rem; line-height: 1.5; }
+  .text-responsive-sm { font-size: 1rem; line-height: 1.6; }
+  .text-responsive-base { font-size: 1.125rem; line-height: 1.6; }
+  .text-responsive-lg { font-size: 1.25rem; line-height: 1.7; }
+  .text-responsive-xl { font-size: 1.5rem; line-height: 1.7; }
+  .text-responsive-2xl { font-size: 1.875rem; line-height: 1.6; }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-xs { font-size: 0.875rem; line-height: 1.4; }
+  .text-responsive-sm { font-size: 1rem; line-height: 1.5; }
+  .text-responsive-base { font-size: 1.125rem; line-height: 1.5; }
+  .text-responsive-lg { font-size: 1.375rem; line-height: 1.6; }
+  .text-responsive-xl { font-size: 1.75rem; line-height: 1.6; }
+  .text-responsive-2xl { font-size: 2.25rem; line-height: 1.5; }
+}
+
+/* Arabic Text Responsive Scaling */
+.text-arabic-responsive-sm {
+  font-size: 1rem; /* Larger base for Arabic */
+  line-height: 1.8; /* More generous line height */
+}
+
+.text-arabic-responsive-base {
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+.text-arabic-responsive-lg {
+  font-size: 1.25rem;
+  line-height: 1.8;
+}
+
+@media (min-width: 768px) {
+  .text-arabic-responsive-sm { font-size: 1.125rem; line-height: 1.8; }
+  .text-arabic-responsive-base { font-size: 1.25rem; line-height: 1.8; }
+  .text-arabic-responsive-lg { font-size: 1.5rem; line-height: 1.8; }
+}
+
+@media (min-width: 1024px) {
+  .text-arabic-responsive-sm { font-size: 1.125rem; line-height: 1.7; }
+  .text-arabic-responsive-base { font-size: 1.375rem; line-height: 1.7; }
+  .text-arabic-responsive-lg { font-size: 1.75rem; line-height: 1.7; }
+}
+
+/* Responsive Spacing Utilities */
+.spacing-responsive-xs { margin: var(--spacing-mobile-xs); }
+.spacing-responsive-sm { margin: var(--spacing-mobile-sm); }
+.spacing-responsive-md { margin: var(--spacing-mobile-md); }
+.spacing-responsive-lg { margin: var(--spacing-mobile-lg); }
+.spacing-responsive-xl { margin: var(--spacing-mobile-xl); }
+
+@media (min-width: 768px) {
+  .spacing-responsive-xs { margin: var(--spacing-desktop-xs); }
+  .spacing-responsive-sm { margin: var(--spacing-desktop-sm); }
+  .spacing-responsive-md { margin: var(--spacing-desktop-md); }
+  .spacing-responsive-lg { margin: var(--spacing-desktop-lg); }
+  .spacing-responsive-xl { margin: var(--spacing-desktop-xl); }
+}
+
+/* Responsive Padding Utilities */
+.padding-responsive-xs { padding: var(--spacing-mobile-xs); }
+.padding-responsive-sm { padding: var(--spacing-mobile-sm); }
+.padding-responsive-md { padding: var(--spacing-mobile-md); }
+.padding-responsive-lg { padding: var(--spacing-mobile-lg); }
+.padding-responsive-xl { padding: var(--spacing-mobile-xl); }
+
+@media (min-width: 768px) {
+  .padding-responsive-xs { padding: var(--spacing-desktop-xs); }
+  .padding-responsive-sm { padding: var(--spacing-desktop-sm); }
+  .padding-responsive-md { padding: var(--spacing-desktop-md); }
+  .padding-responsive-lg { padding: var(--spacing-desktop-lg); }
+  .padding-responsive-xl { padding: var(--spacing-desktop-xl); }
+}
+
+/* Responsive Grid Systems */
+.grid-responsive-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-mobile-md);
+}
+
+.grid-responsive-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-mobile-md);
+}
+
+.grid-responsive-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-mobile-md);
+}
+
+.grid-responsive-4 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-mobile-md);
+}
+
+@media (min-width: 640px) {
+  .grid-responsive-2 { 
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-desktop-md);
+  }
+  .grid-responsive-3 { 
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-desktop-md);
+  }
+  .grid-responsive-4 { 
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-desktop-md);
+  }
+}
+
+@media (min-width: 768px) {
+  .grid-responsive-3 { 
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .grid-responsive-4 { 
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive-4 { 
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Mobile-Specific Utilities */
+@media (max-width: 767px) {
+  .mobile-only { display: block; }
+  .mobile-hidden { display: none; }
+  
+  .mobile-full-width { width: 100vw; margin-left: calc(-50vw + 50%); }
+  .mobile-stack { flex-direction: column; }
+  .mobile-center { text-align: center; }
+  
+  /* Mobile-optimized cards */
+  .mobile-card {
+    border-radius: 0.75rem;
+    padding: var(--spacing-mobile-lg);
+    margin: var(--spacing-mobile-sm);
+  }
+  
+  /* Mobile-friendly forms */
+  .mobile-form-input {
+    font-size: 1rem; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+  }
+  
+  /* Mobile navigation */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 0.5rem;
+    z-index: 50;
+  }
+  
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    min-height: var(--touch-target-comfortable);
+    min-width: var(--touch-target-comfortable);
+  }
+}
+
+/* Tablet-Specific Utilities */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-only { display: block; }
+  .tablet-hidden { display: none; }
+  
+  .tablet-grid-2 { 
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-desktop-md);
+  }
+  
+  .tablet-sidebar {
+    width: 16rem;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .tablet-main {
+    margin-left: 16rem;
+    padding: var(--spacing-desktop-lg);
+  }
+}
+
+/* Desktop-Specific Utilities */
+@media (min-width: 1024px) {
+  .desktop-only { display: block; }
+  .desktop-hidden { display: none; }
+  
+  .desktop-sidebar {
+    width: 20rem;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .desktop-main {
+    margin-left: 20rem;
+    padding: var(--spacing-desktop-xl);
+  }
+  
+  .desktop-grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-desktop-lg);
+  }
+}
+
+/* Container Queries (Modern Browsers) */
+@supports (container-type: inline-size) {
+  .container-responsive {
+    container-type: inline-size;
+  }
+  
+  @container (max-width: 400px) {
+    .container-responsive .card-compact {
+      padding: var(--spacing-mobile-sm);
+      font-size: 0.875rem;
+    }
+  }
+  
+  @container (min-width: 400px) {
+    .container-responsive .card-comfortable {
+      padding: var(--spacing-mobile-lg);
+      font-size: 1rem;
+    }
+  }
+}
+
+/* Safe Area Support for Mobile Devices */
+@supports (padding: max(0px)) {
+  .safe-area-inset-top {
+    padding-top: max(var(--spacing-mobile-md), env(safe-area-inset-top));
+  }
+  
+  .safe-area-inset-bottom {
+    padding-bottom: max(var(--spacing-mobile-md), env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-inset-left {
+    padding-left: max(var(--spacing-mobile-md), env(safe-area-inset-left));
+  }
+  
+  .safe-area-inset-right {
+    padding-right: max(var(--spacing-mobile-md), env(safe-area-inset-right));
+  }
+}
+
+/* Responsive Image Utilities */
+.image-responsive {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+
+.image-responsive-square {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.image-responsive-16-9 {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* Print Responsive Utilities */
+@media print {
+  .print-hidden { display: none !important; }
+  .print-only { display: block !important; }
+  
+  .print-break-before { page-break-before: always; }
+  .print-break-after { page-break-after: always; }
+  .print-break-inside-avoid { page-break-inside: avoid; }
+  
+  /* Ensure readable text sizes in print */
+  .text-responsive-xs { font-size: 10pt !important; }
+  .text-responsive-sm { font-size: 11pt !important; }
+  .text-responsive-base { font-size: 12pt !important; }
+  .text-responsive-lg { font-size: 14pt !important; }
+  .text-responsive-xl { font-size: 16pt !important; }
+  .text-responsive-2xl { font-size: 18pt !important; }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .responsive-animate {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .responsive-high-contrast {
+    border: 2px solid;
+    background: white;
+    color: black;
+  }
+  
+  .responsive-high-contrast .text-responsive-base {
+    font-weight: 600;
+  }
+}

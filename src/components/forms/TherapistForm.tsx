@@ -71,7 +71,7 @@ export default function TherapistForm({
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'qualifications'
-  })
+  }) as any
 
   const handleSubmit = (data: TherapistFormData) => {
     const formData: CreateTherapistData = {

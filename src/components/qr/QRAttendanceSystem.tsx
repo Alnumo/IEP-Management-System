@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { toast } from 'sonner'
-import { useAttendanceRecords, useAttendanceStats, useCheckInStudent, useStartSession, useRealTimeAttendance } from '@/hooks/useAttendance'
+import { useAttendanceRecords, useAttendanceStats, useCheckInStudent, useStartSession, useRealTimeAttendance, useValidateQRCode } from '@/hooks/useAttendance'
 
 interface QRAttendanceSystemProps {
   mode: 'student' | 'therapist' | 'session' | 'room'
@@ -22,10 +22,11 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
   const scannerElementId = 'qr-reader-' + mode
   
   // Hooks for data management
-  const { data: attendanceRecords = [], isLoading } = useAttendanceRecords()
+  const { data: attendanceRecords = [], isLoading } = useAttendanceRecords({ limit: 20 })
   const { data: stats } = useAttendanceStats()
   const checkInMutation = useCheckInStudent()
   const startSessionMutation = useStartSession()
+  const validateQRMutation = useValidateQRCode()
   const liveUpdates = useRealTimeAttendance()
 
   // Monitor online status and cleanup scanner
@@ -52,8 +53,31 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
     setShowScanner(false)
     
     try {
+      // Create hash of QR data for validation
+      const qrHash = await createHash(qrData)
+      
+      // Validate QR code first
+      const validationResult = await validateQRMutation.mutateAsync({
+        qrHash,
+        device_info: navigator.userAgent,
+        location: navigator.geolocation ? await getLocation() : undefined
+      })
+      
+      if (!validationResult.valid) {
+        toast.error(
+          language === 'ar' 
+            ? `رمز غير صالح: ${validationResult.message}` 
+            : `Invalid QR code: ${validationResult.message}`
+        )
+        return
+      }
+      
       // Parse QR code data
       const qrInfo = JSON.parse(qrData)
+      
+      // Add validation metadata
+      qrInfo.qrRecord = validationResult.qrRecord
+      qrInfo.scanTimestamp = new Date().toISOString()
       
       switch (mode) {
         case 'student':
@@ -77,6 +101,34 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
     } finally {
       setIsScanning(false)
     }
+  }
+
+  // Helper function to create hash (same as API)
+  const createHash = async (input: string): Promise<string> => {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(input)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  // Helper function to get user location
+  const getLocation = (): Promise<string> => {
+    return new Promise((resolve) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve(`${position.coords.latitude},${position.coords.longitude}`)
+          },
+          () => {
+            resolve('')
+          },
+          { timeout: 5000 }
+        )
+      } else {
+        resolve('')
+      }
+    })
   }
 
   const handleScanError = (error: any) => {
@@ -229,27 +281,89 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
         <CardContent className="space-y-4">
           {showScanner ? (
             <div className="relative rounded-lg overflow-hidden">
-              <div 
-                id={scannerElementId}
-                className="w-full"
-              />
-              <div className="flex justify-center mt-4">
+              {/* Scanner overlay */}
+              <div className="relative">
+                <div 
+                  id={scannerElementId}
+                  className="w-full min-h-[300px] bg-black rounded-lg"
+                />
+                
+                {/* Scanning overlay */}
+                {isScanning && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                    <div className="bg-white rounded-lg p-4 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                      <p className="text-sm font-medium">
+                        {language === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Scan guide overlay */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="w-48 h-48 border-2 border-white border-dashed rounded-lg opacity-50">
+                    <div className="absolute -top-2 -left-2 w-6 h-6 border-t-4 border-l-4 border-blue-500"></div>
+                    <div className="absolute -top-2 -right-2 w-6 h-6 border-t-4 border-r-4 border-blue-500"></div>
+                    <div className="absolute -bottom-2 -left-2 w-6 h-6 border-b-4 border-l-4 border-blue-500"></div>
+                    <div className="absolute -bottom-2 -right-2 w-6 h-6 border-b-4 border-r-4 border-blue-500"></div>
+                  </div>
+                </div>
+                
+                {/* Instructions */}
+                <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-70 text-white p-2 rounded text-center text-sm">
+                  {language === 'ar' 
+                    ? 'ضع الرمز المربع داخل الإطار'
+                    : 'Position QR code within the frame'
+                  }
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center mt-4">
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={stopScanning}
                   className="gap-2"
+                  disabled={isScanning}
                 >
                   <Camera className="h-4 w-4" />
                   {language === 'ar' ? 'إيقاف المسح' : 'Stop Scanning'}
                 </Button>
+                
+                {/* Online/Offline indicator */}
+                <div className="flex items-center gap-2">
+                  {isOnline ? (
+                    <div className="flex items-center gap-1 text-green-600 text-sm">
+                      <Wifi className="h-4 w-4" />
+                      <span>{language === 'ar' ? 'متصل' : 'Online'}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-red-600 text-sm">
+                      <WifiOff className="h-4 w-4" />
+                      <span>{language === 'ar' ? 'غير متصل' : 'Offline'}</span>
+                    </div>
+                  )}
+                </div>
               </div>
+              
               {scanError && (
                 <div className="mt-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm">
                   <p className="font-semibold mb-1">
                     {language === 'ar' ? 'خطأ في المسح' : 'Scan Error'}
                   </p>
                   <p>{scanError}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => {
+                      setScanError('')
+                      startScanning()
+                    }}
+                  >
+                    {language === 'ar' ? 'إعادة المحاولة' : 'Try Again'}
+                  </Button>
                 </div>
               )}
             </div>

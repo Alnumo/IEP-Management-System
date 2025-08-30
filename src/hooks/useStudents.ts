@@ -1,37 +1,48 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Student, CreateStudentData, UpdateStudentData } from '@/types/student'
+import { requireAuth } from '@/lib/auth-utils'
+import { retryApiCall } from '@/lib/retry-utils'
+import { errorMonitoring } from '@/lib/error-monitoring'
+import { createEntityWebhook, createFormSubmissionWebhook } from '@/services/webhooks'
+import { initializeN8nWebhooks } from '@/services/n8n-webhook-config'
 
-// Fetch all students
+// Initialize n8n webhook configuration on module load
+initializeN8nWebhooks()
+
+// Fetch all students with enhanced error handling
 export const useStudents = () => {
   return useQuery({
     queryKey: ['students'],
     queryFn: async (): Promise<Student[]> => {
-      console.log('🔍 Fetching students...')
-      
-      // Temporarily disable auth check for testing
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError) {
-        console.log('⚠️ useStudents: Auth error (continuing anyway for testing):', authError)
-        // Don't throw error, continue without auth
-      }
-      if (!user) {
-        console.log('⚠️ useStudents: No user found (continuing anyway for testing)')
-        // Don't throw error, continue without auth
-      }
+      return retryApiCall(async () => {
+        console.log('🔍 Fetching students...')
+        
+        // Use centralized auth checking
+        const user = await requireAuth()
+        
+        const { data, error } = await supabase
+          .from('students')
+          .select('*')
+          .order('created_at', { ascending: false })
 
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .order('created_at', { ascending: false })
+        if (error) {
+          console.error('❌ Error fetching students:', error)
+          errorMonitoring.reportError(error, {
+            component: 'useStudents',
+            action: 'fetch_students',
+            userId: user.id
+          })
+          throw error
+        }
 
-      if (error) {
-        console.error('❌ Error fetching students:', error)
-        throw error
-      }
-
-      console.log('✅ Students fetched successfully:', data)
-      return data || []
+        console.log('✅ Students fetched successfully:', data?.length, 'records')
+        return data || []
+      }, {
+        context: 'Fetching students',
+        maxAttempts: 3,
+        logErrors: true
+      })
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
@@ -44,15 +55,15 @@ export const useStudent = (id: string) => {
     queryFn: async (): Promise<Student> => {
       console.log('🔍 Fetching student:', id)
       
-      // Temporarily disable auth check for testing
+      // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError) {
-        console.log('⚠️ useStudents: Auth error (continuing anyway for testing):', authError)
-        // Don't throw error, continue without auth
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
       }
       if (!user) {
-        console.log('⚠️ useStudents: No user found (continuing anyway for testing)')
-        // Don't throw error, continue without auth
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
       }
 
       const { data, error } = await supabase
@@ -82,15 +93,15 @@ export const useCreateStudent = () => {
     mutationFn: async (data: CreateStudentData): Promise<Student> => {
       console.log('🔍 Creating student with:', data)
       
-      // Temporarily disable auth check for testing
+      // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError) {
-        console.log('⚠️ useStudents: Auth error (continuing anyway for testing):', authError)
-        // Don't throw error, continue without auth
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
       }
       if (!user) {
-        console.log('⚠️ useStudents: No user found (continuing anyway for testing)')
-        // Don't throw error, continue without auth
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
       }
 
       // Filter data to only include fields that exist in the students table
@@ -136,7 +147,32 @@ export const useCreateStudent = () => {
       console.log('✅ Student created successfully:', newStudent)
       return newStudent
     },
-    onSuccess: () => {
+    onSuccess: async (data, variables) => {
+      // Trigger n8n webhook for student creation
+      try {
+        // Trigger webhook for student creation
+        await createEntityWebhook('student', 'created', data, {
+          student_id: data.id,
+          registration_number: data.registration_number,
+          workflow: 'student-creation',
+          source: 'student-form'
+        })
+
+        // Also trigger form submission webhook
+        await createFormSubmissionWebhook('student', variables, 'create', {
+          student_id: data.id,
+          workflow: 'student-creation',
+          n8n_webhook: 'student-creation'
+        })
+
+        console.log('✅ Student creation webhooks triggered successfully')
+        
+      } catch (error) {
+        console.error('❌ Failed to trigger student creation webhooks:', error)
+        // Don't throw - webhook failure shouldn't break the student creation process
+      }
+
+      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['students'] })
     },
   })
@@ -150,15 +186,15 @@ export const useUpdateStudent = () => {
     mutationFn: async ({ id, data }: { id: string; data: UpdateStudentData }): Promise<Student> => {
       console.log('🔍 Updating student:', id, 'with:', data)
       
-      // Temporarily disable auth check for testing
+      // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError) {
-        console.log('⚠️ useStudents: Auth error (continuing anyway for testing):', authError)
-        // Don't throw error, continue without auth
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
       }
       if (!user) {
-        console.log('⚠️ useStudents: No user found (continuing anyway for testing)')
-        // Don't throw error, continue without auth
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
       }
 
       const { ...updateFields } = data
@@ -198,15 +234,15 @@ export const useDeleteStudent = () => {
     mutationFn: async (id: string): Promise<void> => {
       console.log('🔍 Deleting student:', id)
       
-      // Temporarily disable auth check for testing
+      // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError) {
-        console.log('⚠️ useStudents: Auth error (continuing anyway for testing):', authError)
-        // Don't throw error, continue without auth
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
       }
       if (!user) {
-        console.log('⚠️ useStudents: No user found (continuing anyway for testing)')
-        // Don't throw error, continue without auth
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
       }
 
       const { error } = await supabase
@@ -238,15 +274,15 @@ export const useSearchStudents = (searchTerm: string) => {
 
       console.log('🔍 Searching students with term:', searchTerm)
       
-      // Temporarily disable auth check for testing
+      // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError) {
-        console.log('⚠️ useStudents: Auth error (continuing anyway for testing):', authError)
-        // Don't throw error, continue without auth
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
       }
       if (!user) {
-        console.log('⚠️ useStudents: No user found (continuing anyway for testing)')
-        // Don't throw error, continue without auth
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
       }
 
       const { data, error } = await supabase

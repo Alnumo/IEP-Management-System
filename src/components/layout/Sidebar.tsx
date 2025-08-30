@@ -23,7 +23,12 @@ import {
   MessageCircle,
   CreditCard,
   Cog,
-  Building2
+  Building2,
+  DollarSign,
+  BarChart3,
+  FileBarChart,
+  Database,
+  Shield
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -57,14 +62,34 @@ const navigation = [
     icon: ClipboardList,
     category: 'students'
   },
-  
-  // Therapy Programs
   {
-    key: 'navigation.plans',
-    href: '/plans',
-    icon: FileText,
+    key: 'navigation.therapy_plan_enrollments',
+    href: '/therapy-plan-enrollments',
+    icon: Target,
     category: 'therapy'
   },
+  {
+    key: 'navigation.therapy_program_enrollments',
+    href: '/therapy-program-enrollments',
+    icon: Brain,
+    category: 'therapy'
+  },
+  
+  // IEP Management
+  {
+    key: 'navigation.iep_dashboard',
+    href: '/iep-dashboard',
+    icon: FileText,
+    category: 'iep'
+  },
+  {
+    key: 'navigation.ieps',
+    href: '/ieps',
+    icon: ClipboardList,
+    category: 'iep'
+  },
+  
+  // Therapy Programs (Unified)
   {
     key: 'navigation.therapy_programs',
     href: '/therapy-programs',
@@ -157,6 +182,52 @@ const navigation = [
   },
   
   
+  // Financial Management (Phase 6)
+  {
+    key: 'navigation.billing',
+    href: '/billing',
+    icon: DollarSign,
+    category: 'financial'
+  },
+  {
+    key: 'navigation.payment_plans',
+    href: '/payment-plans',
+    icon: CreditCard,
+    category: 'financial'
+  },
+  {
+    key: 'navigation.financial_analytics',
+    href: '/financial-analytics',
+    icon: BarChart3,
+    category: 'financial'
+  },
+
+  // Analytics & Reporting (Phase 7)
+  {
+    key: 'navigation.clinical_analytics',
+    href: '/clinical-analytics',
+    icon: FileBarChart,
+    category: 'analytics'
+  },
+  {
+    key: 'navigation.operational_analytics',
+    href: '/operational-analytics',
+    icon: TrendingUp,
+    category: 'analytics'
+  },
+  {
+    key: 'navigation.compliance_reporting',
+    href: '/compliance-reporting',
+    icon: Shield,
+    category: 'analytics'
+  },
+  {
+    key: 'navigation.data_management',
+    href: '/data-management',
+    icon: Database,
+    category: 'analytics'
+  },
+
   // AI Analytics & Enterprise Features
   {
     key: 'navigation.ai_analytics',
@@ -203,8 +274,11 @@ const navigation = [
 const navigationCategories = [
   { key: 'main', icon: LayoutDashboard },
   { key: 'students', icon: GraduationCap },
+  { key: 'iep', icon: FileText },
   { key: 'therapy', icon: Brain },
   { key: 'medical', icon: Activity },
+  { key: 'financial', icon: DollarSign },
+  { key: 'analytics', icon: BarChart3 },
   { key: 'staff', icon: UserCog },
   { key: 'parent', icon: UserCheck },
   { key: 'system', icon: Archive }

@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -162,11 +162,18 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
   const [specialNeedsTypes, setSpecialNeedsTypes] = useState<string[]>([])
   const [learningDifficulties, setLearningDifficulties] = useState<string[]>([])
 
+  // Function to generate auto Child ID
+  const generateChildId = () => {
+    const currentYear = new Date().getFullYear()
+    const randomNum = Math.floor(Math.random() * 9000) + 1000 // 4-digit random number
+    return `STU${currentYear}${randomNum}`
+  }
+
   const form = useForm<ComprehensiveStudentFormData>({
     resolver: zodResolver(comprehensiveStudentSchema),
     defaultValues: {
       // Admission Information
-      child_id: initialData?.child_id || '',
+      child_id: initialData?.child_id || generateChildId(),
       admission_date: initialData?.admission_date || '',
       admission_fee: initialData?.admission_fee || undefined,
       
@@ -285,6 +292,13 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
     }
   })
 
+  // Auto-generate Child ID for new students
+  useEffect(() => {
+    if (!initialData) {
+      form.setValue('child_id', generateChildId())
+    }
+  }, [initialData, form])
+
   const handleSubmit = async (data: ComprehensiveStudentFormData) => {
     try {
       const submitData: CreateStudentData = {
@@ -376,7 +390,12 @@ export const ComprehensiveStudentForm = ({ initialData, onSubmit, onCancel, isLo
                             {language === 'ar' ? 'رقم الطفل' : 'Child ID'}
                           </FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder={language === 'ar' ? 'رقم الطفل' : 'Child ID'} />
+                            <Input 
+                              {...field} 
+                              placeholder={language === 'ar' ? 'رقم الطفل' : 'Child ID'} 
+                              readOnly 
+                              className="bg-muted"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

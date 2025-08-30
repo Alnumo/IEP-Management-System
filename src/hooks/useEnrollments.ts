@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth-utils'
+import { webhookService, WEBHOOK_EVENTS, createEntityWebhook, createFormSubmissionWebhook } from '@/services/webhooks'
+import { initializeN8nWebhooks } from '@/services/n8n-webhook-config'
 import type { CourseEnrollment } from '@/types/course'
 
 export interface CreateEnrollmentData {
@@ -32,6 +35,9 @@ export const useEnrollments = (filters?: EnrollmentFilters) => {
   return useQuery({
     queryKey: ['enrollments', filters],
     queryFn: async () => {
+      // Check authentication
+      await requireAuth()
+      
       let query = supabase
         .from('course_enrollments')
         .select(`
@@ -51,10 +57,17 @@ export const useEnrollments = (filters?: EnrollmentFilters) => {
             course_code,
             name_ar,
             name_en,
+            description_ar,
+            description_en,
             start_date,
             end_date,
+            schedule_time,
+            location,
+            therapist_name,
             price,
-            max_students
+            max_students,
+            enrolled_students,
+            status
           )
         `)
         .order('created_at', { ascending: false })
@@ -131,7 +144,8 @@ export const useEnrollment = (id: string) => {
             max_students,
             enrolled_students,
             therapist_name,
-            location
+            location,
+            status
           )
         `)
         .eq('id', id)
@@ -156,6 +170,9 @@ export const useStudentEnrollments = (studentId: string) => {
 export const useCourseEnrollments = (courseId: string) => {
   return useEnrollments({ course_id: courseId })
 }
+
+// Initialize n8n webhook configuration on module load
+initializeN8nWebhooks()
 
 // Create enrollment
 export const useCreateEnrollment = () => {
@@ -202,7 +219,68 @@ export const useCreateEnrollment = () => {
 
       return data
     },
-    onSuccess: () => {
+    onSuccess: async (data, variables) => {
+      // Trigger n8n webhook for student enrollment
+      try {
+        // Get full enrollment data with related student and course info
+        const { data: fullEnrollmentData } = await supabase
+          .from('course_enrollments')
+          .select(`
+            *,
+            student:students(
+              id,
+              registration_number,
+              first_name_ar,
+              last_name_ar,
+              first_name_en,
+              last_name_en,
+              phone,
+              email,
+              date_of_birth,
+              city_ar
+            ),
+            course:courses(
+              id,
+              course_code,
+              name_ar,
+              name_en,
+              description_ar,
+              description_en,
+              start_date,
+              end_date,
+              schedule_time,
+              price,
+              therapist_name,
+              location
+            )
+          `)
+          .eq('id', data.id)
+          .single()
+
+        // Trigger webhook for enrollment creation
+        await createEntityWebhook('enrollment', 'created', fullEnrollmentData, {
+          enrollment_id: data.id,
+          student_id: variables.student_id,
+          course_id: variables.course_id,
+          workflow: 'student-enrollment-onboarding',
+          source: 'enrollment-form'
+        })
+
+        // Also trigger form submission webhook
+        await createFormSubmissionWebhook('enrollment', variables, 'create', {
+          enrollment_id: data.id,
+          workflow: 'student-enrollment-onboarding',
+          n8n_webhook: 'student-enrollment'
+        })
+
+        console.log('✅ Student enrollment webhooks triggered successfully')
+        
+      } catch (error) {
+        console.error('❌ Failed to trigger enrollment webhooks:', error)
+        // Don't throw - webhook failure shouldn't break the enrollment process
+      }
+
+      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['enrollments'] })
       queryClient.invalidateQueries({ queryKey: ['courses'] })
       queryClient.invalidateQueries({ queryKey: ['students'] })

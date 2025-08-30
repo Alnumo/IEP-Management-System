@@ -71,6 +71,17 @@ export interface CourseEnrollment {
     course_code: string
     name_ar: string
     name_en?: string
+    description_ar?: string
+    description_en?: string
+    start_date: string
+    end_date: string
+    schedule_time: string
+    location?: string
+    therapist_name?: string
+    price: number
+    max_students: number
+    enrolled_students: number
+    status: string
   }
 }
 

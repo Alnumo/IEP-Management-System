@@ -265,11 +265,21 @@ export const TherapyProgramsPage = () => {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1 gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 gap-2"
+                      onClick={() => navigate(`/therapy-programs/${program.id}`)}
+                    >
                       <Eye className="h-4 w-4" />
                       {language === 'ar' ? 'عرض' : 'View'}
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 gap-2"
+                      onClick={() => navigate(`/therapy-programs/edit/${program.id}`)}
+                    >
                       <Edit className="h-4 w-4" />
                       {language === 'ar' ? 'تعديل' : 'Edit'}
                     </Button>

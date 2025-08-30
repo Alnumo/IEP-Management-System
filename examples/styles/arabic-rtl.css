@@ -1,0 +1,384 @@
+/**
+ * Arabic RTL Styling Patterns
+ * 
+ * Why: Demonstrates essential CSS patterns for Arabic text support:
+ * - Proper font family stacking for Arabic fonts
+ * - RTL text direction and alignment utilities
+ * - Spacing adjustments for Arabic typography
+ * - Form input styling for RTL languages
+ * - Icon positioning for RTL layouts
+ * - Responsive Arabic text scaling
+ */
+
+/* Arabic Font Configuration */
+.font-arabic {
+  font-family: 'Tajawal', 'Cairo', 'Amiri', system-ui, sans-serif;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* RTL Direction Utilities */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Arabic Text Sizing - Larger for better readability */
+.text-arabic-sm {
+  font-size: 0.9375rem; /* 15px - slightly larger than standard sm */
+  line-height: 1.75; /* More generous line height */
+}
+
+.text-arabic-base {
+  font-size: 1.0625rem; /* 17px - larger than standard base */
+  line-height: 1.8;
+}
+
+.text-arabic-lg {
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.8;
+}
+
+.text-arabic-xl {
+  font-size: 1.5rem; /* 24px */
+  line-height: 1.75;
+}
+
+/* RTL Flex Utilities */
+.flex-rtl {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.flex-rtl-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* RTL Spacing Utilities */
+.space-x-rtl-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+.space-x-rtl-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-right: 1rem;
+  margin-left: 0;
+}
+
+.space-x-rtl-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-right: 1.5rem;
+  margin-left: 0;
+}
+
+/* RTL Margin Utilities */
+.mr-rtl-2 {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+.ml-rtl-2 {
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+.mr-rtl-4 {
+  margin-left: 1rem;
+  margin-right: 0;
+}
+
+.ml-rtl-4 {
+  margin-right: 1rem;
+  margin-left: 0;
+}
+
+/* RTL Padding Utilities */
+.pr-rtl-4 {
+  padding-left: 1rem;
+  padding-right: 0;
+}
+
+.pl-rtl-4 {
+  padding-right: 1rem;
+  padding-left: 0;
+}
+
+/* RTL Form Styling */
+.input-rtl {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+.input-rtl::placeholder {
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+.textarea-rtl {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+  line-height: 1.8; /* Better line height for Arabic */
+}
+
+.select-rtl {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+/* RTL Button Styling */
+.btn-rtl {
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+  direction: rtl;
+}
+
+.btn-rtl .icon-left {
+  order: 2;
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+.btn-rtl .icon-right {
+  order: 0;
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+/* RTL Card Styling */
+.card-rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.card-rtl .card-header {
+  text-align: right;
+}
+
+.card-rtl .card-title {
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+  text-align: right;
+}
+
+.card-rtl .card-content {
+  text-align: right;
+}
+
+/* RTL Navigation Styling */
+.nav-rtl {
+  direction: rtl;
+}
+
+.nav-rtl .nav-item {
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+.nav-rtl .nav-icon {
+  order: 2;
+  margin-left: 0.75rem;
+  margin-right: 0;
+}
+
+/* RTL Table Styling */
+.table-rtl {
+  direction: rtl;
+}
+
+.table-rtl th,
+.table-rtl td {
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+.table-rtl th:first-child,
+.table-rtl td:first-child {
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.table-rtl th:last-child,
+.table-rtl td:last-child {
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+/* RTL Modal/Dialog Styling */
+.modal-rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.modal-rtl .modal-header {
+  text-align: right;
+}
+
+.modal-rtl .modal-title {
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+  text-align: right;
+}
+
+.modal-rtl .modal-close {
+  left: 1rem;
+  right: auto;
+}
+
+/* RTL Dropdown Styling */
+.dropdown-rtl {
+  direction: rtl;
+}
+
+.dropdown-rtl .dropdown-content {
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+.dropdown-rtl .dropdown-item {
+  text-align: right;
+}
+
+/* RTL Badge/Tag Styling */
+.badge-rtl {
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+  direction: rtl;
+}
+
+/* RTL Progress Bar Styling */
+.progress-rtl {
+  direction: rtl;
+}
+
+.progress-rtl .progress-bar {
+  transform-origin: right;
+}
+
+/* RTL Breadcrumb Styling */
+.breadcrumb-rtl {
+  direction: rtl;
+}
+
+.breadcrumb-rtl .breadcrumb-separator::before {
+  content: '\\';
+  transform: scaleX(-1);
+}
+
+/* RTL Tooltip Styling */
+.tooltip-rtl {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+}
+
+/* RTL Responsive Utilities */
+@media (max-width: 768px) {
+  .mobile-rtl {
+    direction: rtl;
+    text-align: right;
+  }
+  
+  .mobile-rtl .mobile-nav {
+    flex-direction: row-reverse;
+  }
+  
+  .mobile-rtl .mobile-header {
+    text-align: right;
+  }
+  
+  /* Mobile Arabic text needs more spacing */
+  .mobile-rtl .text-arabic-sm {
+    font-size: 1rem; /* Larger on mobile */
+    line-height: 1.8;
+  }
+  
+  .mobile-rtl .text-arabic-base {
+    font-size: 1.125rem;
+    line-height: 1.8;
+  }
+}
+
+/* RTL Animation Utilities */
+.slide-in-rtl {
+  animation: slideInRTL 0.3s ease-out;
+}
+
+@keyframes slideInRTL {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-ltr {
+  animation: slideInLTR 0.3s ease-out;
+}
+
+@keyframes slideInLTR {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* RTL Focus States */
+.focus-rtl:focus {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+}
+
+/* RTL Print Styles */
+@media print {
+  .print-rtl {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Tajawal', 'Cairo', serif;
+  }
+  
+  .print-rtl h1,
+  .print-rtl h2,
+  .print-rtl h3,
+  .print-rtl h4,
+  .print-rtl h5,
+  .print-rtl h6 {
+    text-align: right;
+    font-family: 'Tajawal', 'Cairo', serif;
+  }
+}
+
+/* High Contrast Mode Support for RTL */
+@media (prefers-contrast: high) {
+  .rtl-high-contrast {
+    border: 2px solid;
+    background: white;
+    color: black;
+  }
+  
+  .rtl-high-contrast .text-arabic-base {
+    font-weight: 600; /* Bolder text for better readability */
+  }
+}
+
+/* Reduced Motion Support for RTL */
+@media (prefers-reduced-motion: reduce) {
+  .slide-in-rtl,
+  .slide-in-ltr {
+    animation: none;
+  }
+  
+  .rtl-reduced-motion * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

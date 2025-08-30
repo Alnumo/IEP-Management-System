@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
+import { AuthGuard } from './components/auth/AuthGuard'
+import { LoginForm } from './components/auth/LoginForm'
 import { DashboardPage } from './pages/DashboardPage'
 import { PlansPage } from './pages/PlansPage'
 import { AddPlanPage } from './pages/AddPlanPage'
@@ -68,11 +70,36 @@ import AddClinicalDocumentationPage from './pages/AddClinicalDocumentationPage'
 import EditClinicalDocumentationPage from './pages/EditClinicalDocumentationPage'
 import ClinicalDocumentationDetailsPage from './pages/ClinicalDocumentationDetailsPage'
 import AddAssessmentPage from './pages/AddAssessmentPage'
+import { TherapyPlanEnrollmentsPage } from './pages/TherapyPlanEnrollmentsPage'
+import AddTherapyPlanEnrollmentPage from './pages/AddTherapyPlanEnrollmentPage'
+import { TherapyProgramEnrollmentsPage } from './pages/TherapyProgramEnrollmentsPage'
+import AddTherapyProgramEnrollmentPage from './pages/AddTherapyProgramEnrollmentPage'
+import ClinicalAnalyticsPage from './pages/ClinicalAnalyticsPage'
+import OperationalAnalyticsPage from './pages/OperationalAnalyticsPage'
+import BillingDashboardPage from './pages/BillingDashboardPage'
+import PaymentPlanManagerPage from './pages/PaymentPlanManagerPage'
+import FinancialAnalyticsPage from './pages/FinancialAnalyticsPage'
+import DataManagementPage from './pages/DataManagementPage'
+import ComplianceReportingPage from './pages/ComplianceReportingPage'
+import { IEPDashboard } from './pages/IEPDashboard'
+import { IEPListPage } from './pages/IEPListPage'
+import { IEPDetailPage } from './pages/IEPDetailPage'
 
 export const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      {/* Login Route - No Auth Guard */}
+      <Route path="/login" element={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <LoginForm />
+        </div>
+      } />
+      
+      <Route path="/" element={
+        <AuthGuard>
+          <Layout />
+        </AuthGuard>
+      }>
         <Route index element={<DashboardPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="plans" element={<PlansPage />} />
@@ -103,6 +130,10 @@ export const AppRoutes = () => {
         <Route path="enrollments/add" element={<AddEnrollmentPage />} />
         <Route path="enrollments/edit/:id" element={<EditEnrollmentPage />} />
         <Route path="enrollments/:id" element={<EnrollmentDetailsPage />} />
+        <Route path="therapy-plan-enrollments" element={<TherapyPlanEnrollmentsPage />} />
+        <Route path="therapy-plan-enrollments/add" element={<AddTherapyPlanEnrollmentPage />} />
+        <Route path="therapy-program-enrollments" element={<TherapyProgramEnrollmentsPage />} />
+        <Route path="therapy-program-enrollments/add" element={<AddTherapyProgramEnrollmentPage />} />
         <Route path="medical-records" element={<MedicalRecordsPage />} />
         <Route path="medical-records/add" element={<AddMedicalRecordPage />} />
         <Route path="medical-records/edit/:id" element={<EditMedicalRecordPage />} />
@@ -131,10 +162,28 @@ export const AppRoutes = () => {
         <Route path="ai-analytics" element={<AIAnalyticsPage />} />
         <Route path="enterprise-automation" element={<EnterpriseAutomationPage />} />
         <Route path="multi-center-management" element={<MultiCenterManagementPage />} />
+        
+        {/* Phase 6: Financial Management & Billing */}
+        <Route path="billing" element={<BillingDashboardPage />} />
+        <Route path="payment-plans" element={<PaymentPlanManagerPage />} />
+        <Route path="financial-analytics" element={<FinancialAnalyticsPage />} />
+        
+        {/* Phase 7: Analytics & Reporting */}
+        <Route path="clinical-analytics" element={<ClinicalAnalyticsPage />} />
+        <Route path="operational-analytics" element={<OperationalAnalyticsPage />} />
+        <Route path="compliance-reporting" element={<ComplianceReportingPage />} />
+        <Route path="data-management" element={<DataManagementPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="users/add" element={<AddUserPage />} />
         <Route path="users/edit/:id" element={<EditUserPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        
+        {/* IEP Management Routes */}
+        <Route path="iep-dashboard" element={<IEPDashboard />} />
+        <Route path="ieps" element={<IEPListPage />} />
+        <Route path="ieps/:id" element={<IEPDetailPage />} />
+        <Route path="ieps/:id/edit" element={<IEPDetailPage />} />
+        <Route path="ieps/create" element={<IEPDetailPage />} />
       </Route>
       
       {/* Parent Portal Routes */}

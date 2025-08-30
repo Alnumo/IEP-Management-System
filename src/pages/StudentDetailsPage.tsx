@@ -17,7 +17,9 @@ import {
   Heart,
   Users,
   BookOpen,
-  Plus
+  Plus,
+  Eye,
+  MoreVertical
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,6 +37,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useStudent, useDeleteStudent } from '@/hooks/useStudents'
 import { useMedicalRecords } from '@/hooks/useMedical'
@@ -273,6 +281,86 @@ export const StudentDetailsPage = () => {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                <Plus className="h-5 w-5" />
+                {language === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/medical-records/add?student_id=${id}`)}
+                  className="flex flex-col gap-1 h-auto py-3"
+                >
+                  <Heart className="h-4 w-4" />
+                  <span className={`text-xs ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'سجل طبي' : 'Medical Record'}
+                  </span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/enrollments/add?student_id=${id}`)}
+                  className="flex flex-col gap-1 h-auto py-3"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span className={`text-xs ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'تسجيل دورة' : 'Enroll Course'}
+                  </span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/therapy-plan-enrollments/add?student_id=${id}`)}
+                  className="flex flex-col gap-1 h-auto py-3"
+                >
+                  <Target className="h-4 w-4" />
+                  <span className={`text-xs ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'تسجيل خطة' : 'Enroll Plan'}
+                  </span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/therapy-program-enrollments/add?student_id=${id}`)}
+                  className="flex flex-col gap-1 h-auto py-3"
+                >
+                  <Brain className="h-4 w-4" />
+                  <span className={`text-xs ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'تسجيل برنامج' : 'Enroll Program'}
+                  </span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/assessments/add?student_id=${id}`)}
+                  className="flex flex-col gap-1 h-auto py-3"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className={`text-xs ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'تقييم' : 'Assessment'}
+                  </span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/therapeutic-goals?student_id=${id}&action=add`)}
+                  className="flex flex-col gap-1 h-auto py-3"
+                >
+                  <Target className="h-4 w-4" />
+                  <span className={`text-xs ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'هدف علاجي' : 'Goal'}
+                  </span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Personal Information */}
             <Card>
@@ -321,6 +409,51 @@ export const StudentDetailsPage = () => {
                       {language === 'ar' ? 'رقم الهوية/الإقامة' : 'National ID/Iqama'}
                     </h4>
                     <p className="text-sm">{student.national_id}</p>
+                  </div>
+                )}
+                
+                {student.child_id && (
+                  <div>
+                    <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'رقم الطفل' : 'Child ID'}
+                    </h4>
+                    <p className="text-sm font-mono">{student.child_id}</p>
+                  </div>
+                )}
+                
+                {student.nationality_ar && (
+                  <div>
+                    <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'الجنسية' : 'Nationality'}
+                    </h4>
+                    <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? student.nationality_ar : student.nationality_en || student.nationality_ar}
+                    </p>
+                  </div>
+                )}
+                
+                {(student.height || student.weight) && (
+                  <div>
+                    <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'القياسات الجسمية' : 'Physical Measurements'}
+                    </h4>
+                    <div className="flex gap-4 text-sm">
+                      {student.height && (
+                        <span>{language === 'ar' ? 'الطول:' : 'Height:'} {student.height} cm</span>
+                      )}
+                      {student.weight && (
+                        <span>{language === 'ar' ? 'الوزن:' : 'Weight:'} {student.weight} kg</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {student.blood_type && (
+                  <div>
+                    <h4 className={`font-semibold text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'فصيلة الدم' : 'Blood Type'}
+                    </h4>
+                    <Badge variant="outline">{student.blood_type}</Badge>
                   </div>
                 )}
               </CardContent>
@@ -381,6 +514,152 @@ export const StudentDetailsPage = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Family Information */}
+          {(student.father_full_name || student.mother_full_name || student.guardian_full_name) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  <Users className="h-5 w-5" />
+                  {language === 'ar' ? 'معلومات الأسرة' : 'Family Information'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Father Information */}
+                {student.father_full_name && (
+                  <div>
+                    <h4 className={`font-semibold text-sm mb-3 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'معلومات الأب' : 'Father Information'}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+                        </p>
+                        <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {student.father_full_name}
+                        </p>
+                      </div>
+                      {student.father_mobile && (
+                        <div>
+                          <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'رقم الجوال' : 'Mobile'}
+                          </p>
+                          <p className="text-sm">{student.father_mobile}</p>
+                        </div>
+                      )}
+                      {student.father_job && (
+                        <div>
+                          <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'المهنة' : 'Job'}
+                          </p>
+                          <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {student.father_job}
+                          </p>
+                        </div>
+                      )}
+                      {student.father_education && (
+                        <div>
+                          <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'المستوى التعليمي' : 'Education'}
+                          </p>
+                          <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {student.father_education}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mother Information */}
+                {student.mother_full_name && (
+                  <div>
+                    <Separator />
+                    <h4 className={`font-semibold text-sm mb-3 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'معلومات الأم' : 'Mother Information'}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+                        </p>
+                        <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {student.mother_full_name}
+                        </p>
+                      </div>
+                      {student.mother_mobile && (
+                        <div>
+                          <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'رقم الجوال' : 'Mobile'}
+                          </p>
+                          <p className="text-sm">{student.mother_mobile}</p>
+                        </div>
+                      )}
+                      {student.mother_job && (
+                        <div>
+                          <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'المهنة' : 'Job'}
+                          </p>
+                          <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {student.mother_job}
+                          </p>
+                        </div>
+                      )}
+                      {student.mother_education && (
+                        <div>
+                          <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'المستوى التعليمي' : 'Education'}
+                          </p>
+                          <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {student.mother_education}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Guardian Information */}
+                {student.guardian_full_name && (
+                  <div>
+                    <Separator />
+                    <h4 className={`font-semibold text-sm mb-3 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'معلومات ولي الأمر' : 'Guardian Information'}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+                        </p>
+                        <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {student.guardian_full_name}
+                        </p>
+                      </div>
+                      {student.guardian_mobile && (
+                        <div>
+                          <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'رقم الجوال' : 'Mobile'}
+                          </p>
+                          <p className="text-sm">{student.guardian_mobile}</p>
+                        </div>
+                      )}
+                      {student.guardian_relation && (
+                        <div>
+                          <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {language === 'ar' ? 'صلة القرابة' : 'Relationship'}
+                          </p>
+                          <p className={`text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
+                            {student.guardian_relation}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Medical Tab */}
@@ -389,7 +668,7 @@ export const StudentDetailsPage = () => {
             <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'السجلات الطبية' : 'Medical Records'}
             </h3>
-            <Button size="sm">
+            <Button size="sm" onClick={() => navigate(`/medical-records/add?student_id=${id}`)}>
               <Plus className="h-4 w-4 mr-2" />
               {language === 'ar' ? 'إضافة سجل طبي' : 'Add Medical Record'}
             </Button>
@@ -400,9 +679,28 @@ export const StudentDetailsPage = () => {
               {medicalRecords.map((record) => (
                 <Card key={record.id}>
                   <CardHeader>
-                    <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
-                      {language === 'ar' ? 'سجل طبي' : 'Medical Record'} - {record.medical_record_number}
-                    </CardTitle>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'سجل طبي' : 'Medical Record'} - {record.medical_record_number}
+                      </CardTitle>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/medical-records/${record.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/medical-records/edit/${record.id}`)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'تعديل' : 'Edit'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {record.primary_diagnosis_code && record.primary_diagnosis_code.length > 0 && (
@@ -471,7 +769,7 @@ export const StudentDetailsPage = () => {
             <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'البرامج العلاجية' : 'Therapy Programs'}
             </h3>
-            <Button size="sm">
+            <Button size="sm" onClick={() => navigate(`/enrollments/add?student_id=${id}`)}>
               <Plus className="h-4 w-4 mr-2" />
               {language === 'ar' ? 'تسجيل في برنامج' : 'Enroll in Program'}
             </Button>
@@ -483,12 +781,31 @@ export const StudentDetailsPage = () => {
                 <Card key={enrollment.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
-                        {language === 'ar' ? 'برنامج علاجي' : 'Therapy Program'}
-                      </CardTitle>
-                      <Badge variant={enrollment.enrollment_status === 'active' ? 'default' : 'secondary'}>
-                        {enrollment.enrollment_status}
-                      </Badge>
+                      <div className="flex flex-col gap-2">
+                        <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'برنامج علاجي' : 'Therapy Program'}
+                        </CardTitle>
+                        <Badge variant={enrollment.enrollment_status === 'active' ? 'default' : 'secondary'} className="w-fit">
+                          {enrollment.enrollment_status}
+                        </Badge>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/enrollments/${enrollment.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/enrollments/edit/${enrollment.id}`)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'تعديل' : 'Edit'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -547,7 +864,7 @@ export const StudentDetailsPage = () => {
             <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'الأهداف العلاجية' : 'Therapeutic Goals'}
             </h3>
-            <Button size="sm">
+            <Button size="sm" onClick={() => navigate(`/therapeutic-goals?student_id=${id}&action=add`)}>
               <Plus className="h-4 w-4 mr-2" />
               {language === 'ar' ? 'إضافة هدف' : 'Add Goal'}
             </Button>
@@ -559,12 +876,31 @@ export const StudentDetailsPage = () => {
                 <Card key={goal.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
-                        {language === 'ar' ? 'هدف' : 'Goal'} #{goal.goal_number}
-                      </CardTitle>
-                      <Badge variant={goal.status === 'active' ? 'default' : goal.status === 'achieved' ? 'outline' : 'secondary'}>
-                        {goal.status}
-                      </Badge>
+                      <div className="flex flex-col gap-2">
+                        <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'هدف' : 'Goal'} #{goal.goal_number}
+                        </CardTitle>
+                        <Badge variant={goal.status === 'active' ? 'default' : goal.status === 'achieved' ? 'outline' : 'secondary'} className="w-fit">
+                          {goal.status}
+                        </Badge>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/therapeutic-goals?student_id=${id}&goal_id=${goal.id}&action=view`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/therapeutic-goals?student_id=${id}&goal_id=${goal.id}&action=edit`)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'تعديل' : 'Edit'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -621,7 +957,7 @@ export const StudentDetailsPage = () => {
             <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'التقييمات' : 'Assessments'}
             </h3>
-            <Button size="sm">
+            <Button size="sm" onClick={() => navigate(`/assessments/add?student_id=${id}`)}>
               <Plus className="h-4 w-4 mr-2" />
               {language === 'ar' ? 'إضافة تقييم' : 'Add Assessment'}
             </Button>
@@ -633,12 +969,31 @@ export const StudentDetailsPage = () => {
                 <Card key={assessment.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
-                        {language === 'ar' ? 'تقييم' : 'Assessment'}
-                      </CardTitle>
-                      <Badge variant="outline">
-                        {assessment.assessment_purpose}
-                      </Badge>
+                      <div className="flex flex-col gap-2">
+                        <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'تقييم' : 'Assessment'}
+                        </CardTitle>
+                        <Badge variant="outline" className="w-fit">
+                          {assessment.assessment_purpose}
+                        </Badge>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/assessments/${assessment.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/assessments/edit/${assessment.id}`)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'تعديل' : 'Edit'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -693,7 +1048,7 @@ export const StudentDetailsPage = () => {
             <h3 className={`text-lg font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
               {language === 'ar' ? 'تتبع التقدم' : 'Progress Tracking'}
             </h3>
-            <Button size="sm">
+            <Button size="sm" onClick={() => navigate(`/progress-tracking?student_id=${id}&action=add`)}>
               <Plus className="h-4 w-4 mr-2" />
               {language === 'ar' ? 'إضافة تقرير تقدم' : 'Add Progress Report'}
             </Button>
@@ -705,12 +1060,31 @@ export const StudentDetailsPage = () => {
                 <Card key={progress.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
-                        {language === 'ar' ? 'تقرير التقدم' : 'Progress Report'}
-                      </CardTitle>
-                      <Badge variant={progress.trend_direction === 'improving' ? 'default' : progress.trend_direction === 'declining' ? 'destructive' : 'secondary'}>
-                        {progress.trend_direction}
-                      </Badge>
+                      <div className="flex flex-col gap-2">
+                        <CardTitle className={`text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'تقرير التقدم' : 'Progress Report'}
+                        </CardTitle>
+                        <Badge variant={progress.trend_direction === 'improving' ? 'default' : progress.trend_direction === 'declining' ? 'destructive' : 'secondary'} className="w-fit">
+                          {progress.trend_direction}
+                        </Badge>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/progress-tracking?student_id=${id}&progress_id=${progress.id}&action=view`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/progress-tracking?student_id=${id}&progress_id=${progress.id}&action=edit`)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'تعديل' : 'Edit'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">

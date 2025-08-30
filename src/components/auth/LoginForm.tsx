@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -6,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 
 export function LoginForm() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('admin@arkan-center.com')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -56,37 +58,37 @@ export function LoginForm() {
     }
   }
 
-  // Check current auth status on mount
-  React.useEffect(() => {
+  // Check current auth status on mount and redirect if already logged in
+  useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
+      if (user) {
+        // User is already logged in, redirect to dashboard
+        navigate('/', { replace: true })
+      } else {
+        setUser(user)
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null)
+        if (session?.user) {
+          // User just logged in, redirect to dashboard
+          navigate('/', { replace: true })
+        } else {
+          setUser(null)
+        }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [navigate])
 
+  // Show loading while redirecting authenticated users
   if (user) {
     return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle>مرحباً - Welcome</CardTitle>
-          <CardDescription>You are logged in as {user.email}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Now you can create therapy plans that will save to the database!
-          </p>
-          <Button onClick={handleLogout} variant="outline" className="w-full">
-            تسجيل الخروج - Logout
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
     )
   }
 

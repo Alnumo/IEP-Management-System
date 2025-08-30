@@ -21,7 +21,7 @@ const courseSchema = z.object({
   name_en: z.string().optional(),
   description_ar: z.string().optional(),
   description_en: z.string().optional(),
-  therapist_id: z.string().optional(),
+  therapist_id: z.string(),
   start_date: z.date(),
   end_date: z.date(),
   schedule_days: z.array(z.string()).min(1, 'At least one day must be selected'),
@@ -70,7 +70,7 @@ export default function CourseForm({
       name_en: initialData?.name_en || '',
       description_ar: initialData?.description_ar || '',
       description_en: initialData?.description_en || '',
-      therapist_id: initialData?.therapist_id || '',
+      therapist_id: initialData?.therapist_id || 'unassigned',
       start_date: initialData?.start_date ? new Date(initialData.start_date) : new Date(),
       end_date: initialData?.end_date ? new Date(initialData.end_date) : new Date(),
       schedule_days: initialData?.schedule_days || [],
@@ -87,6 +87,7 @@ export default function CourseForm({
     
     const formData: CreateCourseData = {
       ...data,
+      therapist_id: data.therapist_id === 'unassigned' ? undefined : data.therapist_id,
       start_date: data.start_date.toISOString().split('T')[0],
       end_date: data.end_date.toISOString().split('T')[0],
       therapist_name: selectedTherapist ? 
@@ -223,7 +224,7 @@ export default function CourseForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">
+                        <SelectItem value="unassigned">
                           {language === 'ar' ? 'لم يحدد بعد' : 'To be assigned'}
                         </SelectItem>
                         {therapists?.map((therapist) => (

@@ -1,0 +1,341 @@
+/**
+ * Therapy Management Color System
+ * 
+ * Why: Demonstrates the project's color palette and usage patterns:
+ * - Primary teal/green gradient system for therapy branding
+ * - Semantic color coding for different therapy types
+ * - Status colors for progress tracking and alerts
+ * - Accessibility-compliant contrast ratios
+ * - Glass morphism and backdrop blur effects
+ * - Dark mode support for therapy applications
+ */
+
+/* CSS Custom Properties - Design Tokens */
+:root {
+  /* Primary Brand Colors - Teal/Green Therapy Theme */
+  --color-primary: 20 184 166; /* #14B8A6 - Teal-500 */
+  --color-primary-light: 45 212 191; /* #2DD4BF - Teal-400 */
+  --color-primary-dark: 15 118 110; /* #0F766E - Teal-600 */
+  --color-secondary: 156 222 189; /* #9CDEBD - Custom green accent */
+  
+  /* Therapy Type Colors */
+  --color-speech-therapy: 20 184 166; /* Teal - Speech therapy */
+  --color-physical-therapy: 59 130 246; /* Blue - Physical therapy */
+  --color-occupational-therapy: 34 197 94; /* Green - Occupational therapy */
+  --color-behavioral-therapy: 168 85 247; /* Purple - Behavioral therapy */
+  --color-cognitive-therapy: 249 115 22; /* Orange - Cognitive therapy */
+  
+  /* Status Colors */
+  --color-success: 34 197 94; /* Green-500 */
+  --color-warning: 249 115 22; /* Orange-500 */
+  --color-error: 239 68 68; /* Red-500 */
+  --color-info: 59 130 246; /* Blue-500 */
+  
+  /* Neutral Colors */
+  --color-gray-50: 249 250 251;
+  --color-gray-100: 243 244 246;
+  --color-gray-200: 229 231 235;
+  --color-gray-300: 209 213 219;
+  --color-gray-400: 156 163 175;
+  --color-gray-500: 107 114 128;
+  --color-gray-600: 75 85 99;
+  --color-gray-700: 55 65 81;
+  --color-gray-800: 31 41 55;
+  --color-gray-900: 17 24 39;
+  
+  /* Background Colors */
+  --color-background: 248 250 252; /* Slate-50 */
+  --color-surface: 255 255 255; /* White */
+  --color-surface-secondary: 241 245 249; /* Slate-100 */
+  
+  /* Glass Morphism Colors */
+  --color-glass-bg: 255 255 255 / 0.9;
+  --color-glass-border: 255 255 255 / 0.2;
+  --color-glass-shadow: 0 0 0 / 0.1;
+}
+
+/* Dark Mode Color Overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: 15 23 42; /* Slate-900 */
+    --color-surface: 30 41 59; /* Slate-800 */
+    --color-surface-secondary: 51 65 85; /* Slate-700 */
+    --color-glass-bg: 30 41 59 / 0.9;
+    --color-glass-border: 255 255 255 / 0.1;
+  }
+}
+
+/* Primary Gradient System */
+.gradient-primary {
+  background: linear-gradient(135deg, 
+    rgb(var(--color-primary)) 0%, 
+    rgb(var(--color-secondary)) 50%, 
+    rgb(var(--color-primary-light)) 100%);
+}
+
+.gradient-primary-subtle {
+  background: linear-gradient(135deg, 
+    rgb(var(--color-primary) / 0.1) 0%, 
+    rgb(var(--color-secondary) / 0.05) 100%);
+}
+
+.gradient-primary-hover {
+  background: linear-gradient(135deg, 
+    rgb(var(--color-primary-dark)) 0%, 
+    rgb(var(--color-primary)) 50%, 
+    rgb(var(--color-secondary)) 100%);
+}
+
+/* Therapy Type Color Classes */
+.therapy-speech {
+  --therapy-color: var(--color-speech-therapy);
+  --therapy-bg: var(--color-speech-therapy) / 0.1;
+  --therapy-border: var(--color-speech-therapy) / 0.2;
+}
+
+.therapy-physical {
+  --therapy-color: var(--color-physical-therapy);
+  --therapy-bg: var(--color-physical-therapy) / 0.1;
+  --therapy-border: var(--color-physical-therapy) / 0.2;
+}
+
+.therapy-occupational {
+  --therapy-color: var(--color-occupational-therapy);
+  --therapy-bg: var(--color-occupational-therapy) / 0.1;
+  --therapy-border: var(--color-occupational-therapy) / 0.2;
+}
+
+.therapy-behavioral {
+  --therapy-color: var(--color-behavioral-therapy);
+  --therapy-bg: var(--color-behavioral-therapy) / 0.1;
+  --therapy-border: var(--color-behavioral-therapy) / 0.2;
+}
+
+.therapy-cognitive {
+  --therapy-color: var(--color-cognitive-therapy);
+  --therapy-bg: var(--color-cognitive-therapy) / 0.1;
+  --therapy-border: var(--color-cognitive-therapy) / 0.2;
+}
+
+/* Therapy Card Styling */
+.therapy-card {
+  background: rgb(var(--therapy-bg));
+  border: 1px solid rgb(var(--therapy-border));
+  border-left: 4px solid rgb(var(--therapy-color));
+}
+
+.therapy-card .therapy-icon {
+  color: rgb(var(--therapy-color));
+  background: rgb(var(--therapy-bg));
+}
+
+.therapy-card .therapy-title {
+  color: rgb(var(--therapy-color));
+}
+
+/* Status Color System */
+.status-success {
+  color: rgb(var(--color-success));
+  background: rgb(var(--color-success) / 0.1);
+  border-color: rgb(var(--color-success) / 0.2);
+}
+
+.status-warning {
+  color: rgb(var(--color-warning));
+  background: rgb(var(--color-warning) / 0.1);
+  border-color: rgb(var(--color-warning) / 0.2);
+}
+
+.status-error {
+  color: rgb(var(--color-error));
+  background: rgb(var(--color-error) / 0.1);
+  border-color: rgb(var(--color-error) / 0.2);
+}
+
+.status-info {
+  color: rgb(var(--color-info));
+  background: rgb(var(--color-info) / 0.1);
+  border-color: rgb(var(--color-info) / 0.2);
+}
+
+/* Progress Color Coding */
+.progress-excellent {
+  --progress-color: var(--color-success);
+}
+
+.progress-good {
+  --progress-color: var(--color-info);
+}
+
+.progress-average {
+  --progress-color: var(--color-warning);
+}
+
+.progress-needs-improvement {
+  --progress-color: var(--color-error);
+}
+
+.progress-bar {
+  background: rgb(var(--progress-color));
+}
+
+.progress-text {
+  color: rgb(var(--progress-color));
+}
+
+/* Glass Morphism System */
+.glass-card {
+  background: rgb(var(--color-glass-bg));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgb(var(--color-glass-border));
+  box-shadow: 0 8px 32px rgb(var(--color-glass-shadow));
+}
+
+.glass-header {
+  background: rgb(var(--color-glass-bg));
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgb(var(--color-glass-border));
+}
+
+.glass-sidebar {
+  background: rgb(var(--color-glass-bg));
+  backdrop-filter: blur(16px);
+  border-right: 1px solid rgb(var(--color-glass-border));
+}
+
+/* Interactive Color States */
+.interactive-primary {
+  color: rgb(var(--color-primary));
+  transition: all 0.2s ease;
+}
+
+.interactive-primary:hover {
+  color: rgb(var(--color-primary-dark));
+  background: rgb(var(--color-primary) / 0.1);
+}
+
+.interactive-primary:focus {
+  outline: 2px solid rgb(var(--color-primary));
+  outline-offset: 2px;
+}
+
+.interactive-primary:active {
+  color: rgb(var(--color-primary-dark));
+  background: rgb(var(--color-primary) / 0.2);
+}
+
+/* Button Color Variants */
+.btn-primary {
+  background: rgb(var(--color-primary));
+  color: white;
+  border: 1px solid rgb(var(--color-primary));
+}
+
+.btn-primary:hover {
+  background: rgb(var(--color-primary-dark));
+  border-color: rgb(var(--color-primary-dark));
+}
+
+.btn-secondary {
+  background: rgb(var(--color-surface));
+  color: rgb(var(--color-gray-700));
+  border: 1px solid rgb(var(--color-gray-300));
+}
+
+.btn-secondary:hover {
+  background: rgb(var(--color-gray-50));
+  border-color: rgb(var(--color-gray-400));
+}
+
+.btn-outline-primary {
+  background: transparent;
+  color: rgb(var(--color-primary));
+  border: 1px solid rgb(var(--color-primary));
+}
+
+.btn-outline-primary:hover {
+  background: rgb(var(--color-primary));
+  color: white;
+}
+
+/* Alert/Notification Colors */
+.alert-success {
+  background: rgb(var(--color-success) / 0.1);
+  border: 1px solid rgb(var(--color-success) / 0.2);
+  color: rgb(var(--color-success));
+}
+
+.alert-warning {
+  background: rgb(var(--color-warning) / 0.1);
+  border: 1px solid rgb(var(--color-warning) / 0.2);
+  color: rgb(var(--color-warning));
+}
+
+.alert-error {
+  background: rgb(var(--color-error) / 0.1);
+  border: 1px solid rgb(var(--color-error) / 0.2);
+  color: rgb(var(--color-error));
+}
+
+.alert-info {
+  background: rgb(var(--color-info) / 0.1);
+  border: 1px solid rgb(var(--color-info) / 0.2);
+  color: rgb(var(--color-info));
+}
+
+/* Text Color Utilities */
+.text-primary { color: rgb(var(--color-primary)); }
+.text-secondary { color: rgb(var(--color-gray-600)); }
+.text-success { color: rgb(var(--color-success)); }
+.text-warning { color: rgb(var(--color-warning)); }
+.text-error { color: rgb(var(--color-error)); }
+.text-info { color: rgb(var(--color-info)); }
+
+/* Background Color Utilities */
+.bg-primary { background: rgb(var(--color-primary)); }
+.bg-primary-light { background: rgb(var(--color-primary) / 0.1); }
+.bg-surface { background: rgb(var(--color-surface)); }
+.bg-surface-secondary { background: rgb(var(--color-surface-secondary)); }
+
+/* Border Color Utilities */
+.border-primary { border-color: rgb(var(--color-primary)); }
+.border-secondary { border-color: rgb(var(--color-gray-300)); }
+.border-success { border-color: rgb(var(--color-success)); }
+.border-warning { border-color: rgb(var(--color-warning)); }
+.border-error { border-color: rgb(var(--color-error)); }
+
+/* Accessibility - High Contrast Mode */
+@media (prefers-contrast: high) {
+  :root {
+    --color-primary: 0 100 80; /* Higher contrast teal */
+    --color-success: 0 120 0; /* Higher contrast green */
+    --color-error: 200 0 0; /* Higher contrast red */
+    --color-warning: 180 100 0; /* Higher contrast orange */
+  }
+  
+  .glass-card {
+    background: rgb(var(--color-surface));
+    backdrop-filter: none;
+    border: 2px solid rgb(var(--color-gray-400));
+  }
+}
+
+/* Print Styles */
+@media print {
+  .gradient-primary {
+    background: rgb(var(--color-gray-200)) !important;
+    color: rgb(var(--color-gray-900)) !important;
+  }
+  
+  .glass-card {
+    background: white !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgb(var(--color-gray-400)) !important;
+    box-shadow: none !important;
+  }
+  
+  .therapy-card {
+    background: white !important;
+    border: 1px solid rgb(var(--color-gray-400)) !important;
+  }
+}

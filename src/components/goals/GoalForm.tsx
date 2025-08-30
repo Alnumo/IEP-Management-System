@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -111,7 +110,10 @@ export default function GoalForm({ onSubmit, onCancel, initialData, isLoading }:
       materials_resources: data.materials.split(',').map(m => m.trim()),
       environmental_supports: data.environmental_supports?.split(',').map(e => e.trim()) || [],
       generalization_settings: ['Classroom', 'Home'],
-      maintenance_plan: 'Weekly probes after achieving mastery'
+      maintenance_plan: 'Weekly probes after achieving mastery',
+      progress_data: [],
+      review_notes: [],
+      mastery_criteria_met: false
     }
 
     onSubmit(goalData)

@@ -378,7 +378,7 @@ export interface TherapyGoal {
   
   // Goal Details
   priority_level: 'high' | 'medium' | 'low'
-  goal_status: 'active' | 'achieved' | 'discontinued' | 'modified'
+  goal_status: 'active' | 'achieved' | 'discontinued' | 'modified' | 'paused'
   start_date: string
   target_date: string
   actual_achievement_date?: string

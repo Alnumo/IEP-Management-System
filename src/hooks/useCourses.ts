@@ -9,6 +9,17 @@ export const useCourses = (filters?: CourseFilters) => {
     queryFn: async (): Promise<Course[]> => {
       console.log('🔍 Fetching courses with filters:', filters)
       
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) {
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
+      }
+      if (!user) {
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
+      }
+      
       let query = supabase
         .from('courses')
         .select('*')
@@ -60,6 +71,17 @@ export const useCourse = (id: string) => {
     queryFn: async (): Promise<Course> => {
       console.log('🔍 Fetching course:', id)
 
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) {
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
+      }
+      if (!user) {
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('courses')
         .select('*')
@@ -87,17 +109,25 @@ export const useCreateCourse = () => {
     mutationFn: async (data: CreateCourseData): Promise<Course> => {
       console.log('🔍 Creating course with:', data)
       
-      // Temporarily disable auth check for testing
+      // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError) {
-        console.log('⚠️ Auth error (continuing anyway for testing):', authError)
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
       }
       if (!user) {
-        console.log('⚠️ No user found (continuing anyway for testing)')
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
       }
 
+      // Generate course code if not provided
+      const courseCode = `CRS-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`
+      
       const courseData = {
         ...data,
+        course_code: courseCode,
+        status: 'planned', // Default status for new courses
+        enrolled_students: 0, // Initialize enrolled students
         created_by: user?.id || null,
         updated_by: user?.id || null,
       }

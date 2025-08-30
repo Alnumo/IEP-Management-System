@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search, Filter, User, GraduationCap, CreditCard, CalendarDays } from 'lucide-react'
+import { Plus, Search, Filter, User, GraduationCap, CreditCard, CalendarDays, Webhook } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useEnrollments, useEnrollmentStats } from '@/hooks/useEnrollments'
+import { testStudentEnrollmentWebhook, getWebhookStatus } from '@/services/n8n-webhook-config'
+import { toast } from 'sonner'
 import type { EnrollmentFilters } from '@/hooks/useEnrollments'
 
 export const EnrollmentsPage = () => {
@@ -26,6 +28,45 @@ export const EnrollmentsPage = () => {
       ...prev,
       [key]: value && value !== 'all' ? value : undefined
     }))
+  }
+
+  const handleTestWebhook = async () => {
+    try {
+      toast.loading(language === 'ar' ? 'جاري اختبار الـ webhook...' : 'Testing webhook...', { id: 'webhook-test' })
+      
+      // Check webhook status first
+      const status = getWebhookStatus()
+      console.log('🔍 Webhook status:', status)
+      
+      // Test the webhook
+      const result = await testStudentEnrollmentWebhook()
+      
+      toast.success(
+        language === 'ar' 
+          ? 'تم إرسال الـ webhook بنجاح إلى n8n!' 
+          : 'Webhook successfully sent to n8n!', 
+        { 
+          id: 'webhook-test',
+          description: language === 'ar' 
+            ? 'تحقق من n8n لرؤية البيانات المستلمة' 
+            : 'Check n8n to see the received data'
+        }
+      )
+      
+      console.log('✅ Webhook test result:', result)
+      
+    } catch (error) {
+      console.error('❌ Webhook test failed:', error)
+      toast.error(
+        language === 'ar' 
+          ? 'فشل في اختبار الـ webhook' 
+          : 'Webhook test failed', 
+        { 
+          id: 'webhook-test',
+          description: error instanceof Error ? error.message : 'Unknown error'
+        }
+      )
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -90,7 +131,7 @@ export const EnrollmentsPage = () => {
   return (
     <div className="space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className={`text-2xl sm:text-3xl font-bold ${language === 'ar' ? 'font-arabic' : ''}`}>
             {language === 'ar' ? 'إدارة التسجيلات' : 'Enrollments Management'}
@@ -99,10 +140,16 @@ export const EnrollmentsPage = () => {
             {language === 'ar' ? 'عرض وإدارة تسجيل الطلاب في الدورات' : 'View and manage student course enrollments'}
           </p>
         </div>
-        <Button onClick={() => window.location.href = '/enrollments/add'}>
-          <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-          {language === 'ar' ? 'تسجيل جديد' : 'New Enrollment'}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleTestWebhook}>
+            <Webhook className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {language === 'ar' ? 'اختبار n8n' : 'Test n8n'}
+          </Button>
+          <Button onClick={() => window.location.href = '/enrollments/add'}>
+            <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {language === 'ar' ? 'تسجيل جديد' : 'New Enrollment'}
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}

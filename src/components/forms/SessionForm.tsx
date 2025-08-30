@@ -65,12 +65,12 @@ export default function SessionForm({
   const { fields: objectiveFields, append: appendObjective, remove: removeObjective } = useFieldArray({
     control: form.control,
     name: 'objectives'
-  })
+  }) as any
 
   const { fields: materialFields, append: appendMaterial, remove: removeMaterial } = useFieldArray({
     control: form.control,
     name: 'materials_needed'
-  })
+  }) as any
 
   const handleSubmit = (data: SessionFormData) => {
     const formData: CreateSessionData = {

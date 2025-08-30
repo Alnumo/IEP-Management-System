@@ -36,13 +36,57 @@
       "Bash(rg:*)",
       "Bash(npm test:*)",
       "Bash(npm uninstall:*)",
-      "Bash(kill $!)"
+      "Bash(kill $!)",
+      "Read(/E:\\cygdrive\\e\\app/**)",
+      "Read(/E:\\e\\app\\app1\\src/**)",
+      "Read(/E:\\e\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Read(/E:\\E\\app/**)",
+      "Bash(env)",
+      "mcp__n8n-mcp__get_database_statistics",
+      "Bash(mcp list:*)",
+      "Bash(archon:get_available_sources)",
+      "Bash(archon get_available_sources:*)",
+      "Bash(archon:manage_project action=\"list\")",
+      "Bash(archon manage_project:*)",
+      "mcp__archon__health_check",
+      "mcp__archon__session_info",
+      "mcp__archon__get_available_sources",
+      "mcp__archon__list_projects",
+      "mcp__archon__create_project",
+      "mcp__archon__perform_rag_query",
+      "mcp__archon__search_code_examples",
+      "mcp__archon__create_task",
+      "mcp__archon__get_project",
+      "mcp__archon__list_tasks",
+      "mcp__archon__create_document",
+      "mcp__archon__get_document",
+      "mcp__archon__update_task",
+      "mcp__archon__update_document",
+      "Bash(md-tree explode:*)",
+      "mcp__archon__update_project",
+      "mcp__archon__get_task",
+      "mcp__archon__list_documents",
+      "Bash(npx eslint:*)",
+      "Bash(md contexts:*)"
     ],
     "deny": [],
     "ask": [],
     "additionalDirectories": [
       "E:\\app",
-      "E:\\E\\app"
+      "E:\\E\\app",
+      "E:\\e\\app"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "n8n-mcp"
+  ]
 }

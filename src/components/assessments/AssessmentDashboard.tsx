@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { formatDate } from '@/lib/utils'
 import { AssessmentToolRegistry } from './AssessmentToolRegistry'
 import { VBMAPPAssessmentForm } from './VBMAPPAssessmentForm'
 import { CELFAssessmentForm } from './CELFAssessmentForm'
@@ -210,9 +211,6 @@ export const AssessmentDashboard = ({
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')
-  }
 
   return (
     <div className={`space-y-6 ${language === 'ar' ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
@@ -474,7 +472,7 @@ export const AssessmentDashboard = ({
                               {language === 'ar' ? 'النتيجة:' : 'Score:'} {assessment.overallScore}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {formatDate(assessment.completionDate)}
+                              {formatDate(assessment.completionDate, language === 'ar' ? 'ar-SA' : 'en-US')}
                             </div>
                           </>
                         )}
@@ -488,7 +486,7 @@ export const AssessmentDashboard = ({
                         )}
                         {assessment.status === 'scheduled' && (
                           <div className="text-sm font-medium">
-                            {formatDate(assessment.scheduledDate)}
+                            {formatDate(assessment.scheduledDate, language === 'ar' ? 'ar-SA' : 'en-US')}
                           </div>
                         )}
                         {assessment.status === 'overdue' && (

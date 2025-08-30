@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
+import { useUnreadNotificationCount } from '@/hooks/useNotifications'
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -10,6 +12,10 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { language, isRTL, toggleLanguage } = useLanguage()
+  
+  // Mock user ID - in real app, get from auth context
+  const userId = 'current-user-id'
+  const userType = 'admin' as const
 
       return (
       <header 
@@ -53,16 +59,15 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           </Button>
 
           {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative text-white hover:bg-white/20 rounded-xl h-12 w-12"
-          >
-            <Bell className="h-5 w-5" />
-            <Badge className={`absolute -top-1 h-5 w-5 rounded-full p-0 bg-red-500 text-white text-xs flex items-center justify-center ${isRTL ? '-left-1' : '-right-1'}`}>
-              3
-            </Badge>
-          </Button>
+          <NotificationCenter
+            userId={userId}
+            userType={userType}
+            showAsDropdown={true}
+            onNotificationClick={(notification) => {
+              // Handle notification click - navigate to relevant page
+              console.log('Notification clicked:', notification)
+            }}
+          />
 
           {/* Settings - hidden on mobile */}
           <Button

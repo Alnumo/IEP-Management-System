@@ -376,6 +376,19 @@ export interface ReportAttachment {
   attachment_date: string
 }
 
+// Report Options
+export interface ReportOptions {
+  format: 'pdf' | 'excel' | 'word' | 'html'
+  template_id?: string
+  template?: string
+  include_charts: boolean
+  include_raw_data: boolean
+  language: 'en' | 'ar'
+  delivery_method?: 'download' | 'email' | 'print'
+  recipients?: string[]
+  custom_fields?: Record<string, any>
+}
+
 // Form Data Types
 export type CreateProgressReport = Omit<ProgressReport, 'id' | 'generated_at' | 'generated_by'>
 export type CreateAnalyticsDashboard = Omit<AnalyticsDashboard, 'id' | 'created_at' | 'updated_at'>

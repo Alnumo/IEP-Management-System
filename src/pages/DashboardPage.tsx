@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, Star, Activity, DollarSign, Heart, Brain, Target, Users, Calendar, ClipboardList, Stethoscope, BarChart3 } from 'lucide-react'
+import { 
+  TrendingUp, Star, Activity, DollarSign, Heart, Brain, Target, Users, Calendar, 
+  ClipboardList, Stethoscope, BarChart3, MessageCircle, Phone, AlertTriangle, 
+  CheckCircle, Volume2, Wifi, WifiOff 
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
 import { usePlans } from '@/hooks/usePlans'
 import { useStudents } from '@/hooks/useStudents'
 import { useEnrollmentStats } from '@/hooks/useEnrollments'
@@ -13,6 +18,10 @@ import { useSessions } from '@/hooks/useSessions'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { formatCurrency } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { QuickMessageWidget } from '@/components/communication/QuickMessageWidget'
+import { useConversations } from '@/hooks/useRealTimeMessaging'
+import { usePriorityAlerts } from '@/hooks/usePriorityAlerts'
+import { useVoiceCallManager } from '@/hooks/useVoiceCall'
 
 export const DashboardPage = () => {
   const navigate = useNavigate()
@@ -40,6 +49,11 @@ export const DashboardPage = () => {
   const { data: allCourses = [] } = useCourses()
   const { data: allTherapists = [] } = useTherapists()
   const { data: allSessions = [] } = useSessions()
+  
+  // Communication data
+  const { data: conversations = [], isLoading: conversationsLoading } = useConversations(user?.id || '')
+  const { data: priorityAlerts = [] } = usePriorityAlerts()
+  const { activeCall, isConnected: voiceConnected } = useVoiceCallManager()
 
   // Calculate comprehensive ERP statistics
   const stats = {
@@ -83,6 +97,13 @@ export const DashboardPage = () => {
       ? allPlans.reduce((sum, plan) => sum + plan.final_price, 0) / allPlans.length 
       : 0,
     paymentCompletionRate: enrollmentStats?.paymentCompletionRate || 0,
+    
+    // Communication
+    totalConversations: conversations.length,
+    unreadMessages: conversations.filter(c => c.unread_count > 0).length,
+    priorityAlerts: priorityAlerts.length,
+    activeCalls: activeCall ? 1 : 0,
+    onlineTherapists: allTherapists.filter(t => t.status === 'active').length,
   }
 
   // Show login form if not authenticated
@@ -164,8 +185,9 @@ export const DashboardPage = () => {
 
       {/* Comprehensive ERP Dashboard */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
           <TabsTrigger value="overview">{language === 'ar' ? 'نظرة عامة' : 'Overview'}</TabsTrigger>
+          <TabsTrigger value="communication">{language === 'ar' ? 'التواصل' : 'Communication'}</TabsTrigger>
           <TabsTrigger value="students">{language === 'ar' ? 'الطلاب' : 'Students'}</TabsTrigger>
           <TabsTrigger value="medical">{language === 'ar' ? 'طبي' : 'Medical'}</TabsTrigger>
           <TabsTrigger value="therapy">{language === 'ar' ? 'علاجي' : 'Therapy'}</TabsTrigger>
@@ -275,6 +297,249 @@ export const DashboardPage = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="communication" className="space-y-6">
+          <div className="stats-grid">
+            {/* Communication Overview Cards */}
+            <Card className="stats-card stats-card-responsive">
+              <CardContent className="p-6">
+                <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                    <MessageCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div className={`flex items-center text-primary text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Activity className="w-4 h-4 mr-1" />
+                    {language === 'ar' ? 'نشط' : 'Live'}
+                  </div>
+                </div>
+                <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+                  <h3 className={`text-2xl font-bold text-foreground mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {stats.totalConversations}
+                  </h3>
+                  <p className={`text-muted-foreground font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'المحادثات النشطة' : 'Active Conversations'}
+                  </p>
+                  <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? `غير مقروءة: ${stats.unreadMessages}` : `Unread: ${stats.unreadMessages}`}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="stats-card stats-card-responsive">
+              <CardContent className="p-6">
+                <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-white" />
+                  </div>
+                  {stats.priorityAlerts > 0 && (
+                    <Badge variant="destructive" className="animate-pulse">
+                      {language === 'ar' ? 'عاجل!' : 'Urgent!'}
+                    </Badge>
+                  )}
+                </div>
+                <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+                  <h3 className={`text-2xl font-bold text-foreground mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {stats.priorityAlerts}
+                  </h3>
+                  <p className={`text-muted-foreground font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'التنبيهات العاجلة' : 'Priority Alerts'}
+                  </p>
+                  <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'تحتاج متابعة فورية' : 'Need immediate attention'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="stats-card stats-card-responsive">
+              <CardContent className="p-6">
+                <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl flex items-center justify-center">
+                    <Phone className="w-6 h-6 text-white" />
+                  </div>
+                  <div className={`flex items-center text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    {voiceConnected ? (
+                      <>
+                        <Wifi className="w-4 h-4 mr-1 text-green-500" />
+                        <span className="text-green-600">{language === 'ar' ? 'متصل' : 'Connected'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="w-4 h-4 mr-1 text-gray-400" />
+                        <span className="text-gray-500">{language === 'ar' ? 'غير متصل' : 'Offline'}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+                  <h3 className={`text-2xl font-bold text-foreground mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {stats.activeCalls}
+                  </h3>
+                  <p className={`text-muted-foreground font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'المكالمات النشطة' : 'Active Calls'}
+                  </p>
+                  <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'خدمة الصوت' : 'Voice Service'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="stats-card stats-card-responsive">
+              <CardContent className="p-6">
+                <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div className={`flex items-center text-primary text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Activity className="w-4 h-4 mr-1 text-green-500" />
+                    {language === 'ar' ? 'نشط' : 'Online'}
+                  </div>
+                </div>
+                <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+                  <h3 className={`text-2xl font-bold text-foreground mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {stats.onlineTherapists}
+                  </h3>
+                  <p className={`text-muted-foreground font-medium mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'الأخصائيين المتاحين' : 'Available Therapists'}
+                  </p>
+                  <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {language === 'ar' ? 'جاهز للتواصل' : 'Ready to communicate'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Communication Widgets */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Quick Message Widget */}
+            <Card>
+              <CardHeader>
+                <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+                  <MessageCircle className="w-5 h-5" />
+                  {language === 'ar' ? 'إرسال رسالة سريعة' : 'Quick Message'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <QuickMessageWidget 
+                  language={language as 'ar' | 'en'}
+                  className="h-64"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Priority Alerts */}
+            <Card>
+              <CardHeader>
+                <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+                  <AlertTriangle className="w-5 h-5" />
+                  {language === 'ar' ? 'التنبيهات العاجلة' : 'Priority Alerts'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 max-h-64 overflow-y-auto">
+                {priorityAlerts.length > 0 ? (
+                  priorityAlerts.slice(0, 5).map((alert, index) => (
+                    <div key={index} className={`p-3 border rounded-lg bg-red-50 border-red-200 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <Badge variant="destructive" className="text-xs">
+                          {language === 'ar' ? 'عاجل' : 'URGENT'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(alert.created_at).toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US')}
+                        </span>
+                      </div>
+                      <p className={`text-sm font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {alert.alert_type === 'emergency' 
+                          ? (language === 'ar' ? 'حالة طارئة' : 'Emergency Situation')
+                          : (language === 'ar' ? 'تنبيه مهم' : 'Important Alert')}
+                      </p>
+                      <p className={`text-xs text-muted-foreground mt-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                        {language === 'ar' ? 'من:' : 'From:'} {alert.sender_name || 'غير محدد'}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className={`text-center py-8 ${isRTL ? 'text-right' : 'text-left'}`}>
+                    <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
+                    <p className={`text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'لا توجد تنبيهات عاجلة' : 'No priority alerts'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Messages Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className={`flex items-center justify-between ${language === 'ar' ? 'font-arabic' : ''}`}>
+                <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <MessageCircle className="w-5 h-5" />
+                  {language === 'ar' ? 'الرسائل الأخيرة' : 'Recent Messages'}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/messages')}
+                  className={`gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  {language === 'ar' ? 'عرض الكل' : 'View All'}
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {conversations.slice(0, 4).map((conversation) => (
+                  <div 
+                    key={conversation.id} 
+                    className={`flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+                    onClick={() => navigate(`/messages/${conversation.id}`)}
+                  >
+                    <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className={isRTL ? 'text-right' : 'text-left'}>
+                        <p className={`font-medium ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? conversation.title_ar : conversation.title_en}
+                        </p>
+                        <p className={`text-sm text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                          {language === 'ar' ? 'آخر رسالة' : 'Last message'}: {new Date(conversation.last_message_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    {conversation.unread_count > 0 && (
+                      <Badge variant="destructive" className="ml-2">
+                        {conversation.unread_count}
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+                
+                {conversations.length === 0 && (
+                  <div className={`text-center py-8 ${isRTL ? 'text-right' : 'text-left'}`}>
+                    <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                    <p className={`text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
+                      {language === 'ar' ? 'لا توجد محادثات حتى الآن' : 'No conversations yet'}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/messages')}
+                      className="mt-2"
+                    >
+                      {language === 'ar' ? 'بدء محادثة جديدة' : 'Start New Conversation'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="students" className="space-y-6">
@@ -525,7 +790,7 @@ export const DashboardPage = () => {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <div
               className="action-card bg-gradient-to-br from-blue-500 to-cyan-400 cursor-pointer hover:scale-105 transition-all duration-300"
               onClick={() => navigate('/students')}
@@ -601,6 +866,32 @@ export const DashboardPage = () => {
               </h4>
               <p className={`text-sm opacity-90 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'إدارة الأخصائيين' : 'Manage Therapists'}
+              </p>
+            </div>
+
+            <div
+              className="action-card bg-gradient-to-br from-blue-600 to-indigo-500 cursor-pointer hover:scale-105 transition-all duration-300"
+              onClick={() => navigate('/messages')}
+            >
+              <MessageCircle className="w-8 h-8 mb-3 mx-auto" />
+              <h4 className={`font-semibold mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'الرسائل' : 'Messages'}
+              </h4>
+              <p className={`text-sm opacity-90 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'التواصل المباشر' : 'Direct Communication'}
+              </p>
+            </div>
+
+            <div
+              className="action-card bg-gradient-to-br from-green-600 to-emerald-500 cursor-pointer hover:scale-105 transition-all duration-300"
+              onClick={() => navigate('/voice-calls')}
+            >
+              <Phone className="w-8 h-8 mb-3 mx-auto" />
+              <h4 className={`font-semibold mb-1 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'المكالمات الصوتية' : 'Voice Calls'}
+              </h4>
+              <p className={`text-sm opacity-90 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {language === 'ar' ? 'اتصال مباشر' : 'Direct Calling'}
               </p>
             </div>
           </div>

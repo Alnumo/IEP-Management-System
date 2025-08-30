@@ -27,8 +27,16 @@ const medicalRecordSchema = z.object({
   allergies: z.array(z.string()).optional(),
   emergency_protocol: z.string().optional(),
   blood_type: z.enum(bloodTypes).optional(),
-  weight_kg: z.number().min(0).optional(),
-  height_cm: z.number().min(0).optional(),
+  weight_kg: z.union([z.number().min(0), z.string()]).optional().transform((val) => {
+    if (typeof val === 'string' && val === '') return undefined
+    if (typeof val === 'string') return parseFloat(val) || undefined
+    return val
+  }),
+  height_cm: z.union([z.number().min(0), z.string()]).optional().transform((val) => {
+    if (typeof val === 'string' && val === '') return undefined
+    if (typeof val === 'string') return parseFloat(val) || undefined
+    return val
+  }),
   primary_physician_ar: z.string().optional(),
   primary_physician_en: z.string().optional(),
   primary_physician_phone: z.string().optional(),
@@ -324,6 +332,7 @@ export const MedicalRecordForm = ({
                           type="number"
                           placeholder="0"
                           {...field}
+                          value={field.value || ''}
                           onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                         />
                       </FormControl>
@@ -345,6 +354,7 @@ export const MedicalRecordForm = ({
                           type="number"
                           placeholder="0"
                           {...field}
+                          value={field.value || ''}
                           onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                         />
                       </FormControl>

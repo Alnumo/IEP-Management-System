@@ -1,5 +1,5 @@
 // Add Medical Record Page
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -10,6 +10,10 @@ import { useStudents } from '@/hooks/useStudents'
 export const AddMedicalRecordPage = () => {
   const { language, isRTL } = useLanguage()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  
+  // Get student_id from URL query parameters
+  const preselectedStudentId = searchParams.get('student_id')
   
   // Hooks
   const createMedicalRecord = useCreateMedicalRecord()
@@ -23,14 +27,15 @@ export const AddMedicalRecordPage = () => {
       const medicalRecordNumber = data.medical_record_number || 
         `MR${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`
       
-      const recordData = {
-        ...data,
-        medical_record_number: medicalRecordNumber,
-        is_encrypted: true,
-        data_classification: data.data_classification || 'internal'
+      // Minimal workaround: Only send absolutely essential fields
+      const minimalRecordData = {
+        student_id: data.student_id,
+        medical_record_number: medicalRecordNumber
       }
 
-      const result = await createMedicalRecord.mutateAsync(recordData)
+      console.log('📋 Sending minimal medical record data:', minimalRecordData)
+
+      const result = await createMedicalRecord.mutateAsync(minimalRecordData)
       console.log('✅ Medical record created successfully:', result)
       navigate('/medical-records')
     } catch (error) {
@@ -84,6 +89,7 @@ export const AddMedicalRecordPage = () => {
       ) : (
         /* Medical Record Form */
         <MedicalRecordForm
+          initialData={preselectedStudentId ? { student_id: preselectedStudentId } : undefined}
           students={studentsForForm}
           onSubmit={handleSubmit}
           onCancel={handleCancel}

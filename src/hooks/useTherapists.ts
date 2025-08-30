@@ -19,6 +19,17 @@ export const useTherapists = (filters?: TherapistFilters) => {
     queryFn: async (): Promise<Therapist[]> => {
       console.log('🔍 Fetching therapists with filters:', filters)
       
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) {
+        console.error('❌ Authentication error:', authError)
+        throw new Error('Authentication failed')
+      }
+      if (!user) {
+        console.error('❌ No user found - authentication required')
+        throw new Error('User not authenticated')
+      }
+      
       let query = supabase
         .from('therapists')
         .select('*')

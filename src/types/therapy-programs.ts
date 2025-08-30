@@ -10,7 +10,7 @@ export interface TherapyProgram {
   name_en: string
   
   // Program Classification
-  category: 'intensive' | 'therapeutic' | 'educational' | 'behavioral' | 'developmental' | 'sensory' | 'communication' | 'motor'
+  category: 'aba' | 'speech' | 'occupational' | 'physical' | 'behavioral' | 'developmental' | 'sensory' | 'communication' | 'motor' | 'intensive'
   intensity_level: 'low' | 'moderate' | 'high' | 'intensive'
   
   // Program Configuration
@@ -415,22 +415,49 @@ export interface ProgramEnrollment {
   created_by?: string
 }
 
+// Session Type for Program Content
+export interface SessionType {
+  id?: string
+  session_type: string
+  duration_minutes: number
+  sessions_per_week: number
+  duration_weeks: number
+}
+
 // Create/Update types
 export interface CreateTherapyProgramData {
+  // Basic Information
   program_code: string
   name_ar: string
   name_en: string
-  category: 'intensive' | 'therapeutic' | 'educational' | 'behavioral' | 'developmental' | 'sensory' | 'communication' | 'motor'
-  intensity_level: 'low' | 'moderate' | 'high' | 'intensive'
-  default_sessions_per_week?: number
-  default_session_duration_minutes?: number
-  minimum_age_months?: number
-  maximum_age_months?: number
+  category: 'aba' | 'speech' | 'occupational' | 'physical' | 'behavioral' | 'developmental' | 'sensory' | 'communication' | 'motor' | 'intensive'
+  
+  // Program Content - Session Types
+  session_types: SessionType[]
+  
+  // Program Configuration
+  duration_weeks: number
+  sessions_per_week: number
+  allowed_freeze_days: number
+  
+  // Description
   description_ar?: string
   description_en?: string
+  
+  // Objectives and Target Conditions
   objectives_ar?: string[]
   objectives_en?: string[]
   target_conditions?: string[]
+  
+  // Pricing
+  total_program_price: number
+  discount_percentage: number
+  includes_medical_followup: boolean
+  
+  // Additional fields
+  intensity_level: 'low' | 'moderate' | 'high' | 'intensive'
+  minimum_age_months?: number
+  maximum_age_months?: number
   requires_medical_clearance?: boolean
 }
 
@@ -462,7 +489,7 @@ export interface UpdateProgramEnrollmentData extends Partial<CreateProgramEnroll
 
 // Filter and search types
 export interface TherapyProgramFilters {
-  category?: 'intensive' | 'therapeutic' | 'educational' | 'behavioral' | 'developmental' | 'sensory' | 'communication' | 'motor'
+  category?: 'aba' | 'speech' | 'occupational' | 'physical' | 'behavioral' | 'developmental' | 'sensory' | 'communication' | 'motor' | 'intensive'
   intensity_level?: 'low' | 'moderate' | 'high' | 'intensive'
   is_active?: boolean
   is_available_for_new_patients?: boolean

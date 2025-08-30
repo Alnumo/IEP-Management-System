@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Filter, Users, Eye, Edit } from 'lucide-react'
+import { Plus, Search, Filter, Users, Eye, Edit, Webhook } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Badge } from '@/components/ui/badge'
 import { useStudents } from '@/hooks/useStudents'
+import { testStudentCreationWebhook, getWebhookStatus } from '@/services/n8n-webhook-config'
+import { toast } from 'sonner'
 import type { Student } from '@/types/student'
+import ErrorBoundary from '@/components/error/ErrorBoundary'
+import QueryErrorFallback from '@/components/error/QueryErrorFallback'
+import { SmartLoading } from '@/components/ui/loading-states'
 
 export const StudentsPage = () => {
   const { language, isRTL } = useLanguage()
@@ -15,7 +20,7 @@ export const StudentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   
   // Fetch students data
-  const { data: students = [], isLoading, error } = useStudents()
+  const { data: students = [], isLoading, error, refetch } = useStudents()
   
   // Filter students based on search term
   const filteredStudents = students.filter((student: Student) => {
@@ -76,22 +81,65 @@ export const StudentsPage = () => {
       ? `${student.first_name_ar} ${student.last_name_ar}`
       : `${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar}`
   }
+
+  const handleTestStudentWebhook = async () => {
+    try {
+      toast.loading(language === 'ar' ? 'جاري اختبار webhook الطلاب...' : 'Testing student webhook...', { id: 'student-webhook-test' })
+      
+      // Check webhook status first
+      const status = getWebhookStatus()
+      console.log('🔍 Student webhook status:', status.studentCreation)
+      
+      // Test the webhook
+      const result = await testStudentCreationWebhook()
+      
+      toast.success(
+        language === 'ar' 
+          ? 'تم إرسال webhook الطلاب بنجاح إلى n8n!' 
+          : 'Student webhook successfully sent to n8n!', 
+        { 
+          id: 'student-webhook-test',
+          description: language === 'ar' 
+            ? 'تحقق من n8n لرؤية بيانات الطالب المستلمة' 
+            : 'Check n8n to see the received student data'
+        }
+      )
+      
+      console.log('✅ Student webhook test result:', result)
+      
+    } catch (error) {
+      console.error('❌ Student webhook test failed:', error)
+      toast.error(
+        language === 'ar' 
+          ? 'فشل في اختبار webhook الطلاب' 
+          : 'Student webhook test failed', 
+        { 
+          id: 'student-webhook-test',
+          description: error instanceof Error ? error.message : 'Unknown error'
+        }
+      )
+    }
+  }
   
+  // Handle loading state
+  if (isLoading) {
+    return <SmartLoading context="students" className="py-8" />
+  }
+
+  // Handle error state
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-red-600 mb-2">{language === 'ar' ? 'خطأ في تحميل الطلاب' : 'Error loading students'}</p>
-          <Button onClick={() => window.location.reload()}>
-            {language === 'ar' ? 'إعادة المحاولة' : 'Try Again'}
-          </Button>
-        </div>
-      </div>
+      <QueryErrorFallback
+        error={error as Error}
+        refetch={refetch}
+        isNetworkError={!navigator.onLine}
+      />
     )
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
+    <ErrorBoundary level="component">
+      <div className="space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -102,10 +150,16 @@ export const StudentsPage = () => {
             {language === 'ar' ? 'إدارة الطلاب المسجلين' : 'Manage registered students'}
           </p>
         </div>
-        <Button onClick={() => navigate('/students/add')}>
-          <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-          {language === 'ar' ? 'إضافة طالب' : 'Add Student'}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleTestStudentWebhook}>
+            <Webhook className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {language === 'ar' ? 'اختبار n8n' : 'Test n8n'}
+          </Button>
+          <Button onClick={() => navigate('/students/add')}>
+            <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {language === 'ar' ? 'إضافة طالب' : 'Add Student'}
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -284,6 +338,7 @@ export const StudentsPage = () => {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ErrorBoundary>
   )
 }

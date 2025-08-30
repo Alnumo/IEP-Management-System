@@ -11,13 +11,12 @@ import {
   Legend
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { TrendingUp, TrendingDown, Minus, Target, Calendar, BarChart3 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { TherapyGoal } from '@/types/therapy-data'
-import { format, parseISO, subDays, subWeeks, subMonths } from 'date-fns'
+import { format, parseISO, subDays } from 'date-fns'
 
 interface GoalProgressChartProps {
   goal: TherapyGoal
@@ -26,7 +25,6 @@ interface GoalProgressChartProps {
 export default function GoalProgressChart({ goal }: GoalProgressChartProps) {
   const { language } = useLanguage()
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d')
-  const [showTrend, setShowTrend] = useState(true)
 
   // Filter progress data based on time range
   const getFilteredData = () => {
@@ -61,7 +59,6 @@ export default function GoalProgressChart({ goal }: GoalProgressChartProps) {
   const filteredData = getFilteredData()
   const targetValue = goal.target_criteria.target_value
   const currentValue = filteredData.length > 0 ? filteredData[filteredData.length - 1].measured_value : 0
-  const previousValue = filteredData.length > 1 ? filteredData[filteredData.length - 2].measured_value : 0
   const progressPercentage = Math.min(100, Math.round((currentValue / targetValue) * 100))
 
   // Calculate trend

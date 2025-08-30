@@ -12,9 +12,23 @@ export function formatCurrency(amount: number, currency: string = 'SAR'): string
   return `${amount.toFixed(2)} ${currency}`
 }
 
-export function formatDate(date: string | Date, locale: string = 'ar-SA'): string {
+export function formatDate(date: string | Date | undefined, locale: string = 'ar-SA'): string {
+  if (!date) return ''
   const dateObj = typeof date === 'string' ? new Date(date) : date
   return dateObj.toLocaleDateString(locale)
+}
+
+// Safe string utilities
+export function safeString(value: string | undefined | null, fallback: string = ''): string {
+  return value ?? fallback
+}
+
+export function safeNumber(value: number | undefined | null, fallback: number = 0): number {
+  return value ?? fallback
+}
+
+export function safeArray<T>(value: T[] | undefined | null, fallback: T[] = []): T[] {
+  return value ?? fallback
 }
 
 export function calculatePlanTotal(
