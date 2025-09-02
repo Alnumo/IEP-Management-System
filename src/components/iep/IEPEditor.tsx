@@ -79,13 +79,34 @@ interface CollaborativeChange {
 
 const quickEditSchema = z.object({
   present_levels_academic_ar: z.string(),
+  present_levels_academic_en: z.string().optional(),
   present_levels_functional_ar: z.string(),
+  present_levels_functional_en: z.string().optional(),
   lre_justification_ar: z.string(),
+  lre_justification_en: z.string().optional(),
   mainstreaming_percentage: z.number().min(0).max(100),
   special_education_setting: z.string(),
   academic_year: z.string(),
   effective_date: z.string(),
-  annual_review_date: z.string()
+  annual_review_date: z.string(),
+  triennial_evaluation_due: z.string().optional(),
+  accommodations_ar: z.array(z.string()).optional(),
+  accommodations_en: z.array(z.string()).optional(),
+  modifications_ar: z.array(z.string()).optional(),
+  modifications_en: z.array(z.string()).optional(),
+  state_assessment_accommodations_ar: z.array(z.string()).optional(),
+  state_assessment_accommodations_en: z.array(z.string()).optional(),
+  alternate_assessment_justification_ar: z.string().optional(),
+  alternate_assessment_justification_en: z.string().optional(),
+  transition_services_needed: z.boolean().optional(),
+  behavior_plan_needed: z.boolean().optional(),
+  esy_services_needed: z.boolean().optional(),
+  post_secondary_goals_ar: z.string().optional(),
+  post_secondary_goals_en: z.string().optional(),
+  behavior_goals_ar: z.string().optional(),
+  behavior_goals_en: z.string().optional(),
+  esy_justification_ar: z.string().optional(),
+  esy_justification_en: z.string().optional()
 })
 
 type QuickEditData = z.infer<typeof quickEditSchema>
@@ -136,13 +157,34 @@ export const IEPEditor = ({
     resolver: zodResolver(quickEditSchema),
     defaultValues: {
       present_levels_academic_ar: iep?.present_levels_academic_ar || '',
+      present_levels_academic_en: iep?.present_levels_academic_en || '',
       present_levels_functional_ar: iep?.present_levels_functional_ar || '',
+      present_levels_functional_en: iep?.present_levels_functional_en || '',
       lre_justification_ar: iep?.lre_justification_ar || '',
+      lre_justification_en: iep?.lre_justification_en || '',
       mainstreaming_percentage: iep?.mainstreaming_percentage || 0,
       special_education_setting: iep?.special_education_setting || '',
       academic_year: iep?.academic_year || '',
       effective_date: iep?.effective_date || '',
-      annual_review_date: iep?.annual_review_date || ''
+      annual_review_date: iep?.annual_review_date || '',
+      triennial_evaluation_due: iep?.triennial_evaluation_due || '',
+      accommodations_ar: iep?.accommodations_ar || [],
+      accommodations_en: iep?.accommodations_en || [],
+      modifications_ar: iep?.modifications_ar || [],
+      modifications_en: iep?.modifications_en || [],
+      state_assessment_accommodations_ar: iep?.state_assessment_accommodations_ar || [],
+      state_assessment_accommodations_en: iep?.state_assessment_accommodations_en || [],
+      alternate_assessment_justification_ar: iep?.alternate_assessment_justification_ar || '',
+      alternate_assessment_justification_en: iep?.alternate_assessment_justification_en || '',
+      transition_services_needed: iep?.transition_services_needed || false,
+      behavior_plan_needed: iep?.behavior_plan_needed || false,
+      esy_services_needed: iep?.esy_services_needed || false,
+      post_secondary_goals_ar: iep?.post_secondary_goals_ar || '',
+      post_secondary_goals_en: iep?.post_secondary_goals_en || '',
+      behavior_goals_ar: iep?.behavior_goals_ar || '',
+      behavior_goals_en: iep?.behavior_goals_en || '',
+      esy_justification_ar: iep?.esy_justification_ar || '',
+      esy_justification_en: iep?.esy_justification_en || ''
     }
   })
   

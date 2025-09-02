@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { Language, I18nContext } from '@/lib/i18n'
+import { Language, I18nContext, translate } from '@/lib/i18n'
 
 const LanguageContext = createContext<I18nContext | null>(null)
 
@@ -43,11 +43,14 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     setLanguage(lang)
   }
 
+  const t = (key: string, fallback?: string) => translate(key, fallback, language)
+
   const value: I18nContext = {
     language,
     isRTL: language === 'ar',
     toggleLanguage,
     setLanguage: handleSetLanguage,
+    t
   }
 
   return (

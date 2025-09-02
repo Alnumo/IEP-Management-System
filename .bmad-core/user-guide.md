@@ -1,4 +1,4 @@
-~2# BMad Method — User Guide
+# BMad Method — User Guide
 
 This guide will help you understand and effectively use the BMad Method for agile AI-driven planning and development.
 

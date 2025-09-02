@@ -8,6 +8,8 @@ A comprehensive **Individualized Education Program (IEP) Management System** for
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-blue)
 ![Supabase](https://img.shields.io/badge/Supabase-Backend-green)
 ![Version](https://img.shields.io/badge/Version-1.2.0-brightgreen)
+![Coverage](https://img.shields.io/codecov/c/github/your-username/arkan-therapy-plans)
+![Tests](https://github.com/your-username/arkan-therapy-plans/workflows/Test%20Coverage/badge.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Errors%20Fixed-green)
 ![Forms](https://img.shields.io/badge/Forms-Complete-blue)
 

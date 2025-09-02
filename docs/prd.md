@@ -1,309 +1,229 @@
-# Arkan Al-Numo IEP Management System - Communication Platform Evolution PRD
+Product Requirements Document (PRD)
+Arkan Alnumo - Complete IEP Management System
+Project: Arkan Alnumo Therapy Management & IEP System
 
-## Project Overview
+Version: 2.0
 
-**Project Name**: Arkan Al-Numo IEP Management System - Communication Platform Evolution  
-**Enhancement Type**: Major Feature Addition (Communication & Collaboration Platform)  
-**Current System Status**: 75-80% complete production-ready therapy management system  
-**Target Completion**: 98-100% comprehensive communication and collaboration platform  
-**Timeline**: 6-month phased implementation (February - July 2025)
+Status: In-Progress
 
-### Current System Achievement
+Author: John, Product Manager (BMad Full Stack Team)
 
-The Arkan Al-Numo system represents a remarkable success story where implementation has far exceeded original scope, creating a production-ready comprehensive therapy management platform. With 12+ core modules implemented and advanced bilingual Arabic/English RTL support, the system is positioned for evolution into a leading communication and collaboration platform.
+Date: 2025-08-30
 
-## Requirements Analysis
+1. Goals and Background Context
+1.1. Goals
+The primary goal is to evolve the Arkan Growth Center Therapy Plans Manager into a complete, end-to-end Individualized Education Program (IEP) and Enterprise Resource Planning (ERP) system. This involves three key strategic objectives:
 
-### Functional Requirements
+Audit and Complete Existing Functionality: Address all issues and missing features identified in the gap analysis to bring the current application to 100% completion.
 
-**FR1**: Real-time messaging system enables secure parent-therapist communication with photo, video, and file attachments up to 10MB  
-**FR2**: Advanced therapist assignment system enforces 1-therapist-per-session-type-per-student rule with automatic substitute notifications  
-**FR3**: Media-rich progress documentation allows immediate post-session sharing and bidirectional home practice documentation  
-**FR4**: Automated scheduling engine resolves calendar conflicts and updates therapist calendars automatically during freeze/reschedule scenarios  
-**FR5**: Priority alert system analyzes content and triggers priority notifications for concerning parent-shared content within 5 minutes  
-**FR6**: Voice communication system provides WebRTC-based real-time voice chat for urgent parent-therapist communications  
-**FR7**: Complete IEP workflow generates PDF documents with Arabic RTL support and compliance validation  
-**FR8**: WhatsApp Business integration delivers automated appointment reminders and basic communication features  
-**FR9**: Advanced analytics platform provides predictive insights and custom report generation  
-**FR10**: Enterprise multi-center management enables franchise operations with cross-center analytics
+Implement New Core Features: Introduce new, critical modules for student management, scheduling, and communication as detailed in the brainstorming session results.
 
-### Non-Functional Requirements
+Introduce Advanced Capabilities: Integrate AI-powered features and n8n automation workflows to enhance efficiency, provide data-driven insights, and improve user experience.
 
-**NFR1**: System maintains existing sub-2 second page load performance while adding real-time communication features  
-**NFR2**: Real-time messaging delivers messages within 2 seconds and handles 100+ concurrent conversations per therapy center  
-**NFR3**: Media upload completes within 30 seconds for 10MB files with automatic compression reducing size by 60%  
-**NFR4**: Voice communication maintains sub-500ms latency with Arabic UI support  
-**NFR5**: Automated scheduling resolves 95% of conflicts without manual intervention  
-**NFR6**: Priority alert system responds to concerning content within 5 minutes with 99.9% reliability  
-**NFR7**: System scales to support 500+ therapists and 5000+ students across multiple centers  
-**NFR8**: Arabic RTL functionality maintains cultural appropriateness across all new communication features  
-**NFR9**: Security maintains existing medical record privacy standards for all communication and media  
-**NFR10**: Mobile responsiveness ensures optimal experience on therapy center tablets and parent smartphones
+1.2. Background Context
+The Arkan Therapy Management System is approximately 75-80% complete, with a robust technical foundation based on React, TypeScript, and Supabase. A comprehensive gap analysis has revealed specific areas needing completion, particularly in testing, security, and core modules like IEP Management and the Parent Portal.
 
-### Compatibility Requirements
+Recent brainstorming sessions have identified a clear need for a more sophisticated student lifecycle and scheduling system to fully realize the vision of an all-encompassing ERP platform. This PRD will guide the development process to bridge these gaps and introduce new, value-added features.
 
-**CR1**: All existing production-ready modules (Student Management 95%, Therapist Management 90%, Therapy Plans 85%) continue functioning unchanged  
-**CR2**: Database schema changes maintain backward compatibility with existing 25+ migration files  
-**CR3**: UI enhancements follow established shadcn/ui component patterns and Arabic RTL design standards  
-**CR4**: API integrations preserve existing Supabase real-time, authentication, and storage functionality without breaking changes
+1.3. Change Log
+Date	Version	Description	Author
+2025-08-30	2.0	Initial PRD for completing and extending the system.	John, PM
 
-## Technical Architecture
+Export to Sheets
+2. Requirements
+2.1. Functional Requirements (FR)
+FR1: Complete Partially Implemented Modules
+All modules identified as "Partially Implemented" in the gap analysis report must be brought to full completion. This includes:
 
-### Current Technology Stack
+FR1.1: Core Therapy Management:
 
-**Languages**: TypeScript (100% coverage target), JavaScript  
-**Frameworks**: React 18 with Vite build system, TailwindCSS with RTL support  
-**Database**: Supabase PostgreSQL with Row Level Security, 25+ existing migrations  
-**Infrastructure**: Supabase backend with Netlify frontend hosting, CDN for media delivery  
-**External Dependencies**: shadcn/ui components, TanStack Query, React Hook Form + Zod, Lucide icons
+Implement real-time session progress tracking.
 
-### Integration Architecture
+Develop goal achievement metrics calculation.
 
-**Database Integration**: Extend existing schema with new tables for messages, media, assignments while maintaining referential integrity  
-**API Integration**: Leverage Supabase real-time subscriptions and extend existing custom hooks pattern  
-**Frontend Integration**: Build on established component patterns and integrate with existing routing and authentication  
-**Testing Integration**: Extend existing testing approach with communication-specific test scenarios
+Create automated therapy plan recommendations.
 
-### Code Organization Standards
+FR1.2: Assessment System:
 
-**File Structure**: Follow existing src/components/modules pattern with new communication/, assignment/, and scheduling/ subdirectories  
-**Naming Conventions**: Maintain established PascalCase components, camelCase hooks (use*, get*), kebab-case file names  
-**Coding Standards**: TypeScript-first development, comprehensive Zod validation, React Hook Form patterns  
-**Documentation Standards**: Inline JSDoc comments for complex logic, README updates for new module integration
+Implement assessment scoring algorithms for CELF and VB-MAPP templates.
 
-## Epic Structure
+Generate progress comparison reports from assessment data.
 
-### Epic 1: Communication Platform Enhancement
+Enable standardized assessment exports.
 
-**Epic Goal**: Transform Arkan Al-Numo from therapy management tool into comprehensive communication and collaboration platform implementing sophisticated workflows discovered through morphological analysis
+FR1.3: Medical Records & Documentation:
 
-**Integration Requirements**: Build on existing Supabase real-time infrastructure, extend current parent portal and therapist systems, maintain 100% backward compatibility with production-ready modules
+Implement HIPAA-compliant document encryption for all medical records.
 
-#### Phase 1: Core Communication Infrastructure (Month 1-2)
+Develop a medical report generation system.
 
-**Story 1.1: Parent-Therapist Real-time Messaging System**
+Create workflows for medication tracking.
 
-As a parent of a special needs student, I want to communicate directly with my child's assigned therapist through secure real-time messaging with photo and video sharing, so that I can stay informed about therapy progress and maintain continuous communication about my child's development.
+FR1.4: IEP Management:
 
-**Acceptance Criteria**:
-1. Real-time messaging with photo/video attachments up to 10MB
-2. Message threading with read/unread status and bilingual support  
-3. Permission restrictions - parents message only assigned primary therapist
-4. Integration with existing parent portal without disrupting current features
+Build complete IEP creation, editing, and collaborative development workflows.
 
-**Integration Verification**:
-- IV1: Existing parent portal dashboard and progress viewing continues unchanged
-- IV2: Current authentication and RBAC system maintains all existing permissions
-- IV3: Messaging performance does not impact existing parent portal load times
+Implement an IEP goal tracking system with progress monitoring.
 
-**Story 1.2: Advanced Therapist Assignment & Substitute Workflow**
+Ensure IDEA 2024 compliance validation within the IEP module.
 
-As a therapy center administrator, I want automated therapist assignment ensuring one therapist per session type per student with proper substitute notifications, so that we maintain therapeutic consistency while handling staff changes transparently.
+Develop functionality for Arabic PDF exports of IEP documents.
 
-**Acceptance Criteria**:
-1. One therapist per session type assignment validation
-2. Automatic substitute detection and parent notification
-3. Communication restrictions - parents communicate only with primary assigned therapist
-4. Assignment history audit trail and conflict prevention
+FR2: Implement Missing Modules
+All modules identified as "Missing or Minimal Implementation" in the gap analysis report must be fully developed. This includes:
 
-**Integration Verification**:
-- IV1: Existing therapist management and assignment functionality preserved
-- IV2: Current therapist dashboard and calendar system continues operating  
-- IV3: Assignment changes integrate without disrupting existing scheduled sessions
+FR2.1: Parent Portal:
 
-**Story 1.3: Media-Rich Progress Documentation Workflow**
+Provide real-time progress visualization for parents.
 
-As a therapist, I want to immediately share therapy progress media with parents while enabling bidirectional home practice documentation, so that we create comprehensive collaborative therapeutic records.
+Implement a secure parent-therapist messaging system.
 
-**Acceptance Criteria**:
-1. Post-session media upload with automatic categorization by therapeutic goals
-2. Bidirectional parent home practice video and photo sharing
-3. Media organization and gallery view with search capabilities
-4. Integration with existing session notes and progress tracking
+Create a home program assignment and tracking system.
 
-**Integration Verification**:
-- IV1: Existing session documentation and progress tracking features unchanged
-- IV2: Current media storage and security policies maintained
-- IV3: Media features enhance but do not replace existing progress documentation
+FR2.2: Communication System:
 
-#### Phase 2: Enhanced Collaboration (Month 3-4)
+Build a real-time messaging interface based on the existing database schema.
 
-**Story 2.1: Real-time Voice Communication System**
+Integrate push notifications for new messages and alerts.
 
-As a parent, I want to have voice conversations with my child's therapist for urgent matters, so that I can get immediate guidance and support when critical situations arise.
+Integrate with WhatsApp Business API for automated notifications.
 
-**Acceptance Criteria**:
-1. WebRTC voice chat for urgent parent-therapist communications
-2. Arabic RTL voice call interface with cultural UI patterns
-3. Call recording and playback functionality  
-4. Emergency call escalation system
+FR2.3: Financial Management:
 
-**Story 2.2: Priority Alert & Multi-Channel Notification System**
+Integrate a payment processing gateway.
 
-As a therapist, I want to receive priority alerts when parents share concerning content, so that I can respond quickly to important situations requiring immediate attention.
+Develop an automated invoice generation system.
 
-**Acceptance Criteria**:
-1. Content analysis for priority detection in parent communications
-2. Multi-channel delivery (SMS, email, push notifications)
-3. Notification preference management integrated with existing settings
-4. Escalation workflows for urgent alerts
+Create a financial reporting engine for revenue tracking.
 
-**Story 2.3: Automated Scheduling with Intelligent Conflict Resolution**
+FR2.4: Analytics & Reporting:
 
-As a therapy center administrator, I want automated scheduling that resolves conflicts and updates calendars during freeze/reschedule scenarios, so that we minimize manual coordination while maintaining schedule accuracy.
+Implement data aggregation services for real-time analytics.
 
-**Acceptance Criteria**:
-1. Scheduling algorithm with freeze/reschedule automation
-2. Calendar conflict detection and resolution suggestions
-3. Auto-calendar updates across therapist calendars
-4. Scheduling optimization analytics and reporting
+Build a custom report builder for clinical, operational, and financial data.
 
-#### Phase 3: Platform Integration (Month 5-6)
+FR2.5: Automation & n8n Integration:
 
-**Story 3.1: Complete IEP Workflow with PDF Generation**
+Configure n8n workflows for automated session reminders and report generation.
 
-As a special education coordinator, I want a complete IEP document creation and management workflow with Arabic PDF generation, so that we meet compliance requirements while streamlining administrative processes.
+FR3: New Student Management & Scheduling System
+Implement the comprehensive student lifecycle management system as defined in the brainstorming session.
 
-**Acceptance Criteria**:
-1. IEP document wizard UI with Arabic RTL support
-2. PDF generation with proper Arabic typography
-3. Compliance validation and reporting dashboard
-4. IEP collaboration workflow for multi-disciplinary teams
+FR3.1: Automated Scheduling: Create an automated scheduling system based on student programs, session categories, and therapist availability.
 
-**Story 3.2: WhatsApp Business Integration**
+FR3.2: Dual-Level QR Attendance: Implement a dual-level attendance system to track both center check-in/out and individual session attendance using QR codes.
 
-As a therapy center administrator, I want WhatsApp Business integration for automated communications, so that we can reach parents through their preferred communication channel while maintaining professional service standards.
+FR3.3: Subscription Management: Develop a subscription module with capabilities to freeze and automatically reschedule sessions.
 
-**Acceptance Criteria**:
-1. WhatsApp Business API integration with message templates
-2. Automated appointment reminders with Arabic support
-3. WhatsApp media sharing workflow
-4. Conversation management and threading
+FR4: CRM and Lead Management
+FR4.1: Free Evaluation Booking:
 
-**Story 3.3: Advanced Analytics & AI Insights Platform**
+Parents can book a free evaluation interview by selecting an available date and time.
 
-As a therapy center manager, I want advanced analytics and predictive insights about therapy outcomes, so that we can make data-driven decisions to improve student progress and operational efficiency.
+The system will capture required parent and child information.
 
-**Acceptance Criteria**:
-1. Predictive analytics for therapy outcome prediction
-2. Custom report builder with drag-and-drop interface
-3. Executive dashboard with KPI tracking
-4. AI-powered insights and recommendation engine
+The system will integrate with the Amelia plugin on the WordPress website to sync bookings.
 
-## User Experience Design
+FR4.2: Lead Management Workflow:
 
-### Design Integration Principles
+A CRM dashboard will display all new evaluation bookings.
 
-**Existing UI Integration**: New communication features integrate seamlessly with current shadcn/ui component library, established Arabic RTL patterns, and existing bilingual Arabic/English interface standards
+The responsible employee can view, follow up, and confirm reservations.
 
-**Modified Screens**:
-- Enhanced Parent Portal Dashboard with messaging sidebar
-- Expanded Therapist Dashboard with communication management
-- New Real-time Chat Interface with media sharing
-- Enhanced Student Profile with communication history
-- New Voice Communication Modal with Arabic RTL support
-- Enhanced Session Documentation with media upload workflow
-- New Assignment Management Dashboard for administrators
-- Enhanced Scheduling Interface with conflict resolution automation
+The system will track the lead status from "Booked" to "Confirmed," "Evaluation Complete," and "Registered."
 
-**UI Consistency Requirements**:
-- All new interfaces use established Tajawal and Cairo Arabic fonts
-- Communication components follow existing form validation and error handling patterns
-- New features respect existing role-based UI component rendering
-- Media interfaces maintain existing mobile-responsive design standards
-- Voice communication UI follows established modal and dialog patterns
+FR5: Enhanced Financial System
+FR5.1: Installment Payments: The financial module will support creating and managing installment payment plans for all programs.
 
-## Success Metrics
+FR5.2: Program-Based Invoicing: Invoices will be generated based on the specific program a student is enrolled in, reflecting the prices outlined in the "Arkan Programs" presentation.
 
-### Business Metrics
+FR6: Advanced Student Program Management
+FR6.1: Individualized Enrollment: The system will allow multiple students to be enrolled in the same program type (e.g., "برنامج النمو - السنوى"), each with their own individual start and end dates, session schedules, and assigned therapists.
 
-**Customer Engagement**:
-- 90% parent engagement with messaging system within 60 days
-- 95% automated conflict resolution success rate for scheduling
-- Average 3+ media attachments per therapy session shared
-- 80% reduction in administrative communication overhead
+FR6.2: Subscription Freeze System:
 
-**Operational Excellence**:
-- 99.9% system uptime maintained during feature rollout
-- Sub-2 second message delivery with media preview
-- 95%+ user satisfaction for communication experience
-- 100% preservation of existing user workflow satisfaction
+Each program will have a maximum number of "freeze days" allowed.
 
-### Technical Performance
+When a student's subscription is frozen, the system will deduct the number of frozen days from their allowed total.
 
-**System Performance**:
-- Existing system performance benchmarks preserved
-- Real-time features handle 100+ concurrent conversations per center
-- Mobile responsiveness maintained across all new features
-- Voice communication maintains sub-500ms latency
+The system will automatically reschedule all affected sessions and update the program's end date accordingly.
 
-**Integration Success**:
-- Zero regression in existing production-ready modules
-- All new features follow established architectural patterns
-- Database performance maintained with new communication tables
-- Security standards preserved for all communication data
+2.2. Non-Functional Requirements (NFR)
+NFR1: Testing Coverage: Achieve a minimum of 80% code coverage for all new and existing components, addressing the critical gap in the current testing infrastructure.
 
-## Risk Assessment
+NFR2: Security and Compliance:
 
-### Technical Risks
+All security gaps identified in the analysis must be addressed, including implementing HIPAA-compliant encryption and comprehensive audit trails.
 
-**High Priority**:
-- Real-time communication load could impact existing parent portal performance
-- Complex assignment rules might create workflow bottlenecks
-- Media storage scaling could affect costs and system performance
+The system must remain compliant with the Saudi Personal Data Protection Law (PDPL).
 
-**Mitigation Strategies**:
-- Progressive enhancement approach with feature flags for safe rollback
-- Performance monitoring with automatic scaling and optimization
-- Extensive testing with existing production data patterns
-- Gradual rollout per therapy center to identify issues early
+NFR3: Performance: The application must adhere to the performance targets specified in the UI/UX documentation, including sub-2-second initial load times and sub-500ms API responses.
 
-### Business Risks
+NFR4: Accessibility: The application must comply with WCAG 2.1 AA standards as outlined in the UI/UX specification.
 
-**Market Risks**:
-- Established competitors entering Arabic market with competing solutions
-- Economic conditions impacting therapy center technology spending
-- Regulatory changes affecting therapy center operations in target markets
+NFR5: Localization: All new features must fully support the existing bilingual (Arabic RTL/English LTR) architecture, including database fields, UI components, and error messages.
 
-**Mitigation Approaches**:
-- Build strong market presence and customer relationships
-- Demonstrate clear ROI and offer flexible pricing models
-- Monitor regulatory environments and build compliance flexibility
+3. Epic and Story Structure
+To manage this scope of work, the project will be broken down into the following high-level epics:
 
-## Implementation Timeline
+Epic 1: Foundational Audit and Completion
 
-### Month 1-2: Core Communication Infrastructure
-- Real-time messaging with media attachments
-- Advanced therapist assignment workflows
-- Media-rich progress documentation
+Goal: Address all critical technical debt, focusing on testing infrastructure, security compliance, and performance monitoring to create a stable foundation for future development.
 
-### Month 3-4: Enhanced Collaboration
-- Real-time voice communication system
-- Priority alert and notification system  
-- Automated scheduling with conflict resolution
+Key Stories:
 
-### Month 5-6: Platform Integration
-- Complete IEP workflow with PDF generation
-- WhatsApp Business integration
-- Advanced analytics and AI insights platform
+Implement comprehensive unit and integration tests to achieve 80% coverage.
 
-## Strategic Impact
+Conduct a full security audit and implement all required fixes (e.g., data encryption, 2FA).
 
-### Market Position
-Establishes Arkan Al-Numo as definitive Arabic-first therapy collaboration platform while creating sustainable competitive advantages through sophisticated communication workflows
+Integrate APM tools for real-time performance monitoring.
 
-### Competitive Advantages
-- First comprehensive Arabic-native communication platform for therapy centers
-- Advanced workflow automation exceeding competitor capabilities  
-- Deep therapy center process understanding with cultural sensitivity
-- Modern technical architecture with proven scalability
+Epic 2: Core Module Completion
 
-### Business Value
-- Transforms therapy management tool into comprehensive collaboration platform
-- Creates sustainable competitive moats through communication sophistication
-- Enables enterprise pricing model through advanced feature completeness
-- Positions for regional market leadership and international expansion
+Goal: Bring all partially implemented and missing modules (excluding new features) to 100% completion as defined in the gap analysis.
 
----
+Key Stories:
 
-*This PRD integrates comprehensive system analysis with morphological brainstorming insights to guide transformation from therapy management to communication platform leadership.*
+Complete the IEP Management system with full CRUD, collaboration, and export functionality.
+
+Build out the Parent Portal with messaging, progress tracking, and document access.
+
+Implement the Financial Management module with payment integration and invoicing.
+
+Complete the communication and reporting systems.
+
+Epic 3: Advanced Student Management & Scheduling
+
+Goal: Design and implement the new, automated student management and scheduling system.
+
+Key Stories:
+
+Develop the automated scheduling engine.
+
+Implement the dual-level QR attendance system.
+
+Build the subscription freeze and automated rescheduling functionality.
+
+Epic 4: CRM and Financial Enhancements
+process
+Goal: Integrate a CRM for lead management and enhance the financial system with installment plans.
+
+Key Stories:
+
+Develop the CRM dashboard and lead management workflow.
+
+Implement the installment payment system.
+
+Integrate with the Amelia WordPress plugin for booking synchronization.
+
+Epic 5: AI and Automation Integration
+
+Goal: Integrate intelligent and automated workflows to enhance system capabilities.
+
+Key Stories:
+
+Develop and integrate AI-powered therapy plan recommendations.
+
+Configure and deploy n8n automation for reminders, reports, and data synchronization.
+
+Implement predictive analytics features within the reporting dashboard.

@@ -1,15 +1,79 @@
 import { describe, it, expect } from 'vitest'
 import { 
+  cn,
   formatCurrency, 
   formatDate, 
   safeString, 
   safeNumber, 
   safeArray,
   formatPhoneNumber,
-  calculateAge 
+  calculateAge,
+  calculatePlanTotal,
+  generateStudentId
 } from '@/lib/utils'
 
 describe('Utils', () => {
+  describe('cn (className utility)', () => {
+    it('should merge class names correctly', () => {
+      const result = cn('class1', 'class2')
+      expect(result).toContain('class1')
+      expect(result).toContain('class2')
+    })
+
+    it('should handle conditional classes', () => {
+      const result = cn('base-class', false && 'conditional-class', 'always-class')
+      expect(result).toContain('base-class')
+      expect(result).toContain('always-class')
+      expect(result).not.toContain('conditional-class')
+    })
+
+    it('should handle tailwind merge conflicts', () => {
+      const result = cn('p-4', 'p-8') // Should merge to p-8
+      expect(result).toBe('p-8')
+    })
+  })
+
+  describe('calculatePlanTotal', () => {
+    it('should calculate total cost correctly', () => {
+      const total = calculatePlanTotal(4, 2, 100) // 4 weeks, 2 sessions/week, 100 per session
+      expect(total).toBe(800) // 4 * 2 * 100 = 800
+    })
+
+    it('should apply discount correctly', () => {
+      const total = calculatePlanTotal(4, 2, 100, 10) // 10% discount
+      expect(total).toBe(720) // 800 - (800 * 0.10) = 720
+    })
+
+    it('should handle zero values', () => {
+      const total = calculatePlanTotal(0, 2, 100)
+      expect(total).toBe(0)
+    })
+
+    it('should handle default discount of 0', () => {
+      const total = calculatePlanTotal(2, 1, 50)
+      expect(total).toBe(100) // 2 * 1 * 50 = 100, no discount
+    })
+  })
+
+  describe('generateStudentId', () => {
+    it('should generate a student ID with correct format', () => {
+      const studentId = generateStudentId()
+      const currentYear = new Date().getFullYear()
+      expect(studentId).toMatch(new RegExp(`^STU${currentYear}\\d{4}$`))
+    })
+
+    it('should generate unique student IDs', () => {
+      const id1 = generateStudentId()
+      const id2 = generateStudentId()
+      expect(id1).not.toBe(id2)
+    })
+
+    it('should always include current year', () => {
+      const studentId = generateStudentId()
+      const currentYear = new Date().getFullYear().toString()
+      expect(studentId).toContain(currentYear)
+    })
+  })
   describe('formatCurrency', () => {
     it('should format SAR currency by default', () => {
       expect(formatCurrency(100)).toBe('100.00 ر.س')

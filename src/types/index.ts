@@ -3,9 +3,13 @@ export * from './plans'
 export * from './categories'
 export * from './auth'
 export * from './student'
+export * from './therapist'
+export * from './therapist-assignment'
 export * from './medical'
 export * from './therapy-programs'
 export * from './assessment'
+export * from './media'
+export * from './financial-management'
 
 // Common utility types
 export interface ApiResponse<T> {
@@ -79,4 +83,21 @@ export const TABLE_NAMES = {
   DEVELOPMENTAL_MILESTONES: 'developmental_milestones',
   STUDENT_MILESTONE_PROGRESS: 'student_milestone_progress',
   REGRESSION_MONITORING: 'regression_monitoring',
+  
+  // Therapist Assignment System (Story 1.2)
+  THERAPISTS: 'therapists',
+  COURSES: 'courses',
+  COURSE_ASSIGNMENTS: 'course_assignments',
+  THERAPIST_SPECIALIZATION_ASSIGNMENTS: 'therapist_specialization_assignments',
+  ASSIGNMENT_HISTORY: 'assignment_history',
+  SUBSTITUTE_POOLS: 'substitute_pools',
+  
+  // Media Documentation System (Story 1.3)
+  SESSION_MEDIA: 'session_media',
+  MEDIA_GOAL_TAGS: 'media_goal_tags',
+  PRACTICE_REVIEWS: 'practice_reviews',
+  MEDIA_COLLECTIONS: 'media_collections',
+  MEDIA_COLLECTION_ITEMS: 'media_collection_items',
+  MEDIA_SHARING_PERMISSIONS: 'media_sharing_permissions',
+  MEDIA_ACCESS_LOG: 'media_access_log',
 } as const

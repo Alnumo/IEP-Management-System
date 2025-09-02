@@ -1,0 +1,370 @@
+{
+  "name": "Performance Alert Delivery System",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "alerts",
+        "options": {}
+      },
+      "id": "webhook-alerts",
+      "name": "Alert Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "performance-alerts"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.type}}",
+              "operation": "equal",
+              "value2": "email"
+            }
+          ]
+        }
+      },
+      "id": "if-email",
+      "name": "Is Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.type}}",
+              "operation": "equal", 
+              "value2": "whatsapp"
+            }
+          ]
+        }
+      },
+      "id": "if-whatsapp",
+      "name": "Is WhatsApp?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.type}}",
+              "operation": "equal",
+              "value2": "slack"
+            }
+          ]
+        }
+      },
+      "id": "if-slack",
+      "name": "Is Slack?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 700]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@therapyplans.local",
+        "toEmail": "={{$json.to}}",
+        "subject": "={{$json.subject}}",
+        "text": "={{$json.body}}",
+        "html": "<h2>{{$json.subject}}</h2><pre>{{$json.body}}</pre>",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "send-email",
+      "name": "Send Email Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [680, 200],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-alerts",
+          "name": "SMTP Alerts"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v18.0/{{$json.channel.config.phone_number_id}}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppBusinessApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "={{$json.to}}"
+            },
+            {
+              "name": "type",
+              "value": "text"
+            },
+            {
+              "name": "text",
+              "value": "={\"body\": \"{{$json.message}}\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 400],
+      "credentials": {
+        "whatsAppBusinessApi": {
+          "id": "whatsapp-business",
+          "name": "WhatsApp Business"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "alerts",
+          "mode": "name"
+        },
+        "text": "={{$json.message.text}}",
+        "blockUi": "={{$json.message.blocks}}",
+        "otherOptions": {}
+      },
+      "id": "send-slack",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [680, 600],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "slack-alerts",
+          "name": "Slack Alerts"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE alert_deliveries SET \n  delivery_status = 'sent',\n  sent_at = NOW(),\n  delivered_at = NOW(),\n  delivery_response = $1::jsonb,\n  updated_at = NOW()\nWHERE alert_id = $2::uuid \n  AND channel_id = $3::uuid \n  AND delivery_status IN ('pending', 'retrying')",
+        "additionalFields": {
+          "mode": "independently",
+          "queryParameters": "={{JSON.stringify([{\"status\": \"delivered\", \"timestamp\": new Date().toISOString()}, $json.alert.id, $json.channel.id])}}"
+        }
+      },
+      "id": "update-delivery-success",
+      "name": "Update Delivery Success",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-db",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE alert_deliveries SET \n  delivery_status = 'failed',\n  failed_at = NOW(),\n  last_error = $1::text,\n  error_details = $2::jsonb,\n  retry_count = retry_count + 1,\n  updated_at = NOW()\nWHERE alert_id = $3::uuid \n  AND channel_id = $4::uuid \n  AND delivery_status IN ('pending', 'retrying')",
+        "additionalFields": {
+          "mode": "independently",
+          "queryParameters": "={{JSON.stringify([$json.error?.message || 'Delivery failed', {\"error\": $json.error, \"timestamp\": new Date().toISOString()}, $json.alert.id, $json.channel.id])}}"
+        }
+      },
+      "id": "update-delivery-failure",
+      "name": "Update Delivery Failure", 
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [900, 500],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-db",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{JSON.stringify({\"success\": true, \"message\": \"Alert delivered successfully\", \"timestamp\": new Date().toISOString()})}}"
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 500,
+        "responseBody": "={{JSON.stringify({\"success\": false, \"error\": $json.error?.message || 'Delivery failed', \"timestamp\": new Date().toISOString()})}}"
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 500]
+    }
+  ],
+  "connections": {
+    "webhook-alerts": {
+      "main": [
+        [
+          {
+            "node": "if-email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "if-whatsapp", 
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "if-slack",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-email": {
+      "main": [
+        [
+          {
+            "node": "send-email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-whatsapp": {
+      "main": [
+        [
+          {
+            "node": "send-whatsapp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-slack": {
+      "main": [
+        [
+          {
+            "node": "send-slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send-email": {
+      "main": [
+        [
+          {
+            "node": "update-delivery-success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send-whatsapp": {
+      "main": [
+        [
+          {
+            "node": "update-delivery-success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send-slack": {
+      "main": [
+        [
+          {
+            "node": "update-delivery-success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update-delivery-success": {
+      "main": [
+        [
+          {
+            "node": "success-response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update-delivery-failure": {
+      "main": [
+        [
+          {
+            "node": "error-response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "timezone": "Asia/Riyadh",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowOwner",
+    "errorPolicy": "continueRegular"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "performance-alert-delivery",
+  "tags": [
+    {
+      "createdAt": "2025-09-02T10:00:00.000Z",
+      "updatedAt": "2025-09-02T10:00:00.000Z",
+      "id": "alerts",
+      "name": "alerts"
+    },
+    {
+      "createdAt": "2025-09-02T10:00:00.000Z", 
+      "updatedAt": "2025-09-02T10:00:00.000Z",
+      "id": "notifications",
+      "name": "notifications"
+    }
+  ]
+}

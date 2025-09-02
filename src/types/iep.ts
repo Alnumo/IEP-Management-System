@@ -696,6 +696,7 @@ export interface CreateIEPData {
   iep_type: IEPType
   effective_date: string
   annual_review_date: string
+  triennial_evaluation_due?: string
   present_levels_academic_ar: string
   present_levels_academic_en?: string
   present_levels_functional_ar: string
@@ -708,9 +709,19 @@ export interface CreateIEPData {
   accommodations_en?: string[]
   modifications_ar?: string[]
   modifications_en?: string[]
+  state_assessment_accommodations_ar?: string[]
+  state_assessment_accommodations_en?: string[]
+  alternate_assessment_justification_ar?: string
+  alternate_assessment_justification_en?: string
   transition_services_needed?: boolean
   behavior_plan_needed?: boolean
   esy_services_needed?: boolean
+  post_secondary_goals_ar?: string
+  post_secondary_goals_en?: string
+  behavior_goals_ar?: string
+  behavior_goals_en?: string
+  esy_justification_ar?: string
+  esy_justification_en?: string
 }
 
 export interface UpdateIEPData extends Partial<CreateIEPData> {

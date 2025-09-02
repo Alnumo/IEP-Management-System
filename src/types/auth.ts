@@ -8,7 +8,7 @@ export interface User {
   updated_at: string
 }
 
-export type UserRole = 'admin' | 'manager' | 'therapist_lead' | 'receptionist'
+export type UserRole = 'admin' | 'manager' | 'medical_consultant' | 'therapist_lead' | 'receptionist'
 
 export interface AuthState {
   user: User | null
