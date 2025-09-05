@@ -1,0 +1,233 @@
+{
+  "name": "CRM Integration Monitoring Dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "monitoring-schedule",
+      "name": "Monitor Every 15 Minutes",
+      "type": "n8n-nodes-base.schedule",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "apikey",
+              "value": "{{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "id,parent_name,child_name,status,source,created_at,external_id"
+            },
+            {
+              "name": "source",
+              "value": "eq.website"
+            },
+            {
+              "name": "created_at",
+              "value": "gte.{{ DateTime.now().minus({ minutes: 15 }).toISO() }}"
+            },
+            {
+              "name": "order",
+              "value": "created_at.desc"
+            }
+          ]
+        }
+      },
+      "id": "fetch-recent-leads",
+      "name": "Fetch Recent Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Analyze recent leads and generate metrics\nconst leads = items[0].json;\nconst now = new Date();\nconst fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);\n\n// Calculate metrics\nconst metrics = {\n  total_new_leads: leads.length,\n  amelia_leads: leads.filter(lead => lead.external_id?.startsWith('amelia_')).length,\n  manual_leads: leads.filter(lead => !lead.external_id?.startsWith('amelia_')).length,\n  status_breakdown: {\n    new_booking: leads.filter(lead => lead.status === 'new_booking').length,\n    confirmed: leads.filter(lead => lead.status === 'confirmed').length,\n    other: leads.filter(lead => !['new_booking', 'confirmed'].includes(lead.status)).length\n  },\n  timestamp: now.toISOString(),\n  period: '15_minutes'\n};\n\n// Check for anomalies\nconst anomalies = [];\n\n// No leads in 15 minutes might indicate integration issues\nif (metrics.total_new_leads === 0 && now.getHours() >= 9 && now.getHours() <= 17) {\n  anomalies.push({\n    type: 'no_leads',\n    severity: 'low',\n    message: 'No new leads received in the last 15 minutes during business hours'\n  });\n}\n\n// High volume of leads might indicate spam or bot activity\nif (metrics.total_new_leads > 10) {\n  anomalies.push({\n    type: 'high_volume',\n    severity: 'medium',\n    message: `Unusually high lead volume: ${metrics.total_new_leads} leads in 15 minutes`\n  });\n}\n\n// All leads stuck in new_booking status might indicate workflow issues\nif (metrics.total_new_leads > 0 && metrics.status_breakdown.new_booking === metrics.total_new_leads) {\n  anomalies.push({\n    type: 'status_stuck',\n    severity: 'medium',\n    message: 'All recent leads are stuck in new_booking status'\n  });\n}\n\n// No Amelia leads might indicate integration failure\nconst ameliaIntegrationDown = metrics.total_new_leads > 0 && metrics.amelia_leads === 0;\nif (ameliaIntegrationDown) {\n  anomalies.push({\n    type: 'integration_failure',\n    severity: 'high',\n    message: 'No Amelia leads received despite having new leads - integration may be down'\n  });\n}\n\nreturn {\n  json: {\n    metrics,\n    anomalies,\n    health_score: anomalies.length === 0 ? 100 : \n                  anomalies.reduce((score, anomaly) => {\n                    switch(anomaly.severity) {\n                      case 'low': return score - 5;\n                      case 'medium': return score - 15;\n                      case 'high': return score - 30;\n                      default: return score;\n                    }\n                  }, 100)\n  }\n};"
+      },
+      "id": "analyze-metrics",
+      "name": "Analyze Lead Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-anomalies",
+              "leftValue": "={{ $json.anomalies.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        }
+      },
+      "id": "check-for-anomalies",
+      "name": "Check for Anomalies",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "message": "🚨 CRM Integration Alert\\n\\n*Health Score:* {{ $json.health_score }}/100\\n\\n*Anomalies Detected:*\\n{{ $json.anomalies.map(a => `• ${a.message} (${a.severity})`).join('\\n') }}\\n\\n*Recent Metrics:*\\n• Total New Leads: {{ $json.metrics.total_new_leads }}\\n• Amelia Integration: {{ $json.metrics.amelia_leads }} leads\\n• Status Breakdown: {{ $json.metrics.status_breakdown.new_booking }} new, {{ $json.metrics.status_breakdown.confirmed }} confirmed\\n\\nPlease investigate the CRM integration.",
+        "additionalFields": {
+          "priority": "={{ $json.anomalies.some(a => a.severity === 'high') ? 1 : 2 }}"
+        }
+      },
+      "id": "alert-slack",
+      "name": "Send Alert to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/integration_metrics",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "{{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ $json }}"
+      },
+      "id": "store-metrics",
+      "name": "Store Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Monitor Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Fetch Recent Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recent Leads": {
+      "main": [
+        [
+          {
+            "node": "Analyze Lead Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Lead Metrics": {
+      "main": [
+        [
+          {
+            "node": "Check for Anomalies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Anomalies": {
+      "main": [
+        [
+          {
+            "node": "Send Alert to Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Store Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {},
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "id": "monitoring",
+      "name": "Monitoring"
+    },
+    {
+      "id": "crm-integration",
+      "name": "CRM Integration"
+    }
+  ]
+}

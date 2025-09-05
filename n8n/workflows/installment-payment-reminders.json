@@ -1,0 +1,411 @@
+{
+  "name": "Installment Payment Reminders - Story 4.2",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "everyMinute",
+        "minute": 0,
+        "hour": 9,
+        "dayOfMonth": 1,
+        "monthOfYear": 1
+      },
+      "id": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/overdue_installments_view",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "httpHeaderAuth": {
+          "name": "Authorization",
+          "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        }
+      },
+      "id": "2b3c4d5e-6f7g-8h9i-0j1k-l2m3n4o5p6q7",
+      "name": "Get Overdue Installments",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt",
+                "rightType": "number"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "3c4d5e6f-7g8h-9i0j-1k2l-m3n4o5p6q7r8",
+      "name": "Check If Overdue Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/update_overdue_installments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "httpHeaderAuth": {
+          "name": "Authorization",
+          "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        }
+      },
+      "id": "4d5e6f7g-8h9i-0j1k-2l3m-n4o5p6q7r8s9",
+      "name": "Update Overdue Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 180]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "",
+        "options": {}
+      },
+      "id": "5e6f7g8h-9i0j-1k2l-3m4n-o5p6q7r8s9t0",
+      "name": "Split Overdue Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [920, 420]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json.days_overdue }}",
+              "rightValue": "={{ $json.grace_period_days }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "6f7g8h9i-0j1k-2l3m-4n5o-p6q7r8s9t0u1",
+      "name": "Check Grace Period",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1140, 420]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.WHATSAPP_WEBHOOK_URL }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "httpHeaderAuth": {
+          "name": "Authorization",
+          "value": "Bearer {{ $env.WHATSAPP_API_TOKEN }}"
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "={{ $json.student_phone_number || '966500000000' }}"
+            },
+            {
+              "name": "type",
+              "value": "template"
+            },
+            {
+              "name": "template",
+              "value": {
+                "name": "overdue_installment_reminder",
+                "language": {
+                  "code": "ar"
+                },
+                "components": [
+                  {
+                    "type": "body",
+                    "parameters": [
+                      {
+                        "type": "text",
+                        "text": "={{ $json.student_name_ar }}"
+                      },
+                      {
+                        "type": "text", 
+                        "text": "={{ $json.installment_number }}"
+                      },
+                      {
+                        "type": "text",
+                        "text": "={{ $json.amount }} ريال"
+                      },
+                      {
+                        "type": "text",
+                        "text": "={{ $json.days_overdue }}"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "7g8h9i0j-1k2l-3m4n-5o6p-q7r8s9t0u1v2",
+      "name": "Send WhatsApp Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1360, 320]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.EMAIL_SERVICE_URL }}/send",
+        "authentication": "genericCredentialType", 
+        "genericAuthType": "httpHeaderAuth",
+        "httpHeaderAuth": {
+          "name": "Authorization",
+          "value": "Bearer {{ $env.EMAIL_API_TOKEN }}"
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.parent_email || 'parent@example.com' }}"
+            },
+            {
+              "name": "subject",
+              "value": "تذكير: قسط متأخر - Overdue Installment Reminder"
+            },
+            {
+              "name": "html",
+              "value": "=<div dir=\"rtl\" style=\"font-family: 'Tajawal', Arial, sans-serif;\">\n  <h2>تذكير بدفع قسط متأخر</h2>\n  <p>عزيزي ولي الأمر،</p>\n  <p>نود تذكيركم بأن القسط رقم <strong>{{ $json.installment_number }}</strong> للطالب <strong>{{ $json.student_name_ar }}</strong> متأخر منذ <strong>{{ $json.days_overdue }}</strong> أيام.</p>\n  <p>مبلغ القسط: <strong>{{ $json.amount }} ريال سعودي</strong></p>\n  <p>تاريخ الاستحقاق: <strong>{{ $json.due_date }}</strong></p>\n  <hr>\n  <div dir=\"ltr\">\n    <h2>Overdue Installment Reminder</h2>\n    <p>Dear Parent,</p>\n    <p>We would like to remind you that installment #<strong>{{ $json.installment_number }}</strong> for student <strong>{{ $json.student_name_en }}</strong> is overdue by <strong>{{ $json.days_overdue }}</strong> days.</p>\n    <p>Amount: <strong>{{ $json.amount }} SAR</strong></p>\n    <p>Due Date: <strong>{{ $json.due_date }}</strong></p>\n  </div>\n  <p style=\"margin-top: 20px; font-size: 12px; color: #666;\">تم إرسال هذا التذكير تلقائياً من نظام إدارة مركز أركان للنمو</p>\n</div>"
+            }
+          ]
+        }
+      },
+      "id": "8h9i0j1k-2l3m-4n5o-6p7q-r8s9t0u1v2w3",
+      "name": "Send Email Reminder",
+      "type": "n8n-nodes-base.httpRequest", 
+      "typeVersion": 4.2,
+      "position": [1360, 520]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/installment_payments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth", 
+        "httpHeaderAuth": {
+          "name": "Authorization",
+          "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "qs": {
+          "id": "eq.{{ $json.id }}"
+        },
+        "sendBody": true,
+        "body": "={\n  \"reminders_sent\": {{ JSON.stringify(($json.reminders_sent || []).concat([{\n    \"sent_date\": \"{{ new Date().toISOString() }}\",\n    \"method\": \"whatsapp_email\",\n    \"status\": \"sent\"\n  }])) }}\n}",
+        "options": {
+          "bodyContentType": "json"
+        }
+      },
+      "id": "9i0j1k2l-3m4n-5o6p-7q8r-s9t0u1v2w3x4",
+      "name": "Update Reminder Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1580, 420]
+    }
+  ],
+  "connections": {
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Get Overdue Installments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Overdue Installments": {
+      "main": [
+        [
+          {
+            "node": "Check If Overdue Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Overdue Exists": {
+      "main": [
+        [
+          {
+            "node": "Update Overdue Status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Overdue Items",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Overdue Items": {
+      "main": [
+        [
+          {
+            "node": "Check Grace Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Grace Period": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reminder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email Reminder", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Reminder": {
+      "main": [
+        [
+          {
+            "node": "Update Reminder Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Reminder": {
+      "main": [
+        [
+          {
+            "node": "Update Reminder Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-09-03T10:30:00.000Z",
+  "updatedAt": "2025-09-03T10:30:00.000Z",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-09-03T10:30:00.000Z",
+      "updatedAt": "2025-09-03T10:30:00.000Z",
+      "id": "installment-reminders",
+      "name": "Installment Reminders"
+    }
+  ],
+  "triggerCount": 0,
+  "versionId": "1"
+}

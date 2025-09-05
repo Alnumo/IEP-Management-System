@@ -23,11 +23,15 @@ const createWrapper = () => {
     },
   })
   
-  return ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  )
+  const TestProvider = ({ children }: { children: ReactNode }) => {
+    return React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      children
+    );
+  };
+  
+  return TestProvider;
 }
 
 describe('useYourHook', () => {

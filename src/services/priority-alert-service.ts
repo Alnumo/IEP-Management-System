@@ -135,11 +135,12 @@ export class PriorityAlertAnalyzer {
   private findKeywordMatches(content: string, keywords: { ar: string[], en: string[] }): string[] {
     const matches: string[] = []
     
-    [...keywords.ar, ...keywords.en].forEach(keyword => {
+    const allKeywords = [...keywords.ar, ...keywords.en];
+    allKeywords.forEach(keyword => {
       if (content.includes(keyword.toLowerCase())) {
-        matches.push(keyword)
+        matches.push(keyword);
       }
-    })
+    });
 
     return matches
   }

@@ -1,848 +1,573 @@
-/**
- * Financial Analytics Dashboard Component
- * Comprehensive financial analytics and business intelligence dashboard
- * Part of Story 2.3: Financial Management Module - Task 4
- */
+// Financial Analytics Dashboard - Story 2.3 Task 5
+// Comprehensive financial reporting and analytics interface
 
-import React, { useState, useMemo } from 'react'
-import { format, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
-import {
-  useFinancialDashboard,
-  useRevenueAnalytics,
-  usePaymentAnalytics,
-  useFinancialForecasting,
-  usePeriodComparison,
-  useQuickRangeAnalytics,
-  useExportAnalytics
-} from '../../hooks/useFinancialAnalytics'
-import type { FinancialKPI } from '../../types/financial-management'
-
-// UI Components
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
-import { Button } from '../ui/button'
-import { Badge } from '../ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { DateRangePicker } from '../ui/date-range-picker'
-import { Progress } from '../ui/progress'
-import { Skeleton } from '../ui/skeleton'
-import { Alert, AlertDescription } from '../ui/alert'
-
-// Chart Components
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  RechartsWrapper
-} from 'recharts'
-
-// Icons
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Progress } from '../ui/progress';
+import { Separator } from '../ui/separator';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   TrendingUp,
   TrendingDown,
   DollarSign,
-  CreditCard,
   Users,
   Calendar,
+  FileText,
   Download,
-  RefreshCw,
-  Eye,
-  AlertCircle,
+  BarChart3,
+  PieChart,
+  LineChart,
+  Target,
+  CreditCard,
+  AlertTriangle,
   CheckCircle,
   Clock,
-  Target,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Activity
-} from 'lucide-react'
-
-// ==============================================
-// TYPES AND INTERFACES
-// ==============================================
-
-interface DateRange {
-  start: string
-  end: string
-}
-
-type QuickRangeType = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom'
+  Filter,
+  RefreshCw
+} from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subMonths, isWithinInterval } from 'date-fns';
+import { ar, enUS } from 'date-fns/locale';
+import { Invoice, InstallmentPlan, Student, TherapyProgram } from '../../types/financial-management';
 
 interface FinancialAnalyticsDashboardProps {
-  /** Language preference */
-  language?: 'ar' | 'en'
-  /** Default date range */
-  defaultDateRange?: DateRange
-  /** Dashboard layout mode */
-  layout?: 'grid' | 'list'
-  /** Real-time updates enabled */
-  liveUpdates?: boolean
-  /** Refresh interval in milliseconds */
-  refreshInterval?: number
+  invoices: Invoice[];
+  installmentPlans: InstallmentPlan[];
+  students: Student[];
+  therapyPrograms: TherapyProgram[];
+  onExportReport: (reportType: string, filters: any) => Promise<void>;
+  onDrillDown: (metric: string, filters: any) => void;
 }
 
-// ==============================================
-// MAIN COMPONENT
-// ==============================================
+interface FinancialMetrics {
+  totalRevenue: number;
+  totalOutstanding: number;
+  averageInvoiceValue: number;
+  collectionRate: number;
+  revenueGrowth: number;
+  paymentDelinquencyRate: number;
+  averagePaymentTime: number;
+  customerLifetimeValue: number;
+  monthlyRecurringRevenue: number;
+  churnRate: number;
+  // Installment Payment Metrics - Story 4.2
+  activeInstallmentPlans: number;
+  totalInstallmentValue: number;
+  installmentCollectionRate: number;
+  overdueInstallments: number;
+  partialPayments: number;
+  averageInstallmentAmount: number;
+}
+
+interface RevenueBreakdown {
+  therapyProgram: string;
+  revenue: number;
+  percentage: number;
+  invoiceCount: number;
+  averageValue: number;
+}
+
+interface PaymentTrend {
+  date: string;
+  revenue: number;
+  payments: number;
+  outstanding: number;
+  period: string;
+}
+
+interface CustomerSegment {
+  segment: string;
+  customerCount: number;
+  revenue: number;
+  averageValue: number;
+  color: string;
+}
+
+// Story 4.2: Installment Payment Analytics Interfaces
+interface InstallmentPlanAnalytics {
+  planId: string;
+  studentName: string;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  installmentsCount: number;
+  paidInstallments: number;
+  overdueInstallments: number;
+  nextDueDate: string | null;
+  completionRate: number;
+  status: 'active' | 'completed' | 'defaulted';
+}
+
+interface InstallmentTrendData {
+  date: string;
+  newPlans: number;
+  completedPlans: number;
+  totalValue: number;
+  collectionRate: number;
+}
 
 export const FinancialAnalyticsDashboard: React.FC<FinancialAnalyticsDashboardProps> = ({
-  language = 'en',
-  defaultDateRange,
-  layout = 'grid',
-  liveUpdates = false,
-  refreshInterval = 5 * 60 * 1000 // 5 minutes
+  invoices,
+  installmentPlans,
+  students,
+  therapyPrograms,
+  onExportReport,
+  onDrillDown
 }) => {
-  // State management
-  const [activeTab, setActiveTab] = useState<'overview' | 'revenue' | 'payments' | 'forecasting'>('overview')
-  const [dateRange, setDateRange] = useState<DateRange>(
-    defaultDateRange || {
-      start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
-      end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  const { language, isRTL } = useLanguage();
+  const [dateRange, setDateRange] = useState({
+    from: startOfMonth(subMonths(new Date(), 5)),
+    to: endOfMonth(new Date())
+  });
+  const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
+  const [selectedProgram, setSelectedProgram] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Labels for bilingual support
+  const labels = {
+    ar: {
+      title: 'لوحة التحليلات المالية',
+      description: 'تحليل شامل للأداء المالي والإيرادات',
+      overview: 'نظرة عامة',
+      revenue: 'الإيرادات',
+      payments: 'المدفوعات',
+      customers: 'العملاء',
+      trends: 'الاتجاهات',
+      reports: 'التقارير',
+      totalRevenue: 'إجمالي الإيرادات',
+      outstandingAmount: 'المبلغ المستحق',
+      averageInvoiceValue: 'متوسط قيمة الفاتورة',
+      collectionRate: 'معدل التحصيل',
+      revenueGrowth: 'نمو الإيرادات',
+      paymentDelinquencyRate: 'معدل التأخير في الدفع',
+      averagePaymentTime: 'متوسط وقت الدفع',
+      customerLifetimeValue: 'القيمة الدائمة للعميل',
+      monthlyRecurringRevenue: 'الإيرادات الشهرية المتكررة',
+      churnRate: 'معدل فقدان العملاء',
+      revenueByProgram: 'الإيرادات حسب البرنامج',
+      // Installment Payment Metrics - Story 4.2
+      activeInstallmentPlans: 'خطط الأقساط النشطة',
+      totalInstallmentValue: 'إجمالي قيمة الأقساط',
+      installmentCollectionRate: 'معدل تحصيل الأقساط',
+      overdueInstallments: 'الأقساط المتأخرة',
+      partialPayments: 'المدفوعات الجزئية',
+      averageInstallmentAmount: 'متوسط قيمة القسط',
+      installmentAnalytics: 'تحليلات الأقساط',
+      installmentTrends: 'اتجاهات الأقساط',
+      completionRate: 'معدل الإكمال',
+      installmentStatus: 'حالة القسط',
+      paymentTrends: 'اتجاهات المدفوعات',
+      customerSegmentation: 'تقسيم العملاء',
+      topPerformers: 'أفضل البرامج أداءً',
+      recentTransactions: 'المعاملات الأخيرة',
+      kpiSummary: 'ملخص المؤشرات الرئيسية',
+      periodSelection: 'اختيار الفترة',
+      programFilter: 'تصفية البرنامج',
+      dateRangeFilter: 'تصفية النطاق الزمني',
+      exportReport: 'تصدير التقرير',
+      refreshData: 'تحديث البيانات',
+      applyFilters: 'تطبيق المرشحات',
+      clearFilters: 'مسح المرشحات',
+      daily: 'يومي',
+      weekly: 'أسبوعي',
+      monthly: 'شهري',
+      allPrograms: 'جميع البرامج',
+      amount: 'المبلغ',
+      count: 'العدد',
+      percentage: 'النسبة المئوية',
+      date: 'التاريخ',
+      program: 'البرنامج',
+      student: 'الطالب',
+      invoice: 'الفاتورة',
+      payment: 'الدفع',
+      status: 'الحالة',
+      paid: 'مدفوع',
+      pending: 'معلق',
+      overdue: 'متأخر',
+      partial: 'جزئي',
+      cancelled: 'ملغي',
+      days: 'يوم',
+      sar: 'ريال',
+      noData: 'لا توجد بيانات',
+      noDataDesc: 'لا توجد بيانات للفترة المحددة',
+      loading: 'جارِ التحميل...',
+      error: 'خطأ في تحميل البيانات'
+    },
+    en: {
+      title: 'Financial Analytics Dashboard',
+      description: 'Comprehensive analysis of financial performance and revenue',
+      overview: 'Overview',
+      revenue: 'Revenue',
+      payments: 'Payments',
+      customers: 'Customers',
+      trends: 'Trends',
+      reports: 'Reports',
+      totalRevenue: 'Total Revenue',
+      outstandingAmount: 'Outstanding Amount',
+      averageInvoiceValue: 'Average Invoice Value',
+      collectionRate: 'Collection Rate',
+      revenueGrowth: 'Revenue Growth',
+      paymentDelinquencyRate: 'Payment Delinquency Rate',
+      averagePaymentTime: 'Average Payment Time',
+      customerLifetimeValue: 'Customer Lifetime Value',
+      monthlyRecurringRevenue: 'Monthly Recurring Revenue',
+      churnRate: 'Churn Rate',
+      // Installment Payment Metrics - Story 4.2
+      activeInstallmentPlans: 'Active Installment Plans',
+      totalInstallmentValue: 'Total Installment Value',
+      installmentCollectionRate: 'Installment Collection Rate',
+      overdueInstallments: 'Overdue Installments',
+      partialPayments: 'Partial Payments',
+      averageInstallmentAmount: 'Average Installment Amount',
+      installmentAnalytics: 'Installment Analytics',
+      installmentTrends: 'Installment Trends',
+      completionRate: 'Completion Rate',
+      installmentStatus: 'Installment Status',
+      revenueByProgram: 'Revenue by Program',
+      paymentTrends: 'Payment Trends',
+      customerSegmentation: 'Customer Segmentation',
+      topPerformers: 'Top Performing Programs',
+      recentTransactions: 'Recent Transactions',
+      kpiSummary: 'KPI Summary',
+      periodSelection: 'Period Selection',
+      programFilter: 'Program Filter',
+      dateRangeFilter: 'Date Range Filter',
+      exportReport: 'Export Report',
+      refreshData: 'Refresh Data',
+      applyFilters: 'Apply Filters',
+      clearFilters: 'Clear Filters',
+      daily: 'Daily',
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      allPrograms: 'All Programs',
+      amount: 'Amount',
+      count: 'Count',
+      percentage: 'Percentage',
+      date: 'Date',
+      program: 'Program',
+      student: 'Student',
+      invoice: 'Invoice',
+      payment: 'Payment',
+      status: 'Status',
+      paid: 'Paid',
+      pending: 'Pending',
+      overdue: 'Overdue',
+      partial: 'Partial',
+      cancelled: 'Cancelled',
+      days: 'days',
+      sar: 'SAR',
+      noData: 'No Data',
+      noDataDesc: 'No data available for the selected period',
+      loading: 'Loading...',
+      error: 'Error loading data'
     }
-  )
-  const [quickRange, setQuickRange] = useState<QuickRangeType>('month')
-  const [selectedKPI, setSelectedKPI] = useState<string>('')
+  };
 
-  // Queries
-  const { data: dashboardData, isLoading, error, refetch } = useFinancialDashboard(dateRange)
-  const { data: revenueData, isLoading: revenueLoading } = useRevenueAnalytics(dateRange)
-  const { data: paymentData, isLoading: paymentLoading } = usePaymentAnalytics(dateRange)
-  const { data: forecastingData, isLoading: forecastingLoading } = useFinancialForecasting(6, 'both')
-  
-  // Period comparison
-  const periodComparison = usePeriodComparison(dateRange, 'previous_period')
-  
-  // Quick range analytics
-  const quickRangeData = useQuickRangeAnalytics()
-  
-  // Export functionality
-  const exportAnalytics = useExportAnalytics()
+  const currentLabels = labels[language];
 
-  // ==============================================
-  // EVENT HANDLERS
-  // ==============================================
+  // Filter data based on date range and program selection
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(invoice => {
+      const invoiceDate = new Date(invoice.invoice_date);
+      const withinDateRange = isWithinInterval(invoiceDate, { start: dateRange.from!, end: dateRange.to! });
+      const matchesProgram = selectedProgram === 'all' || 
+        invoice.invoice_items?.some(item => item.therapy_program_id === selectedProgram);
+      
+      return withinDateRange && matchesProgram;
+    });
+  }, [invoices, dateRange, selectedProgram]);
 
-  const handleQuickRangeChange = (range: QuickRangeType) => {
-    setQuickRange(range)
-    const today = new Date()
+  const filteredInstallmentPlans = useMemo(() => {
+    return installmentPlans.filter(plan => {
+      const planDate = new Date(plan.created_at);
+      return isWithinInterval(planDate, { start: dateRange.from!, end: dateRange.to! });
+    });
+  }, [installmentPlans, dateRange]);
+
+  // Calculate financial metrics
+  const financialMetrics = useMemo((): FinancialMetrics => {
+    const totalRevenue = filteredInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
+    const paidInvoices = filteredInvoices.filter(inv => inv.payment_status === 'paid');
+    const totalPaid = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
+    const totalOutstanding = totalRevenue - totalPaid;
+    const averageInvoiceValue = filteredInvoices.length > 0 ? totalRevenue / filteredInvoices.length : 0;
+    const collectionRate = totalRevenue > 0 ? (totalPaid / totalRevenue) * 100 : 0;
     
-    let newRange: DateRange
-    switch (range) {
-      case 'today':
-        newRange = {
-          start: format(today, 'yyyy-MM-dd'),
-          end: format(today, 'yyyy-MM-dd')
-        }
-        break
-      case 'week':
-        newRange = {
-          start: format(subDays(today, 7), 'yyyy-MM-dd'),
-          end: format(today, 'yyyy-MM-dd')
-        }
-        break
-      case 'month':
-        newRange = {
-          start: format(startOfMonth(today), 'yyyy-MM-dd'),
-          end: format(endOfMonth(today), 'yyyy-MM-dd')
-        }
-        break
-      case 'quarter':
-        const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1)
-        newRange = {
-          start: format(quarterStart, 'yyyy-MM-dd'),
-          end: format(today, 'yyyy-MM-dd')
-        }
-        break
-      case 'year':
-        newRange = {
-          start: format(startOfYear(today), 'yyyy-MM-dd'),
-          end: format(endOfYear(today), 'yyyy-MM-dd')
-        }
-        break
-      default:
-        return // Don't change for custom range
-    }
+    // Calculate revenue growth (comparing to previous period)
+    const previousPeriodStart = new Date(dateRange.from!);
+    previousPeriodStart.setMonth(previousPeriodStart.getMonth() - 6);
+    const previousPeriodEnd = new Date(dateRange.from!);
     
-    setDateRange(newRange)
-  }
+    const previousInvoices = invoices.filter(inv => 
+      isWithinInterval(new Date(inv.invoice_date), { start: previousPeriodStart, end: previousPeriodEnd })
+    );
+    const previousRevenue = previousInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+    const revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
-  const handleExport = async (format: 'json' | 'csv' | 'xlsx') => {
-    try {
-      const result = await exportAnalytics.mutateAsync({
-        dateRange,
-        format,
-        includeForecasting: true
+    // Calculate payment delinquency rate
+    const overdueInvoices = filteredInvoices.filter(inv => 
+      inv.payment_status === 'overdue' || 
+      (inv.payment_status === 'pending' && new Date(inv.due_date) < new Date())
+    );
+    const paymentDelinquencyRate = filteredInvoices.length > 0 ? 
+      (overdueInvoices.length / filteredInvoices.length) * 100 : 0;
+
+    // Calculate average payment time
+    const paidInvoicesWithTimes = paidInvoices.filter(inv => inv.paid_date);
+    const totalPaymentDays = paidInvoicesWithTimes.reduce((sum, inv) => {
+      const invoiceDate = new Date(inv.invoice_date);
+      const paidDate = new Date(inv.paid_date!);
+      return sum + Math.floor((paidDate.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
+    }, 0);
+    const averagePaymentTime = paidInvoicesWithTimes.length > 0 ? 
+      totalPaymentDays / paidInvoicesWithTimes.length : 0;
+
+    // Calculate customer lifetime value (simplified)
+    const uniqueStudents = new Set(filteredInvoices.map(inv => inv.student_id));
+    const customerLifetimeValue = uniqueStudents.size > 0 ? totalRevenue / uniqueStudents.size : 0;
+
+    // Calculate monthly recurring revenue from installment plans
+    const monthlyRecurringRevenue = filteredInstallmentPlans.reduce((sum, plan) => {
+      return sum + (plan.regular_payment_amount || 0);
+    }, 0);
+
+    // Calculate churn rate (simplified - customers who haven't made payments in 3 months)
+    const threeMonthsAgo = subMonths(new Date(), 3);
+    const recentCustomers = new Set(
+      invoices.filter(inv => new Date(inv.invoice_date) >= threeMonthsAgo)
+        .map(inv => inv.student_id)
+    );
+    const totalCustomers = new Set(invoices.map(inv => inv.student_id));
+    const churnRate = totalCustomers.size > 0 ? 
+      ((totalCustomers.size - recentCustomers.size) / totalCustomers.size) * 100 : 0;
+
+    return {
+      totalRevenue,
+      totalOutstanding,
+      averageInvoiceValue,
+      collectionRate,
+      revenueGrowth,
+      paymentDelinquencyRate,
+      averagePaymentTime,
+      customerLifetimeValue,
+      monthlyRecurringRevenue,
+      churnRate
+    };
+  }, [filteredInvoices, filteredInstallmentPlans, invoices, dateRange]);
+
+  // Calculate revenue breakdown by therapy program
+  const revenueBreakdown = useMemo((): RevenueBreakdown[] => {
+    const programRevenue = new Map<string, { revenue: number; count: number }>();
+
+    filteredInvoices.forEach(invoice => {
+      invoice.invoice_items?.forEach(item => {
+        if (item.therapy_program_id) {
+          const current = programRevenue.get(item.therapy_program_id) || { revenue: 0, count: 0 };
+          current.revenue += item.total_price;
+          current.count += 1;
+          programRevenue.set(item.therapy_program_id, current);
+        }
+      });
+    });
+
+    const totalRevenue = financialMetrics.totalRevenue;
+    
+    return Array.from(programRevenue.entries())
+      .map(([programId, data]) => {
+        const program = therapyPrograms.find(p => p.id === programId);
+        return {
+          therapyProgram: program ? (language === 'ar' ? program.name_ar : program.name_en) : 'Unknown',
+          revenue: data.revenue,
+          percentage: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0,
+          invoiceCount: data.count,
+          averageValue: data.count > 0 ? data.revenue / data.count : 0
+        };
       })
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [filteredInvoices, therapyPrograms, financialMetrics.totalRevenue, language]);
 
-      // Create and trigger download
-      const blob = new Blob([result.data], { type: result.mimeType })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = result.filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Export failed:', error)
-    }
-  }
+  const currencySymbol = currentLabels.sar;
 
-  // ==============================================
-  // UI HELPERS
-  // ==============================================
+  const formatCurrency = (amount: number) => {
+    return `${currencySymbol} ${amount.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    })}`;
+  };
 
-  const formatCurrency = (amount: number, currency = 'SAR') => {
-    return new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount)
-  }
+  const getMetricIcon = (metric: string) => {
+    const icons = {
+      totalRevenue: DollarSign,
+      totalOutstanding: AlertTriangle,
+      averageInvoiceValue: FileText,
+      collectionRate: Target,
+      revenueGrowth: TrendingUp,
+      paymentDelinquencyRate: Clock,
+      averagePaymentTime: Calendar,
+      customerLifetimeValue: Users,
+      monthlyRecurringRevenue: CreditCard,
+      churnRate: TrendingDown
+    };
+    return icons[metric as keyof typeof icons] || BarChart3;
+  };
 
-  const formatPercentage = (value: number) => {
-    return new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-US', {
-      style: 'percent',
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 2
-    }).format(value / 100)
-  }
-
-  const getChangeIcon = (changeType?: 'increase' | 'decrease' | 'neutral') => {
-    switch (changeType) {
-      case 'increase':
-        return <TrendingUp className="w-4 h-4 text-green-600" />
-      case 'decrease':
-        return <TrendingDown className="w-4 h-4 text-red-600" />
+  const getMetricColor = (metric: string, value: number) => {
+    switch (metric) {
+      case 'revenueGrowth':
+        return value >= 0 ? 'text-green-600' : 'text-red-600';
+      case 'collectionRate':
+        return value >= 80 ? 'text-green-600' : value >= 60 ? 'text-yellow-600' : 'text-red-600';
+      case 'paymentDelinquencyRate':
+      case 'churnRate':
+        return value <= 5 ? 'text-green-600' : value <= 15 ? 'text-yellow-600' : 'text-red-600';
       default:
-        return <Activity className="w-4 h-4 text-gray-600" />
+        return 'text-primary';
     }
-  }
+  };
 
-  const getChangeColor = (changeType?: 'increase' | 'decrease' | 'neutral') => {
-    switch (changeType) {
-      case 'increase':
-        return 'text-green-600'
-      case 'decrease':
-        return 'text-red-600'
-      default:
-        return 'text-gray-600'
-    }
-  }
-
-  // ==============================================
-  // RENDER HELPERS
-  // ==============================================
-
-  const renderKPICard = (kpi: FinancialKPI, icon: React.ReactNode) => (
-    <Card key={kpi.metric} className="cursor-pointer transition-all hover:shadow-md">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              {icon}
-              <p className="text-sm font-medium text-gray-600">
-                {language === 'ar' ? kpi.metric : kpi.metric}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-2xl font-bold">
-                {kpi.currency ? formatCurrency(kpi.value, kpi.currency) : kpi.value.toLocaleString()}
-              </p>
-              {kpi.change !== undefined && (
-                <div className={`flex items-center gap-1 text-sm ${getChangeColor(kpi.changeType)}`}>
-                  {getChangeIcon(kpi.changeType)}
-                  <span>{Math.abs(kpi.change)}%</span>
-                  <span className="text-gray-500">vs {language === 'ar' ? 'الفترة السابقة' : 'previous period'}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          {kpi.trend && (
-            <div className="w-16 h-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={kpi.trend.map((value, index) => ({ value, index }))}>
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke={kpi.changeType === 'increase' ? '#22c55e' : kpi.changeType === 'decrease' ? '#ef4444' : '#6b7280'} 
-                    strokeWidth={2} 
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-
-  const renderOverviewTab = () => {
-    if (isLoading) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )
-    }
-
-    if (error) {
-      return (
-        <Alert className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {language === 'ar' 
-              ? 'فشل في تحميل البيانات المالية. يرجى المحاولة مرة أخرى.'
-              : 'Failed to load financial data. Please try again.'}
-          </AlertDescription>
-        </Alert>
-      )
-    }
-
-    const kpis = dashboardData?.kpis || []
-    const revenue = dashboardData?.revenue
-    const payments = dashboardData?.payments
-
-    return (
-      <div className="space-y-6">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {kpis.slice(0, 4).map((kpi, index) => {
-            const icons = [
-              <DollarSign className="w-5 h-5 text-blue-600" />,
-              <TrendingUp className="w-5 h-5 text-green-600" />,
-              <CreditCard className="w-5 h-5 text-purple-600" />,
-              <Users className="w-5 h-5 text-orange-600" />
-            ]
-            return renderKPICard(kpi, icons[index])
-          })}
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue Trend Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                {language === 'ar' ? 'اتجاه الإيرادات' : 'Revenue Trend'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenue?.monthlyRevenue || []}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                    <Tooltip formatter={(value: number) => [formatCurrency(value), language === 'ar' ? 'الإيرادات' : 'Revenue']} />
-                    <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fillOpacity={1} fill="url(#colorRevenue)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payment Method Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChartIcon className="w-5 h-5" />
-                {language === 'ar' ? 'توزيع طرق الدفع' : 'Payment Methods'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={payments?.paymentMethodBreakdown || []}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ method, percentage }: any) => `${method} (${percentage?.toFixed(1) || 0}%)`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="amount"
-                    >
-                      {payments?.paymentMethodBreakdown?.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 50%)`} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => [formatCurrency(value), language === 'ar' ? 'المبلغ' : 'Amount']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Additional KPIs */}
-        {kpis.length > 4 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {kpis.slice(4).map((kpi, index) => {
-              const additionalIcons = [
-                <Target className="w-5 h-5 text-indigo-600" />,
-                <Clock className="w-5 h-5 text-pink-600" />,
-                <CheckCircle className="w-5 h-5 text-teal-600" />
-              ]
-              return renderKPICard(kpi, additionalIcons[index % additionalIcons.length])
-            })}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  const renderRevenueTab = () => {
-    if (revenueLoading) {
-      return <div className="space-y-4">
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    }
-
-    return (
-      <div className="space-y-6">
-        {/* Revenue Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {language === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">
-                {formatCurrency(revenueData?.totalRevenue.value || 0)}
-              </div>
-              <div className={`flex items-center gap-1 text-sm mt-2 ${getChangeColor(revenueData?.totalRevenue.changeType)}`}>
-                {getChangeIcon(revenueData?.totalRevenue.changeType)}
-                <span>{Math.abs(revenueData?.totalRevenue.change || 0)}%</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {language === 'ar' ? 'الإيرادات المتكررة' : 'Recurring Revenue'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                {formatCurrency(revenueData?.recurringRevenue.value || 0)}
-              </div>
-              <div className={`flex items-center gap-1 text-sm mt-2 ${getChangeColor(revenueData?.recurringRevenue.changeType)}`}>
-                {getChangeIcon(revenueData?.recurringRevenue.changeType)}
-                <span>{Math.abs(revenueData?.recurringRevenue.change || 0)}%</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {language === 'ar' ? 'الإيرادات لمرة واحدة' : 'One-time Revenue'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-600">
-                {formatCurrency(revenueData?.oneTimeRevenue.value || 0)}
-              </div>
-              <div className={`flex items-center gap-1 text-sm mt-2 ${getChangeColor(revenueData?.oneTimeRevenue.changeType)}`}>
-                {getChangeIcon(revenueData?.oneTimeRevenue.changeType)}
-                <span>{Math.abs(revenueData?.oneTimeRevenue.change || 0)}%</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Revenue by Service Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {language === 'ar' ? 'الإيرادات حسب الخدمة' : 'Revenue by Service Type'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueData?.revenueByService || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="serviceType" angle={-45} textAnchor="end" height={80} />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip formatter={(value: number) => [formatCurrency(value), language === 'ar' ? 'الإيرادات' : 'Revenue']} />
-                  <Bar dataKey="revenue" fill="#3b82f6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Daily Revenue Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {language === 'ar' ? 'الإيرادات اليومية' : 'Daily Revenue'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenueData?.dailyRevenue || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip formatter={(value: number) => [formatCurrency(value), language === 'ar' ? 'الإيرادات' : 'Revenue']} />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  const renderPaymentsTab = () => {
-    if (paymentLoading) {
-      return <div className="space-y-4">
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    }
-
-    return (
-      <div className="space-y-6">
-        {/* Payment KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-green-600">
-                {formatPercentage(paymentData?.collectionRate.value || 0)}
-              </div>
-              <p className="text-sm text-gray-600 mt-1">
-                {language === 'ar' ? 'معدل التحصيل' : 'Collection Rate'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-blue-600">
-                {Math.round(paymentData?.averagePaymentTime.value || 0)}
-              </div>
-              <p className="text-sm text-gray-600 mt-1">
-                {language === 'ar' ? 'متوسط وقت الدفع (أيام)' : 'Avg Payment Time (days)'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(paymentData?.overdueAmount.value || 0)}
-              </div>
-              <p className="text-sm text-gray-600 mt-1">
-                {language === 'ar' ? 'المبلغ المتأخر' : 'Overdue Amount'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-yellow-600">
-                {formatCurrency(paymentData?.outstandingBalance.value || 0)}
-              </div>
-              <p className="text-sm text-gray-600 mt-1">
-                {language === 'ar' ? 'الرصيد المستحق' : 'Outstanding Balance'}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Aging Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {language === 'ar' ? 'تحليل أعمار المستحقات' : 'Aging Analysis'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {paymentData?.agingAnalysis?.map((aging) => (
-                <div key={aging.category} className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium min-w-[60px]">{aging.category}</span>
-                    <Progress value={aging.percentage} className="flex-1 max-w-[200px]" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{formatCurrency(aging.amount)}</div>
-                    <div className="text-xs text-gray-500">{aging.invoiceCount} invoices</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Payment Trends */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {language === 'ar' ? 'اتجاهات الدفع' : 'Payment Trends'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={paymentData?.paymentTrends || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="onTimePayments" stroke="#10b981" name={language === 'ar' ? 'دفعات في الوقت المحدد' : 'On-time Payments'} />
-                  <Line type="monotone" dataKey="latePayments" stroke="#ef4444" name={language === 'ar' ? 'دفعات متأخرة' : 'Late Payments'} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  const renderForecastingTab = () => {
-    if (forecastingLoading) {
-      return <div className="space-y-4">
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    }
-
-    return (
-      <div className="space-y-6">
-        {/* Revenue Forecast Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {language === 'ar' ? 'توقعات الإيرادات' : 'Revenue Forecast'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={forecastingData?.revenueProjection || []}>
-                  <defs>
-                    <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip formatter={(value: number) => [formatCurrency(value), language === 'ar' ? 'الإيرادات المتوقعة' : 'Projected Revenue']} />
-                  <Area type="monotone" dataKey="projectedRevenue" stroke="#6366f1" fillOpacity={1} fill="url(#colorForecast)" />
-                  <Area type="monotone" dataKey="confidenceInterval.low" stroke="#94a3b8" fillOpacity={0.2} />
-                  <Area type="monotone" dataKey="confidenceInterval.high" stroke="#94a3b8" fillOpacity={0.2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cash Flow Forecast */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {language === 'ar' ? 'توقعات التدفق النقدي' : 'Cash Flow Forecast'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={forecastingData?.cashFlowProjection || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip formatter={(value: number) => [formatCurrency(value)]} />
-                  <Bar dataKey="inflow" fill="#10b981" name={language === 'ar' ? 'التدفق الداخل' : 'Inflow'} />
-                  <Bar dataKey="outflow" fill="#ef4444" name={language === 'ar' ? 'التدفق الخارج' : 'Outflow'} />
-                  <Bar dataKey="netCashFlow" fill="#6366f1" name={language === 'ar' ? 'صافي التدفق' : 'Net Cash Flow'} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Scenario Analysis */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {forecastingData?.scenarios?.map((scenario) => (
-            <Card key={scenario.name}>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {language === 'ar' ? scenario.nameAr : scenario.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600">
-                    {language === 'ar' ? 'الإيرادات المتوقعة' : 'Projected Revenue'}
-                  </p>
-                  <p className="text-xl font-bold">
-                    {formatCurrency(scenario.projectedImpact.revenue)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">
-                    {language === 'ar' ? 'الربح المتوقع' : 'Projected Profit'}
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {formatCurrency(scenario.projectedImpact.profit)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">
-                    {language === 'ar' ? 'التدفق النقدي' : 'Cash Flow'}
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {formatCurrency(scenario.projectedImpact.cashFlow)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  // ==============================================
-  // MAIN RENDER
-  // ==============================================
+  const refreshData = async () => {
+    setIsLoading(true);
+    // In a real app, this would trigger a data refresh
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsLoading(false);
+  };
 
   return (
-    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`w-full space-y-6 ${isRTL ? 'rtl' : 'ltr'}`}>
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">
-            {language === 'ar' ? 'لوحة التحليلات المالية' : 'Financial Analytics Dashboard'}
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            {currentLabels.title}
           </h1>
-          <p className="text-gray-600 mt-1">
-            {language === 'ar' 
-              ? 'رؤى مالية شاملة وتحليل الأعمال'
-              : 'Comprehensive financial insights and business intelligence'}
+          <p className="text-muted-foreground mt-1">
+            {currentLabels.description}
           </p>
         </div>
-
+        
         <div className="flex items-center gap-2">
-          {/* Quick Date Range Selector */}
-          <Select value={quickRange} onValueChange={handleQuickRangeChange}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">{language === 'ar' ? 'اليوم' : 'Today'}</SelectItem>
-              <SelectItem value="week">{language === 'ar' ? 'هذا الأسبوع' : 'This Week'}</SelectItem>
-              <SelectItem value="month">{language === 'ar' ? 'هذا الشهر' : 'This Month'}</SelectItem>
-              <SelectItem value="quarter">{language === 'ar' ? 'هذا الربع' : 'This Quarter'}</SelectItem>
-              <SelectItem value="year">{language === 'ar' ? 'هذا العام' : 'This Year'}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Refresh Button */}
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="w-4 h-4" />
+          <Button
+            variant="outline"
+            onClick={refreshData}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            {currentLabels.refreshData}
           </Button>
-
-          {/* Export Button */}
-          <Select onValueChange={(value) => handleExport(value as any)}>
-            <SelectTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                {language === 'ar' ? 'تصدير' : 'Export'}
-              </Button>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="json">JSON</SelectItem>
-              <SelectItem value="csv">CSV</SelectItem>
-              <SelectItem value="xlsx">Excel</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            {currentLabels.exportReport}
+          </Button>
         </div>
       </div>
 
-      {/* Main Dashboard Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab as any}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">
-            {language === 'ar' ? 'نظرة عامة' : 'Overview'}
-          </TabsTrigger>
-          <TabsTrigger value="revenue">
-            {language === 'ar' ? 'الإيرادات' : 'Revenue'}
-          </TabsTrigger>
-          <TabsTrigger value="payments">
-            {language === 'ar' ? 'المدفوعات' : 'Payments'}
-          </TabsTrigger>
-          <TabsTrigger value="forecasting">
-            {language === 'ar' ? 'التوقعات' : 'Forecasting'}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-6">
-          {renderOverviewTab()}
-        </TabsContent>
-
-        <TabsContent value="revenue" className="mt-6">
-          {renderRevenueTab()}
-        </TabsContent>
-
-        <TabsContent value="payments" className="mt-6">
-          {renderPaymentsTab()}
-        </TabsContent>
-
-        <TabsContent value="forecasting" className="mt-6">
-          {renderForecastingTab()}
-        </TabsContent>
-      </Tabs>
-
-      {/* Last Updated Footer */}
-      <div className="text-center text-sm text-gray-500 pt-4 border-t">
-        {language === 'ar' 
-          ? `آخر تحديث: ${dashboardData?.lastUpdated ? format(new Date(dashboardData.lastUpdated), 'PPpp') : 'غير محدد'}`
-          : `Last updated: ${dashboardData?.lastUpdated ? format(new Date(dashboardData.lastUpdated), 'PPpp') : 'Unknown'}`}
+      {/* Key Metrics Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {Object.entries(financialMetrics).map(([key, value]) => {
+          const Icon = getMetricIcon(key);
+          const colorClass = getMetricColor(key, value);
+          const isPercentage = ['collectionRate', 'revenueGrowth', 'paymentDelinquencyRate', 'churnRate'].includes(key);
+          const isDays = ['averagePaymentTime'].includes(key);
+          
+          return (
+            <Card key={key} className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => onDrillDown(key, { dateRange, selectedProgram })}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  {currentLabels[key as keyof typeof currentLabels]}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${colorClass}`}>
+                  {isPercentage 
+                    ? `${value.toFixed(1)}%` 
+                    : isDays 
+                    ? `${value.toFixed(0)} ${currentLabels.days}`
+                    : formatCurrency(value)}
+                </div>
+                {key === 'revenueGrowth' && (
+                  <div className="flex items-center mt-1">
+                    {value >= 0 ? (
+                      <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
+                    ) : (
+                      <TrendingDown className="h-3 w-3 text-red-600 mr-1" />
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      vs previous period
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
-    </div>
-  )
-}
 
-export default FinancialAnalyticsDashboard
+      {/* Revenue Breakdown */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            {currentLabels.topPerformers}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {revenueBreakdown.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className={`p-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                      {currentLabels.program}
+                    </th>
+                    <th className={`p-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                      {currentLabels.revenue}
+                    </th>
+                    <th className={`p-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                      {currentLabels.percentage}
+                    </th>
+                    <th className={`p-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                      {currentLabels.count}
+                    </th>
+                    <th className={`p-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                      Avg. Value
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {revenueBreakdown.slice(0, 10).map((program, index) => (
+                    <tr key={index} className="border-b hover:bg-muted/50">
+                      <td className="p-3 font-medium">{program.therapyProgram}</td>
+                      <td className="p-3">{formatCurrency(program.revenue)}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <Progress value={program.percentage} className="w-16" />
+                          <span>{program.percentage.toFixed(1)}%</span>
+                        </div>
+                      </td>
+                      <td className="p-3">{program.invoiceCount}</td>
+                      <td className="p-3">{formatCurrency(program.averageValue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">{currentLabels.noData}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default FinancialAnalyticsDashboard;

@@ -1,0 +1,359 @@
+{
+  "name": "Amelia WordPress Plugin - Lead Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "amelia-booking-webhook",
+        "responseMode": "responseNode",
+        "options": {
+          "noResponseBody": false
+        }
+      },
+      "id": "webhook-amelia",
+      "name": "Amelia Booking Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "amelia-booking-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "validate-booking",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "booking.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "validate-secret",
+              "leftValue": "={{ $json.secret }}",
+              "rightValue": "={{ $env.AMELIA_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "validate-webhook",
+      "name": "Validate Webhook",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform Amelia booking data to Arkan lead format\nconst ameliaData = items[0].json;\n\n// Extract booking information\nconst booking = ameliaData.booking || {};\nconst customer = ameliaData.customer || {};\nconst service = ameliaData.service || {};\n\n// Calculate child age from date of birth if provided\nconst calculateAge = (dob) => {\n  if (!dob) return null;\n  const birthDate = new Date(dob);\n  const today = new Date();\n  let age = today.getFullYear() - birthDate.getFullYear();\n  const monthDiff = today.getMonth() - birthDate.getMonth();\n  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {\n    age--;\n  }\n  return age;\n};\n\n// Transform to Arkan lead format\nconst leadData = {\n  // Parent Information\n  parent_name: customer.firstName && customer.lastName \n    ? `${customer.firstName} ${customer.lastName}`.trim()\n    : customer.email?.split('@')[0] || 'Unknown Parent',\n  parent_contact: customer.phone || customer.email,\n  parent_contact_secondary: customer.phone && customer.email ? customer.email : null,\n  \n  // Child Information\n  child_name: booking.customFields?.child_name || \n             booking.customFields?.childName || \n             customer.firstName || 'Child',\n  child_name_ar: booking.customFields?.child_name_ar || \n                 booking.customFields?.childNameAr || null,\n  child_dob: booking.customFields?.child_dob || \n             booking.customFields?.childDateOfBirth || \n             booking.customFields?.dob || \n             '2019-01-01', // Default if not provided\n  child_gender: booking.customFields?.child_gender || \n                booking.customFields?.gender || null,\n  \n  // Booking Details\n  evaluation_date: booking.bookingStart || new Date().toISOString(),\n  evaluation_notes: service.name ? `Service: ${service.name}` : null,\n  notes: [\n    booking.info ? `Info: ${booking.info}` : null,\n    booking.customFields?.concerns ? `Concerns: ${booking.customFields.concerns}` : null,\n    booking.customFields?.notes ? `Notes: ${booking.customFields.notes}` : null\n  ].filter(Boolean).join('\\n') || null,\n  \n  // Source and Metadata\n  source: 'website',\n  source_details: {\n    campaign: booking.customFields?.utm_campaign || ameliaData.utm_campaign || null,\n    source: booking.customFields?.utm_source || ameliaData.utm_source || 'amelia',\n    medium: booking.customFields?.utm_medium || ameliaData.utm_medium || 'booking_form',\n    referrer: ameliaData.referrer || null\n  },\n  \n  // Integration tracking\n  external_id: `amelia_${booking.id || ameliaData.id || Date.now()}`,\n  integration_metadata: {\n    amelia_booking_id: booking.id,\n    amelia_customer_id: customer.id,\n    amelia_service_id: service.id,\n    service_name: service.name,\n    appointment_duration: service.duration,\n    booking_status: booking.status,\n    payment_status: ameliaData.payment?.status,\n    original_data: ameliaData\n  }\n};\n\n// Validation and cleanup\nif (!leadData.parent_contact) {\n  throw new Error('Parent contact information is required');\n}\n\nif (!leadData.child_name || leadData.child_name === 'Child') {\n  leadData.child_name = `Child of ${leadData.parent_name}`;\n}\n\n// Return transformed data\nreturn { json: leadData };"
+      },
+      "id": "transform-data",
+      "name": "Transform Amelia Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/lead-management/leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "{{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "create-lead",
+      "name": "Create Lead in Arkan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-success",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "check-lead-creation",
+      "name": "Check Lead Creation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "message": "=New lead created successfully: {{ $json.data.parent_name }} ({{ $json.data.child_name }})",
+        "additionalFields": {
+          "priority": 3
+        }
+      },
+      "id": "log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.WHATSAPP_API_URL }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppBusinessApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Create Lead in Arkan').item.json.data.parent_contact.replace(/[^0-9]/g, '') }}\",\n  \"type\": \"template\",\n  \"template\": {\n    \"name\": \"evaluation_confirmation\",\n    \"language\": {\n      \"code\": \"ar\"\n    },\n    \"components\": [\n      {\n        \"type\": \"body\",\n        \"parameters\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"{{ $('Create Lead in Arkan').item.json.data.parent_name }}\"\n          },\n          {\n            \"type\": \"text\",\n            \"text\": \"{{ $('Create Lead in Arkan').item.json.data.child_name }}\"\n          },\n          {\n            \"type\": \"text\",\n            \"text\": \"{{ DateTime.fromISO($('Create Lead in Arkan').item.json.data.evaluation_date).toFormat('dd/MM/yyyy HH:mm') }}\"\n          }\n        ]\n      }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "id": "send-whatsapp-confirmation",
+      "name": "Send WhatsApp Confirmation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Booking received and lead created\",\n  \"lead_id\": \"{{ $json.data.id }}\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "message": "=Failed to create lead from Amelia booking: {{ $json.error || 'Unknown error' }}",
+        "additionalFields": {
+          "priority": 1
+        }
+      },
+      "id": "log-error",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Failed to process booking\",\n  \"error\": \"{{ $json.error || 'Internal server error' }}\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Invalid webhook data or unauthorized\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "validation-error",
+      "name": "Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 500]
+    }
+  ],
+  "connections": {
+    "Amelia Booking Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Webhook": {
+      "main": [
+        [
+          {
+            "node": "Transform Amelia Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Amelia Data": {
+      "main": [
+        [
+          {
+            "node": "Create Lead in Arkan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead in Arkan": {
+      "main": [
+        [
+          {
+            "node": "Check Lead Creation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Lead Creation": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send WhatsApp Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Success": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error": {
+      "main": [
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "error-handler-workflow"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "createdAt": "2025-09-03T10:00:00.000Z",
+      "updatedAt": "2025-09-03T10:00:00.000Z",
+      "id": "crm-integration",
+      "name": "CRM Integration"
+    }
+  ]
+}

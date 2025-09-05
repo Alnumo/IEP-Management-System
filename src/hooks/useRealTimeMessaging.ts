@@ -1,659 +1,618 @@
-/**
- * Real-time Messaging Hook
- * React Query hooks for real-time messaging with optimistic updates
- * Following useStudents.ts patterns with Supabase real-time integration
- */
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { supabase } from '@/lib/supabase'
+import { messageEncryptionService, messageEncryptionUtils } from '@/services/message-encryption-service'
+import { communicationPushNotifications } from '@/services/communication-push-notifications'
+import type { Message, Conversation, SendMessageData } from '@/types/communication'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useCallback } from 'react'
-import { retryApiCall } from '@/lib/retry-utils'
-import { errorMonitoring } from '@/lib/error-monitoring'
-import { requireAuth } from '@/lib/auth-utils'
-import { messagingService } from '@/services/messaging-service'
-import type {
-  Conversation,
-  Message,
-  SendMessageData,
-  CreateConversationData,
-  UpdateConversationData,
-  ConversationFilters,
-  MessageFilters,
-  ConversationStats,
-  TypingEvent,
-  MessageReadEvent
-} from '@/types/communication'
-
-// =============================================================================
-// CONVERSATION HOOKS
-// =============================================================================
-
-/**
- * Fetch user conversations with real-time updates
- */
-export const useConversations = (userId: string, filters: ConversationFilters = {}) => {
-  const queryClient = useQueryClient()
-
-  // Subscribe to real-time conversation updates
-  useEffect(() => {
-    if (!userId) return
-
-    const cleanup = messagingService.subscribeToUserConversations(userId, (conversation) => {
-      // Update conversation in cache
-      queryClient.setQueryData(['conversations', userId], (old: Conversation[] | undefined) => {
-        if (!old) return [conversation]
-        
-        const existingIndex = old.findIndex(c => c.id === conversation.id)
-        if (existingIndex >= 0) {
-          const updated = [...old]
-          updated[existingIndex] = conversation
-          // Sort by last message time
-          return updated.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
-        }
-        
-        return [conversation, ...old].sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
-      })
-    })
-
-    return cleanup
-  }, [userId, queryClient])
-
-  return useQuery({
-    queryKey: ['conversations', userId, filters],
-    queryFn: async (): Promise<Conversation[]> => {
-      return retryApiCall(async () => {
-        console.log('🔍 useConversations: Fetching conversations for user:', userId)
-        
-        const user = await requireAuth()
-        
-        const data = await messagingService.getUserConversations(userId)
-        
-        console.log('✅ useConversations: Conversations fetched successfully:', data?.length, 'records')
-        return data || []
-      }, {
-        context: 'Fetching conversations',
-        maxAttempts: 3,
-        logErrors: true
-      })
-    },
-    enabled: !!userId,
-    staleTime: 2 * 60 * 1000, // 2 minutes - conversations update frequently
-    refetchInterval: 30 * 1000, // Refetch every 30 seconds for backup
-  })
+export interface UseRealTimeMessagingOptions {
+  conversationId?: string
+  userId?: string
+  onMessageReceived?: (message: Message) => void
+  onTypingStart?: (userId: string) => void
+  onTypingStop?: (userId: string) => void
+  onUserOnline?: (userId: string) => void
+  onUserOffline?: (userId: string) => void
 }
 
-/**
- * Fetch single conversation by ID
- */
-export const useConversation = (conversationId: string) => {
-  return useQuery({
-    queryKey: ['conversations', conversationId],
-    queryFn: async (): Promise<Conversation> => {
-      console.log('🔍 useConversation: Fetching conversation:', conversationId)
-      
-      const user = await requireAuth()
-      
+export const useRealTimeMessaging = (options: UseRealTimeMessagingOptions = {}) => {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isConnected, setIsConnected] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set())
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
+  
+  const subscriptionRef = useRef<any>(null)
+  const typingTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+
+  // Load initial messages
+  const loadMessages = useCallback(async () => {
+    if (!options.conversationId) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Check if encryption is enabled for this conversation
+      const encryptionStatus = await messageEncryptionUtils.getConversationEncryptionStatus(
+        options.conversationId
+      )
+      setEncryptionEnabled(encryptionStatus.isEnabled)
+
       const { data, error } = await supabase
-        .from('conversations')
-        .select(`
-          *,
-          student:students(
-            id, first_name_ar, last_name_ar, first_name_en, last_name_en, registration_number
-          ),
-          parent:parent_profiles(id, name, email, avatar_url),
-          therapist:therapist_profiles(id, name, email, avatar_url, specialization)
-        `)
-        .eq('id', conversationId)
-        .single()
-
-      if (error) {
-        console.error('❌ Error fetching conversation:', error)
-        throw error
-      }
-
-      console.log('✅ useConversation: Conversation fetched successfully')
-      return data
-    },
-    enabled: !!conversationId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
-
-/**
- * Create new conversation
- */
-export const useCreateConversation = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (data: CreateConversationData): Promise<Conversation> => {
-      console.log('🔍 useCreateConversation: Creating conversation:', data)
-      
-      const user = await requireAuth()
-      
-      const newConversation = await messagingService.createConversation(data)
-      
-      console.log('✅ useCreateConversation: Conversation created successfully:', newConversation.id)
-      return newConversation
-    },
-    onSuccess: (data, variables) => {
-      // Invalidate conversations list for both participants
-      queryClient.invalidateQueries({ queryKey: ['conversations', variables.parent_id] })
-      queryClient.invalidateQueries({ queryKey: ['conversations', variables.therapist_id] })
-      
-      // Set the new conversation in cache
-      queryClient.setQueryData(['conversations', data.id], data)
-      
-      console.log('✅ useCreateConversation: Cache updated successfully')
-    },
-    onError: (error, variables) => {
-      console.error('❌ useCreateConversation: Error creating conversation:', error)
-      
-      errorMonitoring.reportError(error as Error, {
-        component: 'useCreateConversation',
-        action: 'create_conversation',
-        metadata: { 
-          parent_id: variables.parent_id,
-          therapist_id: variables.therapist_id,
-          student_id: variables.student_id
-        }
-      })
-    }
-  })
-}
-
-// =============================================================================
-// MESSAGE HOOKS
-// =============================================================================
-
-/**
- * Fetch messages for a conversation with real-time updates
- */
-export const useRealTimeMessaging = (conversationId: string) => {
-  const queryClient = useQueryClient()
-
-  // Subscribe to real-time message updates
-  useEffect(() => {
-    if (!conversationId) return
-
-    const cleanup = messagingService.subscribeToConversation(conversationId, {
-      onNewMessage: (message: Message) => {
-        console.log('📨 New message received:', message.id)
-        
-        // Add to messages cache with optimistic update
-        queryClient.setQueryData(['messages', conversationId], (old: Message[] | undefined) => {
-          if (!old) return [message]
-          
-          // Check if message already exists (prevent duplicates)
-          if (old.some(m => m.id === message.id)) return old
-          
-          return [...old, message].sort((a, b) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          )
-        })
-
-        // Update conversation last message info
-        queryClient.setQueryData(['conversations', conversationId], (old: Conversation | undefined) => {
-          if (!old) return old
-          return {
-            ...old,
-            last_message_at: message.created_at,
-            last_message_by: message.sender_id,
-            message_count: old.message_count + 1
-          }
-        })
-      },
-      
-      onMessageRead: ({ userId, timestamp }: MessageReadEvent) => {
-        console.log('👀 Messages marked as read by:', userId)
-        
-        // Update read status for messages in cache
-        queryClient.setQueryData(['messages', conversationId], (old: Message[] | undefined) => {
-          if (!old) return old
-          
-          return old.map(message => {
-            if (message.recipient_id === userId && !message.read_status) {
-              return {
-                ...message,
-                read_status: true,
-                read_at: timestamp
-              }
-            }
-            return message
-          })
-        })
-      },
-      
-      onTyping: ({ userId, isTyping }: TypingEvent) => {
-        // Update typing indicators in cache or state management
-        queryClient.setQueryData(['typing', conversationId], (old: Record<string, boolean> | undefined) => {
-          return { ...old, [userId]: isTyping }
-        })
-        
-        // Clear typing indicator after 3 seconds if true
-        if (isTyping) {
-          setTimeout(() => {
-            queryClient.setQueryData(['typing', conversationId], (current: Record<string, boolean> | undefined) => {
-              if (!current) return {}
-              const updated = { ...current }
-              delete updated[userId]
-              return updated
-            })
-          }, 3000)
-        }
-      }
-    })
-
-    return cleanup
-  }, [conversationId, queryClient])
-
-  return useQuery({
-    queryKey: ['messages', conversationId],
-    queryFn: async (): Promise<Message[]> => {
-      // PATTERN: Always validate auth first (see useStudents.ts:22)
-      const user = await requireAuth()
-      
-      const data = await messagingService.getConversationMessages(conversationId)
-      
-      console.log('✅ useRealTimeMessaging: Messages fetched successfully:', data?.length, 'records')
-      return data || []
-    },
-    enabled: !!conversationId,
-    staleTime: 0, // Always fresh for real-time messaging
-    refetchInterval: false, // Rely on real-time subscriptions
-    refetchOnMount: true,
-    refetchOnWindowFocus: true
-  })
-}
-
-/**
- * Send message with optimistic updates
- */
-export const useSendMessage = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (data: SendMessageData): Promise<Message> => {
-      console.log('🔍 useSendMessage: Sending message:', data)
-      
-      const user = await requireAuth()
-      
-      const newMessage = await messagingService.sendMessage(data)
-      
-      console.log('✅ useSendMessage: Message sent successfully:', newMessage.id)
-      return newMessage
-    },
-    onMutate: async (variables) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['messages', variables.conversation_id] })
-      
-      // Snapshot the previous value
-      const previousMessages = queryClient.getQueryData<Message[]>(['messages', variables.conversation_id])
-      
-      // Create optimistic message
-      const user = await requireAuth()
-      const optimisticMessage: Message = {
-        id: `temp-${Date.now()}`, // Temporary ID
-        conversation_id: variables.conversation_id,
-        sender_id: user.id,
-        recipient_id: variables.recipient_id,
-        content_ar: variables.content_ar,
-        content_en: variables.content_en,
-        message_type: variables.message_type,
-        priority_level: variables.priority_level || 'normal',
-        requires_response: variables.requires_response || false,
-        response_deadline: variables.response_deadline,
-        media_attachments: variables.media_attachments || [],
-        read_status: false,
-        delivered_at: new Date().toISOString(),
-        alert_processed: false,
-        escalation_triggered: false,
-        related_session_id: variables.related_session_id,
-        related_goal_id: variables.related_goal_id,
-        reply_to_message_id: variables.reply_to_message_id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        sender: {
-          id: user.id,
-          name: user.user_metadata?.name || user.email?.split('@')[0] || 'User'
-        }
-      }
-      
-      // Optimistically update messages
-      queryClient.setQueryData(['messages', variables.conversation_id], (old: Message[] | undefined) => {
-        if (!old) return [optimisticMessage]
-        return [...old, optimisticMessage]
-      })
-      
-      // Return context for rollback
-      return { previousMessages, optimisticMessage }
-    },
-    onError: (error, variables, context) => {
-      // Roll back optimistic update
-      if (context?.previousMessages) {
-        queryClient.setQueryData(['messages', variables.conversation_id], context.previousMessages)
-      }
-      
-      console.error('❌ useSendMessage: Error sending message:', error)
-      
-      errorMonitoring.reportError(error as Error, {
-        component: 'useSendMessage',
-        action: 'send_message',
-        metadata: { 
-          conversation_id: variables.conversation_id,
-          message_type: variables.message_type
-        }
-      })
-    },
-    onSuccess: (actualMessage, variables, context) => {
-      // Replace optimistic message with actual message
-      queryClient.setQueryData(['messages', variables.conversation_id], (old: Message[] | undefined) => {
-        if (!old) return [actualMessage]
-        
-        return old.map(message => {
-          // Replace temporary optimistic message with actual
-          if (message.id === context?.optimisticMessage.id) {
-            return actualMessage
-          }
-          return message
-        })
-      })
-
-      // Update conversation cache
-      queryClient.invalidateQueries({ queryKey: ['conversations'] })
-      
-      console.log('✅ useSendMessage: Cache updated successfully')
-    },
-  })
-}
-
-/**
- * Mark messages as read
- */
-export const useMarkMessagesAsRead = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (conversationId: string): Promise<number> => {
-      console.log('🔍 useMarkMessagesAsRead: Marking messages as read:', conversationId)
-      
-      const user = await requireAuth()
-      
-      const count = await messagingService.markMessagesAsRead(conversationId)
-      
-      console.log('✅ useMarkMessagesAsRead: Messages marked as read:', count)
-      return count
-    },
-    onSuccess: (count, conversationId) => {
-      // Update message read status in cache
-      queryClient.setQueryData(['messages', conversationId], (old: Message[] | undefined) => {
-        if (!old) return old
-        
-        return old.map(message => {
-          if (!message.read_status && message.recipient_id === user.id) {
-            return {
-              ...message,
-              read_status: true,
-              read_at: new Date().toISOString()
-            }
-          }
-          return message
-        })
-      })
-
-      // Update unread counts
-      queryClient.invalidateQueries({ queryKey: ['conversations'] })
-      queryClient.invalidateQueries({ queryKey: ['unread-count'] })
-      
-      console.log('✅ useMarkMessagesAsRead: Cache updated successfully')
-    },
-    onError: (error, conversationId) => {
-      console.error('❌ useMarkMessagesAsRead: Error marking messages as read:', error)
-      
-      errorMonitoring.reportError(error as Error, {
-        component: 'useMarkMessagesAsRead',
-        action: 'mark_messages_read',
-        metadata: { conversation_id: conversationId }
-      })
-    }
-  })
-}
-
-/**
- * Get unread message count for user
- */
-export const useUnreadMessageCount = (userId: string) => {
-  return useQuery({
-    queryKey: ['unread-count', userId],
-    queryFn: async (): Promise<number> => {
-      console.log('🔍 useUnreadMessageCount: Fetching unread count for user:', userId)
-      
-      const user = await requireAuth()
-      
-      const count = await messagingService.getUnreadMessageCount(userId)
-      
-      console.log('✅ useUnreadMessageCount: Unread count fetched:', count)
-      return count
-    },
-    enabled: !!userId,
-    staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every minute
-  })
-}
-
-// =============================================================================
-// TYPING INDICATOR HOOKS
-// =============================================================================
-
-/**
- * Typing indicators for conversation
- */
-export const useTypingIndicators = (conversationId: string) => {
-  return useQuery({
-    queryKey: ['typing', conversationId],
-    queryFn: async (): Promise<Record<string, boolean>> => {
-      // Typing indicators are managed entirely by real-time events
-      // This query just provides the cache structure
-      return {}
-    },
-    enabled: !!conversationId,
-    staleTime: Infinity, // Never stale - managed by real-time events
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
-  })
-}
-
-/**
- * Send typing indicator
- */
-export const useSendTypingIndicator = () => {
-  return useMutation({
-    mutationFn: async ({ conversationId, isTyping }: { conversationId: string; isTyping: boolean }) => {
-      await messagingService.sendTypingIndicator(conversationId, isTyping)
-    },
-    onError: (error) => {
-      console.error('❌ Error sending typing indicator:', error)
-      // Don't report typing errors to error monitoring - they're not critical
-    }
-  })
-}
-
-// =============================================================================
-// SEARCH AND FILTERING HOOKS
-// =============================================================================
-
-/**
- * Search messages across conversations
- */
-export const useSearchMessages = (searchTerm: string, filters: MessageFilters = {}) => {
-  return useQuery({
-    queryKey: ['messages', 'search', searchTerm, filters],
-    queryFn: async (): Promise<Message[]> => {
-      if (!searchTerm.trim()) {
-        return []
-      }
-
-      console.log('🔍 useSearchMessages: Searching messages with term:', searchTerm)
-      
-      const user = await requireAuth()
-      
-      let query = supabase
         .from('messages')
         .select(`
           *,
-          conversation:conversations!inner(
-            id, parent_id, therapist_id, student_id,
-            student:students(first_name_ar, last_name_ar, first_name_en, last_name_en)
+          sender:sender_id (
+            id,
+            name,
+            email,
+            avatar_url
+          ),
+          recipient:recipient_id (
+            id,
+            name,
+            email
+          ),
+          reactions:message_reactions (
+            id,
+            reaction_type,
+            reaction_emoji,
+            user_id,
+            created_at
           )
         `)
-        .or(`content_ar.ilike.%${searchTerm}%,content_en.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
+        .eq('conversation_id', options.conversationId)
+        .order('created_at', { ascending: true })
 
-      // Apply filters
-      if (filters.conversation_id) {
-        query = query.eq('conversation_id', filters.conversation_id)
-      }
+      if (error) throw error
 
-      if (filters.message_type) {
-        query = query.eq('message_type', filters.message_type)
-      }
+      // Decrypt messages if encryption is enabled
+      const processedMessages = await Promise.all(
+        (data || []).map(async (message) => {
+          if (encryptionStatus.isEnabled && messageEncryptionUtils.isMessageEncrypted(message)) {
+            try {
+              return await messageEncryptionService.decryptMessage(message)
+            } catch (decryptError) {
+              console.warn('Failed to decrypt message:', message.id, decryptError)
+              return { ...message, content_ar: '[رسالة مشفرة]', content_en: '[Encrypted message]' }
+            }
+          }
+          return message
+        })
+      )
 
-      if (filters.priority_level) {
-        query = query.eq('priority_level', filters.priority_level)
-      }
-
-      if (filters.unread_only) {
-        query = query.eq('read_status', false)
-      }
-
-      const { data, error } = await query.limit(50)
-
-      if (error) {
-        console.error('❌ Error searching messages:', error)
-        throw error
-      }
-
-      console.log('✅ useSearchMessages: Search completed:', data?.length || 0, 'results')
-      return data || []
-    },
-    enabled: !!searchTerm.trim(),
-    staleTime: 1 * 60 * 1000, // 1 minute
-  })
-}
-
-// =============================================================================
-// CONVERSATION STATISTICS HOOKS
-// =============================================================================
-
-/**
- * Get conversation statistics for dashboard
- */
-export const useConversationStats = (userId: string) => {
-  return useQuery({
-    queryKey: ['conversation-stats', userId],
-    queryFn: async (): Promise<ConversationStats> => {
-      console.log('🔍 useConversationStats: Fetching stats for user:', userId)
-      
-      const user = await requireAuth()
-      
-      // Get basic conversation statistics
-      const { data: conversations } = await supabase
-        .from('conversations')
-        .select('id, status, message_count, unread_count_parent, unread_count_therapist, created_at')
-        .or(`parent_id.eq.${userId},therapist_id.eq.${userId}`)
-
-      // Get today's voice call count
-      const today = new Date().toISOString().split('T')[0]
-      const { data: todayCalls } = await supabase
-        .from('voice_calls')
-        .select('id')
-        .or(`caller_id.eq.${userId},callee_id.eq.${userId}`)
-        .gte('initiated_at', today)
-
-      // Calculate statistics
-      const stats: ConversationStats = {
-        total_conversations: conversations?.length || 0,
-        active_conversations: conversations?.filter(c => c.status === 'active').length || 0,
-        unread_messages: conversations?.reduce((sum, c) => {
-          const userUnread = userId === c.parent_id ? c.unread_count_parent : c.unread_count_therapist
-          return sum + userUnread
-        }, 0) || 0,
-        priority_messages: 0, // Would need additional query
-        voice_calls_today: todayCalls?.length || 0,
-        media_shared_today: 0, // Would need additional query
-        response_time_avg_minutes: 0, // Would need complex calculation
-        user_engagement_score: 0.8 // Placeholder - calculate based on activity
-      }
-
-      console.log('✅ useConversationStats: Stats calculated:', stats)
-      return stats
-    },
-    enabled: !!userId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
-  })
-}
-
-// =============================================================================
-// UTILITY HOOKS
-// =============================================================================
-
-/**
- * Check if user can message another user
- */
-export const useCanMessage = (recipientId: string) => {
-  return useQuery({
-    queryKey: ['can-message', recipientId],
-    queryFn: async (): Promise<boolean> => {
-      const user = await requireAuth()
-      
-      // Check if there's an active relationship (parent-therapist via student)
-      const { data } = await supabase
-        .from('student_therapists')
-        .select('id')
-        .or(`parent_id.eq.${user.id},therapist_id.eq.${user.id}`)
-        .or(`parent_id.eq.${recipientId},therapist_id.eq.${recipientId}`)
-        .eq('is_active', true)
-        .limit(1)
-
-      return (data?.length || 0) > 0
-    },
-    enabled: !!recipientId,
-    staleTime: 5 * 60 * 1000,
-  })
-}
-
-/**
- * Archive conversation
- */
-export const useArchiveConversation = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (conversationId: string): Promise<void> => {
-      console.log('🔍 useArchiveConversation: Archiving conversation:', conversationId)
-      
-      await messagingService.archiveConversation(conversationId)
-    },
-    onSuccess: (_, conversationId) => {
-      // Remove from active conversations
-      queryClient.setQueryData(['conversations'], (old: Conversation[] | undefined) => {
-        if (!old) return old
-        return old.filter(c => c.id !== conversationId)
-      })
-      
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['conversations'] })
-      
-      console.log('✅ useArchiveConversation: Conversation archived successfully')
-    },
-    onError: (error, conversationId) => {
-      console.error('❌ useArchiveConversation: Error archiving conversation:', error)
-      
-      errorMonitoring.reportError(error as Error, {
-        component: 'useArchiveConversation',
-        action: 'archive_conversation',
-        metadata: { conversation_id: conversationId }
-      })
+      setMessages(processedMessages)
+    } catch (err) {
+      console.error('Error loading messages:', err)
+      setError('Failed to load messages')
+    } finally {
+      setIsLoading(false)
     }
-  })
+  }, [options.conversationId])
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!options.conversationId) return
+
+    loadMessages()
+
+    // Subscribe to new messages
+    const messagesChannel = supabase
+      .channel(`messages:${options.conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${options.conversationId}`,
+        },
+        async (payload) => {
+          const newMessage = payload.new as Message
+          
+          // Decrypt new message if encryption is enabled
+          let processedMessage = newMessage
+          if (encryptionEnabled && messageEncryptionUtils.isMessageEncrypted(newMessage)) {
+            try {
+              processedMessage = await messageEncryptionService.decryptMessage(newMessage)
+            } catch (decryptError) {
+              console.warn('Failed to decrypt new message:', newMessage.id, decryptError)
+              processedMessage = { 
+                ...newMessage, 
+                content_ar: '[رسالة مشفرة]', 
+                content_en: '[Encrypted message]' 
+              }
+            }
+          }
+          
+          setMessages((prev) => [...prev, processedMessage])
+          options.onMessageReceived?.(processedMessage)
+          
+          // Send push notification if this message is for current user
+          if (processedMessage.recipient_id === options.userId && processedMessage.sender_id !== options.userId) {
+            try {
+              // Get conversation details for notification
+              const { data: conversation } = await supabase
+                .from('conversations')
+                .select('*')
+                .eq('id', processedMessage.conversation_id)
+                .single()
+                
+              if (conversation) {
+                await communicationPushNotifications.notifyNewMessage(processedMessage, conversation)
+              }
+            } catch (error) {
+              console.warn('Failed to send push notification:', error)
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${options.conversationId}`,
+        },
+        (payload) => {
+          const updatedMessage = payload.new as Message
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg
+            )
+          )
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true)
+        } else if (status === 'CHANNEL_ERROR') {
+          setIsConnected(false)
+          setError('Connection error')
+        }
+      })
+
+    // Subscribe to typing indicators
+    const typingChannel = supabase
+      .channel(`typing:${options.conversationId}`)
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        const { userId, isTyping } = payload.payload
+        
+        if (userId !== options.userId) {
+          if (isTyping) {
+            setTypingUsers((prev) => new Set([...prev, userId]))
+            options.onTypingStart?.(userId)
+            
+            // Clear existing timeout for this user
+            const existingTimeout = typingTimeoutRef.current.get(userId)
+            if (existingTimeout) {
+              clearTimeout(existingTimeout)
+            }
+            
+            // Set new timeout to remove typing indicator
+            const timeout = setTimeout(() => {
+              setTypingUsers((prev) => {
+                const newSet = new Set(prev)
+                newSet.delete(userId)
+                return newSet
+              })
+              options.onTypingStop?.(userId)
+              typingTimeoutRef.current.delete(userId)
+            }, 3000)
+            
+            typingTimeoutRef.current.set(userId, timeout)
+          } else {
+            setTypingUsers((prev) => {
+              const newSet = new Set(prev)
+              newSet.delete(userId)
+              return newSet
+            })
+            options.onTypingStop?.(userId)
+            
+            const existingTimeout = typingTimeoutRef.current.get(userId)
+            if (existingTimeout) {
+              clearTimeout(existingTimeout)
+              typingTimeoutRef.current.delete(userId)
+            }
+          }
+        }
+      })
+      .subscribe()
+
+    // Subscribe to user presence
+    const presenceChannel = supabase
+      .channel(`presence:${options.conversationId}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState()
+        const users = new Set<string>()
+        
+        Object.keys(state).forEach((userId) => {
+          users.add(userId)
+        })
+        
+        setOnlineUsers(users)
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        setOnlineUsers((prev) => new Set([...prev, key]))
+        options.onUserOnline?.(key)
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        setOnlineUsers((prev) => {
+          const newSet = new Set(prev)
+          newSet.delete(key)
+          return newSet
+        })
+        options.onUserOffline?.(key)
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED' && options.userId) {
+          // Track user presence
+          await presenceChannel.track({
+            user_id: options.userId,
+            online_at: new Date().toISOString(),
+          })
+        }
+      })
+
+    subscriptionRef.current = { messagesChannel, typingChannel, presenceChannel }
+
+    return () => {
+      messagesChannel.unsubscribe()
+      typingChannel.unsubscribe()
+      presenceChannel.unsubscribe()
+      
+      // Clear typing timeouts
+      typingTimeoutRef.current.forEach((timeout) => clearTimeout(timeout))
+      typingTimeoutRef.current.clear()
+    }
+  }, [options.conversationId, options.userId, loadMessages])
+
+  // Send typing indicator
+  const sendTypingIndicator = useCallback((isTyping: boolean) => {
+    if (!options.conversationId || !options.userId || !subscriptionRef.current) return
+
+    subscriptionRef.current.typingChannel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: {
+        userId: options.userId,
+        isTyping,
+      },
+    })
+  }, [options.conversationId, options.userId])
+
+  return {
+    messages,
+    isConnected,
+    isLoading,
+    error,
+    typingUsers: Array.from(typingUsers),
+    onlineUsers: Array.from(onlineUsers),
+    encryptionEnabled,
+    sendTypingIndicator,
+    refetchMessages: loadMessages,
+  }
 }
+
+export const useConversation = (conversationId: string) => {
+  const [conversation, setConversation] = useState<Conversation | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadConversation = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const { data, error } = await supabase
+          .from('conversations')
+          .select(`
+            *,
+            parent:parent_id (
+              id,
+              name,
+              email,
+              avatar_url
+            ),
+            therapist:therapist_id (
+              id,
+              name,
+              email,
+              avatar_url
+            ),
+            student:student_id (
+              id,
+              first_name_ar,
+              last_name_ar,
+              first_name_en,
+              last_name_en,
+              registration_number
+            ),
+            participants:conversation_participants (
+              id,
+              user_id,
+              role,
+              status,
+              notifications_enabled,
+              last_seen_at
+            )
+          `)
+          .eq('id', conversationId)
+          .single()
+
+        if (error) throw error
+
+        setConversation(data)
+      } catch (err) {
+        console.error('Error loading conversation:', err)
+        setError('Failed to load conversation')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (conversationId) {
+      loadConversation()
+    }
+  }, [conversationId])
+
+  return { conversation, isLoading, error }
+}
+
+export const useSendMessage = () => {
+  const [isSending, setIsSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const sendMessage = useCallback(async (messageData: SendMessageData) => {
+    setIsSending(true)
+    setError(null)
+
+    try {
+      // Check if encryption should be used for this conversation
+      const encryptionStatus = await messageEncryptionUtils.getConversationEncryptionStatus(
+        messageData.conversationId
+      )
+
+      let messageToInsert: any = {
+        conversation_id: messageData.conversationId,
+        sender_id: messageData.senderId,
+        recipient_id: messageData.recipientId,
+        message_type: messageData.messageType || 'text',
+        priority_level: messageData.priorityLevel || 'normal',
+        reply_to_message_id: messageData.replyToMessageId,
+        related_session_id: messageData.relatedSessionId,
+        related_goal_id: messageData.relatedGoalId,
+      }
+
+      // Encrypt message if encryption is enabled
+      if (encryptionStatus.isEnabled) {
+        try {
+          const encryptionResult = await messageEncryptionService.encryptMessage({
+            content_ar: messageData.contentAr,
+            content_en: messageData.contentEn,
+            message_type: messageData.messageType || 'text',
+            media_attachments: messageData.mediaAttachments || []
+          })
+
+          messageToInsert = {
+            ...messageToInsert,
+            ...encryptionResult.encryptedMessage,
+            encryption_key_id: encryptionResult.encryptionMetadata.keyId,
+            iv: encryptionResult.encryptionMetadata.iv,
+            auth_tag: encryptionResult.encryptionMetadata.authTag,
+            content_hash: encryptionResult.encryptionMetadata.contentHash,
+            encrypted_at: new Date().toISOString()
+          }
+        } catch (encryptError) {
+          console.warn('Encryption failed, sending unencrypted:', encryptError)
+          messageToInsert = {
+            ...messageToInsert,
+            content_ar: messageData.contentAr,
+            content_en: messageData.contentEn,
+            media_attachments: messageData.mediaAttachments || []
+          }
+        }
+      } else {
+        messageToInsert = {
+          ...messageToInsert,
+          content_ar: messageData.contentAr,
+          content_en: messageData.contentEn,
+          media_attachments: messageData.mediaAttachments || []
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([messageToInsert])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return { success: true, data }
+    } catch (err) {
+      console.error('Error sending message:', err)
+      setError('Failed to send message')
+      return { success: false, error: err }
+    } finally {
+      setIsSending(false)
+    }
+  }, [])
+
+  const markAsRead = useCallback(async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({
+          read_status: true,
+          read_at: new Date().toISOString(),
+        })
+        .eq('id', messageId)
+
+      if (error) throw error
+
+      return { success: true }
+    } catch (err) {
+      console.error('Error marking message as read:', err)
+      return { success: false, error: err }
+    }
+  }, [])
+
+  const addReaction = useCallback(async (messageId: string, reactionType: string, emoji?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('message_reactions')
+        .upsert([
+          {
+            message_id: messageId,
+            user_id: (await supabase.auth.getUser()).data.user?.id,
+            reaction_type: reactionType,
+            reaction_emoji: emoji,
+          },
+        ])
+        .select()
+
+      if (error) throw error
+
+      return { success: true, data }
+    } catch (err) {
+      console.error('Error adding reaction:', err)
+      return { success: false, error: err }
+    }
+  }, [])
+
+  return {
+    sendMessage,
+    markAsRead,
+    addReaction,
+    isSending,
+    error,
+  }
+}
+
+// Hook for fetching user's conversations list
+export const useConversations = (userId: string) => {
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadConversations = async () => {
+      if (!userId) {
+        setConversations([])
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const { data, error } = await supabase
+          .from('conversations')
+          .select(`
+            *,
+            parent:parent_id (
+              id,
+              name,
+              email,
+              avatar_url
+            ),
+            therapist:therapist_id (
+              id,
+              name,
+              email,
+              avatar_url
+            ),
+            student:student_id (
+              id,
+              first_name_ar,
+              last_name_ar,
+              first_name_en,
+              last_name_en,
+              registration_number
+            ),
+            participants:conversation_participants (
+              id,
+              user_id,
+              role,
+              status,
+              notifications_enabled,
+              last_seen_at
+            )
+          `)
+          .or(`parent_id.eq.${userId},therapist_id.eq.${userId}`)
+          .order('last_message_at', { ascending: false })
+
+        if (error) throw error
+
+        // Calculate unread messages count for each conversation
+        const conversationsWithUnread = await Promise.all(
+          (data || []).map(async (conversation) => {
+            const { count } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', conversation.id)
+              .eq('recipient_id', userId)
+              .eq('read_status', false)
+
+            return {
+              ...conversation,
+              unread_count: count || 0
+            }
+          })
+        )
+
+        setConversations(conversationsWithUnread)
+      } catch (err) {
+        console.error('Error loading conversations:', err)
+        setError('Failed to load conversations')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadConversations()
+
+    // Subscribe to conversation updates
+    const conversationsChannel = supabase
+      .channel(`user_conversations:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+          filter: `parent_id=eq.${userId}`,
+        },
+        () => {
+          loadConversations()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+          filter: `therapist_id=eq.${userId}`,
+        },
+        () => {
+          loadConversations()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      conversationsChannel.unsubscribe()
+    }
+  }, [userId])
+
+  return { data: conversations, isLoading, error }
+}
+
+export default useRealTimeMessaging

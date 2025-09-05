@@ -181,6 +181,40 @@
   border-inline-start: 4px solid rgb(var(--primary));
 }
 
+/* RTL specific navigation item styling */
+[dir="rtl"] .nav-item {
+  text-align: right !important;
+  justify-content: flex-start !important;
+  flex-direction: row !important;
+}
+
+[dir="rtl"] .nav-item span {
+  text-align: right !important;
+  width: 100% !important;
+  order: 2 !important;
+}
+
+[dir="rtl"] .nav-item svg {
+  order: 1 !important;
+}
+
+/* RTL sidebar category headers */
+[dir="rtl"] .sidebar nav .flex.items-center {
+  flex-direction: row !important;
+  text-align: right !important;
+  justify-content: flex-start !important;
+}
+
+[dir="rtl"] .sidebar nav .flex.items-center span {
+  text-align: right !important;
+  width: 100% !important;
+  order: 2 !important;
+}
+
+[dir="rtl"] .sidebar nav .flex.items-center svg {
+  order: 1 !important;
+}
+
 /* Enhanced Form Styles */
 .form-modern {
   @apply bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20;
@@ -473,7 +507,7 @@
 }
 
 /* Radio and checkbox alignment for RTL */
-[dir="rtl"] .flex.items-center {
+[dir="rtl"] .flex.items-center:not(.nav-item):not(nav .flex.items-center) {
   flex-direction: row-reverse;
 }
 
@@ -578,6 +612,202 @@
   text-align: right !important;
 }
 
+/* Sidebar header and navigation alignment for RTL */
+[dir="rtl"] .sidebar .flex.items-center {
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+[dir="rtl"] .sidebar nav a {
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+[dir="rtl"] .sidebar nav span {
+  text-align: right !important;
+}
+
+/* Sidebar modern class specific RTL styles */
+[dir="rtl"] .sidebar-modern {
+  direction: rtl !important;
+}
+
+[dir="rtl"] .sidebar-modern .flex.items-center.justify-between {
+  flex-direction: row-reverse !important;
+}
+
+[dir="rtl"] .sidebar-modern nav {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* Force all sidebar navigation text to align right in RTL */
+[dir="rtl"] .sidebar-modern nav .space-y-6 {
+  direction: rtl !important;
+}
+
+[dir="rtl"] .sidebar-modern nav .space-y-2 {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+[dir="rtl"] .sidebar-modern nav .space-y-2 > div {
+  text-align: right !important;
+}
+
+/* Ensure all navigation links are right-aligned */
+[dir="rtl"] .sidebar-modern a {
+  direction: rtl !important;
+  text-align: right !important;
+  flex-direction: row !important;
+}
+
+[dir="rtl"] .sidebar-modern a span {
+  text-align: right !important;
+  direction: rtl !important;
+  order: 2 !important;
+}
+
+[dir="rtl"] .sidebar-modern a svg {
+  order: 1 !important;
+}
+
+/* Additional aggressive RTL styling for sidebar navigation */
+[dir="rtl"] aside nav {
+  direction: rtl !important;
+}
+
+[dir="rtl"] aside nav * {
+  text-align: right !important;
+}
+
+[dir="rtl"] aside .nav-item * {
+  text-align: right !important;
+}
+
+/* Comprehensive icon positioning for all sidebar navigation */
+[dir="rtl"] aside nav svg,
+[dir="rtl"] aside nav .nav-item svg,
+[dir="rtl"] aside .nav-item > svg,
+[dir="rtl"] .sidebar nav svg,
+[dir="rtl"] .sidebar-modern nav svg,
+[dir="rtl"] nav a svg,
+[dir="rtl"] .nav-item svg {
+  order: 1 !important;
+}
+
+[dir="rtl"] aside nav span,
+[dir="rtl"] aside nav .nav-item span,
+[dir="rtl"] aside .nav-item > span,
+[dir="rtl"] .sidebar nav span,
+[dir="rtl"] .sidebar-modern nav span,
+[dir="rtl"] nav a span,
+[dir="rtl"] .nav-item span {
+  order: 2 !important;
+}
+
+/* Force all navigation items to use row direction with proper ordering */
+[dir="rtl"] .nav-item,
+[dir="rtl"] nav a,
+[dir="rtl"] aside nav a,
+[dir="rtl"] .sidebar nav a {
+  flex-direction: row !important;
+  display: flex !important;
+}
+
+/* Override Tailwind margin classes for RTL icon positioning */
+[dir="rtl"] .sidebar nav .flex.items-center svg.ml-2 {
+  margin-left: 0 !important;
+  margin-right: 0.5rem !important;
+  order: 1 !important;
+}
+
+[dir="rtl"] .sidebar nav .flex.items-center svg.mr-2 {
+  margin-right: 0 !important;
+  margin-left: 0.5rem !important;
+  order: 1 !important;
+}
+
+/* Specific fix for category header icons */
+[dir="rtl"] .sidebar nav .flex.items-center.px-2.py-1 svg {
+  order: 1 !important;
+  margin-left: 0 !important;
+  margin-right: 0.5rem !important;
+}
+
+[dir="rtl"] .sidebar nav .flex.items-center.px-2.py-1 span {
+  order: 2 !important;
+}
+
+/* Fix navigation item icons with mr-3 class */
+[dir="rtl"] .nav-item svg.mr-3,
+[dir="rtl"] .sidebar nav a svg.mr-3 {
+  margin-right: 0 !important;
+  margin-left: 0.75rem !important;
+  order: 1 !important;
+}
+
+/* Ensure all sidebar navigation icons are positioned correctly */
+[dir="rtl"] .sidebar nav svg,
+[dir="rtl"] .sidebar .nav-item svg {
+  order: 1 !important;
+}
+
+/* Ultimate fallback for any remaining icon positioning issues */
+[dir="rtl"] aside.sidebar-modern nav svg,
+[dir="rtl"] aside.sidebar-modern .nav-item svg,
+[dir="rtl"] aside.sidebar-modern .flex.items-center svg {
+  order: 1 !important;
+  margin-right: 0.5rem !important;
+  margin-left: 0 !important;
+}
+
+[dir="rtl"] aside.sidebar-modern nav span,
+[dir="rtl"] aside.sidebar-modern .nav-item span,
+[dir="rtl"] aside.sidebar-modern .flex.items-center span {
+  order: 2 !important;
+}
+
+/* AGGRESSIVE RTL ICON POSITIONING - MAXIMUM SPECIFICITY */
+html[dir="rtl"] body div aside.sidebar-modern nav svg,
+html[dir="rtl"] body div aside nav svg,
+html[dir="rtl"] body aside nav svg,
+html[dir="rtl"] aside nav svg {
+  order: -1 !important;
+  margin-left: 0 !important;
+  margin-right: 0.5rem !important;
+}
+
+html[dir="rtl"] body div aside.sidebar-modern nav span,
+html[dir="rtl"] body div aside nav span,
+html[dir="rtl"] body aside nav span,
+html[dir="rtl"] aside nav span {
+  order: 1 !important;
+}
+
+/* Force flex direction and display for all navigation items */
+html[dir="rtl"] body aside nav a,
+html[dir="rtl"] body aside nav .flex.items-center,
+html[dir="rtl"] aside nav a,
+html[dir="rtl"] aside nav .flex.items-center {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+/* Target specific Lucide icons */
+html[dir="rtl"] svg.lucide {
+  order: -1 !important;
+  margin-left: 0 !important;
+  margin-right: 0.5rem !important;
+}
+
+/* Clean RTL icon positioning without test colors */
+html[dir="rtl"] aside nav svg {
+  order: -1 !important;
+  margin-left: 0 !important;
+  margin-right: 0.5rem !important;
+}
+
 /* Subsection headings within card content for RTL */
 [dir="rtl"] .card-content h1,
 [dir="rtl"] .card-content h2,
@@ -601,6 +831,24 @@
 
 [dir="rtl"] .text-muted-foreground {
   text-align: right !important;
+}
+
+/* Header RTL layout fixes */
+[dir="rtl"] header .container {
+  direction: rtl !important;
+}
+
+[dir="rtl"] header .flex.justify-between {
+  flex-direction: row !important;
+}
+
+/* Ensure header elements maintain proper order in RTL */
+[dir="rtl"] header .order-1 {
+  order: 3 !important;
+}
+
+[dir="rtl"] header .order-3 {
+  order: 1 !important;
 }
 
 /* AGGRESSIVE Header layout fixes for RTL */
@@ -759,7 +1007,7 @@
   justify-content: flex-start;
 }
 
-[dir="rtl"] nav.flex-1 .flex.items-center {
+[dir="rtl"] nav.flex-1 .flex.items-center:not(.nav-item) {
   flex-direction: row-reverse;
   text-align: right;
 }
@@ -788,7 +1036,7 @@
 
 /* Sidebar navigation icons for RTL */
 [dir="rtl"] nav a svg {
-  order: 2;
+  order: 1 !important;
   margin-left: 0.75rem;
   margin-right: 0;
 }
@@ -871,4 +1119,46 @@
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/*
+============================================
+== RIGHT-TO-LEFT (RTL) STYLES FOR ARABIC  ==
+============================================
+*/
+
+/* 1. Global Text Alignment */
+[dir="rtl"] body {
+  text-align: right;
+}
+
+/* 2. Sidebar Layout & Alignment */
+/* This rule will move the sidebar to the right side of the screen */
+[dir="rtl"] .sidebar { /* Assuming a class 'sidebar' on your main aside element */
+  left: auto;
+  right: 0;
+}
+
+/* Adjust main content padding to account for the sidebar on the right */
+[dir="rtl"] .main-content { /* Assuming a class on your main content wrapper */
+  padding-left: 0;
+  padding-right: 250px; /* Adjust this value to match your sidebar's width */
+}
+
+/* Ensure text within sidebar links is right-aligned */
+[dir="rtl"] aside nav a div {
+    text-align: right;
+}
+
+/* 3. Card Component Alignment */
+[dir="rtl"] .card-header,
+[dir="rtl"] .card-content,
+[dir="rtl"] .card-footer {
+    text-align: right;
+}
+
+/* 4. Generic Text Alignment Helper */
+/* A utility to force right-alignment on shadcn/ui or other components if needed */
+[dir="rtl"] [class*="text-"] {
+    text-align: right !important;
 }

@@ -15,7 +15,12 @@ import { useTherapists } from '@/hooks/useTherapists'
 import { useCourses } from '@/hooks/useCourses'
 
 interface QRData {
-  type: 'student' | 'session' | 'therapist' | 'room'
+  type: 'student' | 'session' | 'therapist' | 'room' | 'center_entry' | 'center_exit' | 'session_specific'
+  // Center-level properties
+  facilityId?: string
+  location?: string
+  centerAction?: 'check_in' | 'check_out'
+  // Session-level properties  
   studentId?: string
   studentName?: string
   sessionId?: string
@@ -23,7 +28,9 @@ interface QRData {
   therapistId?: string
   therapistName?: string
   roomNumber?: string
+  // Enhanced metadata
   timestamp: string
+  level?: 'center' | 'session' | 'general'
 }
 
 export const QRCodeGenerator = () => {
@@ -39,7 +46,11 @@ export const QRCodeGenerator = () => {
     roomNumber: '',
     courseId: '',
     description: '',
-    tags: ''
+    tags: '',
+    // Dual-level properties
+    facilityId: 'arkan_center_main',
+    location: '',
+    centerAction: 'check_in' as 'check_in' | 'check_out'
   })
   const [generatedQR, setGeneratedQR] = useState<string>('')
   const [qrDataString, setQrDataString] = useState<string>('')
@@ -70,6 +81,7 @@ export const QRCodeGenerator = () => {
         qrData.studentName = formData.studentName
         qrData.sessionType = formData.sessionType
         qrData.roomNumber = formData.roomNumber
+        qrData.level = 'general'
         break
       case 'session':
         qrData.sessionId = formData.sessionId
@@ -79,13 +91,37 @@ export const QRCodeGenerator = () => {
         qrData.therapistId = formData.therapistId
         qrData.therapistName = formData.therapistName
         qrData.roomNumber = formData.roomNumber
+        qrData.level = 'general'
         break
       case 'therapist':
         qrData.therapistId = formData.therapistId
         qrData.therapistName = formData.therapistName
+        qrData.level = 'general'
         break
       case 'room':
         qrData.roomNumber = formData.roomNumber
+        qrData.level = 'general'
+        break
+      // NEW: Dual-level QR types
+      case 'center_entry':
+        qrData.facilityId = formData.facilityId
+        qrData.location = formData.location
+        qrData.centerAction = 'check_in'
+        qrData.level = 'center'
+        break
+      case 'center_exit':
+        qrData.facilityId = formData.facilityId
+        qrData.location = formData.location
+        qrData.centerAction = 'check_out'
+        qrData.level = 'center'
+        break
+      case 'session_specific':
+        qrData.sessionId = formData.sessionId
+        qrData.sessionType = formData.sessionType
+        qrData.studentId = formData.studentId
+        qrData.therapistId = formData.therapistId
+        qrData.roomNumber = formData.roomNumber
+        qrData.level = 'session'
         break
     }
 
@@ -171,13 +207,19 @@ export const QRCodeGenerator = () => {
         student: 'طالب',
         session: 'جلسة',
         therapist: 'معالج',
-        room: 'غرفة'
+        room: 'غرفة',
+        center_entry: 'دخول المركز',
+        center_exit: 'خروج المركز', 
+        session_specific: 'جلسة محددة'
       },
       en: {
         student: 'Student',
         session: 'Session',
         therapist: 'Therapist',
-        room: 'Room'
+        room: 'Room',
+        center_entry: 'Center Entry',
+        center_exit: 'Center Exit',
+        session_specific: 'Session Specific'
       }
     }
     return labels[language as keyof typeof labels][type] || type
@@ -203,7 +245,26 @@ export const QRCodeGenerator = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                {/* General QR Types */}
+                <div className="px-2 py-1 text-xs font-semibold text-muted-foreground border-b">
+                  {language === 'ar' ? 'عام' : 'General'}
+                </div>
                 {(['student', 'session', 'therapist', 'room'] as const).map((type) => {
+                  const Icon = getTypeIcon(type)
+                  return (
+                    <SelectItem key={type} value={type}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        {getTypeLabel(type)}
+                      </div>
+                    </SelectItem>
+                  )
+                })}
+                {/* Dual-Level QR Types */}
+                <div className="px-2 py-1 text-xs font-semibold text-muted-foreground border-b border-t">
+                  {language === 'ar' ? 'المستوى المزدوج' : 'Dual-Level'}
+                </div>
+                {(['center_entry', 'center_exit', 'session_specific'] as const).map((type) => {
                   const Icon = getTypeIcon(type)
                   return (
                     <SelectItem key={type} value={type}>
@@ -382,6 +443,135 @@ export const QRCodeGenerator = () => {
                   className="mt-1"
                 />
               </div>
+            )}
+
+            {/* NEW: Dual-level QR specific fields */}
+            {(qrType === 'center_entry' || qrType === 'center_exit') && (
+              <>
+                <div>
+                  <Label className={language === 'ar' ? 'font-arabic' : ''}>
+                    {language === 'ar' ? 'موقع المركز' : 'Center Location'}
+                  </Label>
+                  <Select 
+                    value={formData.location} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder={language === 'ar' ? 'اختر الموقع' : 'Select location'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Main Entrance">{language === 'ar' ? 'المدخل الرئيسي' : 'Main Entrance'}</SelectItem>
+                      <SelectItem value="Emergency Exit">{language === 'ar' ? 'مخرج الطوارئ' : 'Emergency Exit'}</SelectItem>
+                      <SelectItem value="Side Door">{language === 'ar' ? 'الباب الجانبي' : 'Side Door'}</SelectItem>
+                      <SelectItem value="Reception Area">{language === 'ar' ? 'منطقة الاستقبال' : 'Reception Area'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className={language === 'ar' ? 'font-arabic' : ''}>
+                    {language === 'ar' ? 'معرف المرفق' : 'Facility ID'}
+                  </Label>
+                  <Input
+                    value={formData.facilityId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, facilityId: e.target.value }))}
+                    placeholder="arkan_center_main"
+                    className="mt-1"
+                  />
+                </div>
+              </>
+            )}
+
+            {qrType === 'session_specific' && (
+              <>
+                <div>
+                  <Label className={language === 'ar' ? 'font-arabic' : ''}>
+                    {language === 'ar' ? 'الجلسة' : 'Session'}
+                  </Label>
+                  <Select 
+                    value={formData.sessionId} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, sessionId: value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder={language === 'ar' ? 'اختر الجلسة' : 'Select session'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {/* TODO: Replace with actual sessions query */}
+                      <SelectItem value="session_1">
+                        {language === 'ar' ? 'جلسة علاج النطق - 10:00 ص' : 'Speech Therapy - 10:00 AM'}
+                      </SelectItem>
+                      <SelectItem value="session_2">
+                        {language === 'ar' ? 'جلسة ABA - 2:00 م' : 'ABA Therapy - 2:00 PM'}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className={language === 'ar' ? 'font-arabic' : ''}>
+                    {language === 'ar' ? 'الطالب (اختياري)' : 'Student (Optional)'}
+                  </Label>
+                  <Select 
+                    value={formData.studentId} 
+                    onValueChange={(value) => {
+                      const selectedStudent = students.find(s => s.id === value)
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        studentId: value,
+                        studentName: selectedStudent?.name || ''
+                      }))
+                    }}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder={language === 'ar' ? 'اختر الطالب (اختياري)' : 'Select student (optional)'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">{language === 'ar' ? 'لا يوجد' : 'None'}</SelectItem>
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className={language === 'ar' ? 'font-arabic' : ''}>
+                    {language === 'ar' ? 'المعالج' : 'Therapist'}
+                  </Label>
+                  <Select 
+                    value={formData.therapistId} 
+                    onValueChange={(value) => {
+                      const selectedTherapist = therapists.find(t => t.id === value)
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        therapistId: value,
+                        therapistName: selectedTherapist?.name || ''
+                      }))
+                    }}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder={language === 'ar' ? 'اختر المعالج' : 'Select therapist'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {therapists.map((therapist) => (
+                        <SelectItem key={therapist.id} value={therapist.id}>
+                          {therapist.name} - {therapist.specialization}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className={language === 'ar' ? 'font-arabic' : ''}>
+                    {language === 'ar' ? 'رقم الغرفة' : 'Room Number'}
+                  </Label>
+                  <Input
+                    value={formData.roomNumber}
+                    onChange={(e) => setFormData(prev => ({ ...prev, roomNumber: e.target.value }))}
+                    placeholder={language === 'ar' ? 'أدخل رقم الغرفة' : 'Enter room number'}
+                    className="mt-1"
+                  />
+                </div>
+              </>
             )}
           </div>
 

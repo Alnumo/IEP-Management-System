@@ -686,6 +686,211 @@ export interface SchedulingUIState {
 }
 
 // =====================================================
+// Subscription Management Types (Story 3.3)
+// =====================================================
+
+export enum SubscriptionStatus {
+  ACTIVE = 'active',
+  FROZEN = 'frozen', 
+  SUSPENDED = 'suspended',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
+}
+
+export enum BillingCycle {
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  ANNUALLY = 'annually'
+}
+
+export enum FreezeOperationType {
+  FREEZE = 'freeze',
+  UNFREEZE = 'unfreeze',
+  EXTEND_FREEZE = 'extend_freeze',
+  MODIFY_FREEZE = 'modify_freeze'
+}
+
+export enum OperationStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  ROLLED_BACK = 'rolled_back'
+}
+
+export interface StudentSubscription {
+  id: string;
+  
+  // Core relationships
+  student_id: string;
+  therapy_program_id: string;
+  
+  // Subscription timeline
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // YYYY-MM-DD
+  original_end_date: string; // Original end date before freezes
+  
+  // Freeze management
+  freeze_days_allowed: number;
+  freeze_days_used: number;
+  
+  // Status tracking
+  is_active: boolean;
+  status: SubscriptionStatus;
+  
+  // Billing integration
+  billing_cycle: BillingCycle;
+  total_amount: number;
+  amount_paid: number;
+  
+  // Current freeze tracking
+  current_freeze_start?: string;
+  current_freeze_end?: string;
+  total_frozen_days: number;
+  
+  // Metadata
+  notes?: string;
+  notes_ar?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  
+  // Computed properties
+  remaining_freeze_days?: number;
+  days_until_expiry?: number;
+  is_currently_frozen?: boolean;
+  freeze_progress_percentage?: number;
+}
+
+export interface SubscriptionFreezeHistory {
+  id: string;
+  subscription_id: string;
+  
+  // Freeze operation details
+  operation_type: FreezeOperationType;
+  freeze_start_date: string;
+  freeze_end_date: string;
+  freeze_duration_days: number;
+  
+  // Business context
+  reason?: string;
+  reason_ar?: string;
+  admin_notes?: string;
+  admin_notes_ar?: string;
+  
+  // Impact tracking
+  original_end_date: string;
+  new_end_date: string;
+  affected_sessions_count: number;
+  rescheduled_sessions_count: number;
+  
+  // Operation metadata
+  operation_status: OperationStatus;
+  rollback_data?: any;
+  
+  // Metadata
+  created_at: string;
+  created_by: string;
+}
+
+export interface SubscriptionFreezeOperation {
+  id: string;
+  operation_id: string; // Human-readable identifier
+  subscription_id: string;
+  
+  // Operation details
+  operation_type: FreezeOperationType;
+  freeze_start_date: string;
+  freeze_end_date: string;
+  
+  // Status tracking
+  status: OperationStatus;
+  current_step?: string;
+  total_steps: number;
+  completed_steps: number;
+  
+  // Recovery data
+  rollback_data: any;
+  error_details?: any;
+  
+  // Progress tracking
+  progress_percentage: number;
+  estimated_completion?: string;
+  
+  // Metadata
+  started_at: string;
+  completed_at?: string;
+  created_by: string;
+}
+
+export interface FreezeRequest {
+  subscription_id: string;
+  freeze_start_date: string; // YYYY-MM-DD
+  freeze_end_date: string; // YYYY-MM-DD
+  reason: string;
+  reason_ar?: string;
+  admin_notes?: string;
+  admin_notes_ar?: string;
+  
+  // Preview options
+  preview_only?: boolean;
+  notify_parents?: boolean;
+  auto_reschedule?: boolean;
+}
+
+export interface FreezePreview {
+  is_valid: boolean;
+  freeze_duration_days: number;
+  remaining_freeze_days: number;
+  new_end_date: string;
+  
+  // Affected sessions
+  affected_sessions: ScheduledSession[];
+  sessions_to_reschedule: number;
+  sessions_to_cancel: number;
+  
+  // Conflicts and warnings
+  conflicts: ScheduleConflict[];
+  warnings: string[];
+  
+  // Financial impact
+  billing_adjustment: {
+    amount: number;
+    description: string;
+    description_ar?: string;
+  };
+  
+  // Rescheduling preview
+  rescheduling_options: {
+    successful_reschedules: number;
+    manual_resolution_needed: number;
+    alternative_therapists: string[];
+    estimated_delay_days: number;
+  };
+}
+
+export interface FreezeResult {
+  success: boolean;
+  operation_id?: string;
+  subscription_id: string;
+  message: string;
+  message_ar?: string;
+  
+  // Results data
+  freeze_duration_days?: number;
+  new_end_date?: string;
+  remaining_freeze_days?: number;
+  affected_sessions_count?: number;
+  
+  // Error information
+  error?: string;
+  errors?: ValidationError[];
+  warnings?: string[];
+}
+
+// =====================================================
 // Hook Return Types
 // =====================================================
 

@@ -34,7 +34,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           }}
         >
         {/* LEFT SECTION: User Controls (Language, Notifications, Settings, Profile) */}
-        <div className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'} order-1`}>
+        <div className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse order-1' : 'space-x-2 order-3'}`}>
           {/* Mobile menu button - visible on small screens */}
           <Button
             variant="ghost"
@@ -111,7 +111,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         </div>
 
         {/* RIGHT SECTION: Logo and Branding */}
-        <div className={`flex items-center ${isRTL ? 'space-x-2 md:space-x-4 space-x-reverse' : 'space-x-2 md:space-x-4'} order-3`}>
+        <div className={`flex items-center ${isRTL ? 'space-x-2 md:space-x-4 space-x-reverse order-3' : 'space-x-2 md:space-x-4 order-1'}`}>
           {/* Logo Image */}
           <div className="flex items-center">
             <img

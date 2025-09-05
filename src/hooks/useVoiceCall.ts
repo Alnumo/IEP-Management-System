@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { VoiceCallManager, voiceCommService } from '@/services/voice-communication-service'
+import { communicationPushNotifications } from '@/services/communication-push-notifications'
 
 // =====================================================
 // VOICE CALL MANAGER HOOK

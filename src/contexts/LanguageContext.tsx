@@ -31,6 +31,45 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
       ? "'Tajawal', 'Cairo', system-ui, sans-serif"
       : "system-ui, -apple-system, sans-serif"
     
+    // Force sidebar icon positioning for RTL
+    if (isRTL) {
+      // Remove any existing style first
+      const existingStyle = document.getElementById('rtl-icon-fix')
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+      
+      const style = document.createElement('style')
+      style.id = 'rtl-icon-fix'
+      style.textContent = `
+        [dir="rtl"] aside nav svg,
+        [dir="rtl"] .sidebar nav svg,
+        [dir="rtl"] .nav-item svg {
+          order: -1 !important;
+          margin-left: 0 !important;
+          margin-right: 0.5rem !important;
+        }
+        [dir="rtl"] aside nav span,
+        [dir="rtl"] .sidebar nav span,
+        [dir="rtl"] .nav-item span {
+          order: 1 !important;
+        }
+        [dir="rtl"] aside nav a,
+        [dir="rtl"] .sidebar nav a,
+        [dir="rtl"] .nav-item {
+          display: flex !important;
+          flex-direction: row !important;
+        }
+      `
+      document.head.appendChild(style)
+    } else {
+      // Remove RTL styles when switching to English
+      const existingStyle = document.getElementById('rtl-icon-fix')
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+    }
+    
     // Save to localStorage
     localStorage.setItem('language', language)
   }, [language])

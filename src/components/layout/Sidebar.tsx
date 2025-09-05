@@ -308,7 +308,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                  <div className="flex flex-col h-full">
           {/* Sidebar header */}
           <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'rgb(var(--border))' }}>
-            <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex items-center ${isRTL ? 'flex-row-reverse justify-end w-full' : ''}`}>
               {/* Logo image */}
               <img 
                 src="/imgs/Final-Logo-01.png" 
@@ -320,7 +320,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="md:hidden hover:bg-gray-100 rounded-xl"
+              className={`md:hidden hover:bg-gray-100 rounded-xl ${isRTL ? 'order-first' : ''}`}
             >
               <X className="w-5 h-5" />
             </Button>
@@ -337,9 +337,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   <div key={category.key} className="space-y-2">
                     {/* Category Header - Skip for main dashboard */}
                     {category.key !== 'main' && (
-                      <div className={`flex items-center px-2 py-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <category.icon className={`w-4 h-4 text-muted-foreground ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                        <span className={`text-xs font-semibold text-muted-foreground uppercase tracking-wider ${language === 'ar' ? 'font-arabic' : ''} ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <div className="flex items-center px-2 py-1" style={{ textAlign: isRTL ? 'right' : 'left' }}>
+                        <category.icon className={cn(
+                          "w-4 h-4 text-muted-foreground",
+                          isRTL ? "ml-2 order-2" : "mr-2 order-1"
+                        )} />
+                        <span className={cn(
+                          "text-xs font-semibold text-muted-foreground uppercase tracking-wider flex-1",
+                          language === 'ar' ? 'font-arabic' : '',
+                          isRTL ? 'text-right order-1' : 'text-left order-2'
+                        )} style={{ textAlign: isRTL ? 'right' : 'left' }}>
                           {t(`navigation.category.${category.key}`)}
                         </span>
                       </div>
@@ -360,12 +367,23 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             isActive && "active"
                           )}
                           style={{
-                            flexDirection: isRTL ? 'row-reverse' : 'row',
-                            textAlign: isRTL ? 'right' : 'left'
+                            flexDirection: 'row',
+                            textAlign: isRTL ? 'right' : 'left',
+                            justifyContent: 'flex-start'
                           }}
                         >
-                          <Icon className={`w-5 h-5 ${isRTL ? 'ml-3' : 'mr-3'}`} />
-                          <span className={`flex-1 font-medium ${language === 'ar' ? 'font-arabic' : ''} ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <Icon className={cn(
+                            "w-5 h-5",
+                            isRTL ? "ml-3 order-2" : "mr-3 order-1"
+                          )} />
+                          <span 
+                            className={cn(
+                              "flex-1 font-medium",
+                              language === 'ar' ? 'font-arabic' : '',
+                              isRTL ? 'text-right order-1' : 'text-left order-2'
+                            )}
+                            style={{ textAlign: isRTL ? 'right' : 'left' }}
+                          >
                             {t(item.key)}
                           </span>
                         </Link>
@@ -379,14 +397,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
           {/* Sidebar footer */}
           <div className="p-4 border-t" style={{ borderColor: 'rgb(var(--border))' }}>
-            <div className="bg-gradient-to-r from-teal-50 to-green-50 rounded-xl p-4">
-              <h3 className={`font-semibold text-foreground mb-2 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+            <div className="bg-gradient-to-r from-teal-50 to-green-50 rounded-xl p-4" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
+              <h3 className={`font-semibold text-foreground mb-2 ${language === 'ar' ? 'font-arabic text-right' : 'text-left'}`}>
                 {language === 'ar' ? 'المؤسسات الكبرى القائمة' : 'Major Established Institutions'}
               </h3>
-              <p className={`text-sm text-muted-foreground mb-3 ${language === 'ar' ? 'font-arabic text-right' : ''}`}>
+              <p className={`text-sm text-muted-foreground mb-3 ${language === 'ar' ? 'font-arabic text-right' : 'text-left'}`}>
                 {language === 'ar' ? 'المستفيدين النشطين - 96' : 'Active Beneficiaries - 96'}
               </p>
-              <Button className="w-full btn-primary text-sm">
+              <Button className={`w-full btn-primary text-sm ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
               </Button>
             </div>

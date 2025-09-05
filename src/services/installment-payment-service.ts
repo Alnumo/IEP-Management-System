@@ -1,7 +1,9 @@
 /**
- * Installment Payment Service
- * Handles payment plan creation, management, automated scheduling, and analytics
- * Part of Story 2.3: Financial Management Module - Task 3
+ * Enhanced Installment Payment Service
+ * Story 4.2: installment-payment-system
+ * 
+ * Enhanced service for managing installment payment plans and payments
+ * Handles CRUD operations, payment recording, status updates, and automation
  */
 
 import { supabase } from '../lib/supabase'
@@ -16,14 +18,334 @@ import type {
   PaymentMethod,
   Currency
 } from '../types/financial-management'
+import type {
+  InstallmentPlan,
+  InstallmentPayment,
+  InstallmentPlanFormData,
+  PaymentRecordingData,
+  InstallmentDashboardData,
+  OverdueInstallment
+} from '../types/billing'
 
 // ==============================================
 // PAYMENT PLAN CREATION AND MANAGEMENT
 // ==============================================
 
 export class InstallmentPaymentService {
+  
+  // ==============================================
+  // ENHANCED METHODS FOR STORY 4.2
+  // ==============================================
+
   /**
-   * Create a new payment plan from an invoice
+   * إنشاء خطة دفعة مقسطة جديدة / Create new installment payment plan (Story 4.2)
+   * Creates an installment plan using new database schema
+   */
+  static async createInstallmentPlanEnhanced(formData: InstallmentPlanFormData): Promise<{
+    data: InstallmentPlan | null
+    error: string | null
+  }> {
+    try {
+      // Input validation
+      if (formData.numberOfInstallments <= 0) {
+        return { data: null, error: 'عدد الأقساط يجب أن يكون أكبر من صفر / Number of installments must be greater than zero' }
+      }
+
+      if (new Date(formData.startDate) < new Date()) {
+        return { data: null, error: 'تاريخ البداية يجب أن يكون في المستقبل / Start date must be in the future' }
+      }
+
+      // Get invoice details to calculate total amount
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .select('total_amount, balance_amount, student_id')
+        .eq('id', formData.invoiceId)
+        .single()
+
+      if (invoiceError || !invoice) {
+        return { data: null, error: 'لم يتم العثور على الفاتورة / Invoice not found' }
+      }
+
+      // Calculate installment amount
+      const totalAmount = invoice.balance_amount || invoice.total_amount
+      const installmentAmount = formData.firstPaymentAmount || 
+        Math.round((totalAmount / formData.numberOfInstallments) * 100) / 100
+
+      const currentUser = await supabase.auth.getUser()
+      if (!currentUser.data.user) {
+        return { data: null, error: 'غير مصرح / Unauthorized' }
+      }
+
+      // Create installment plan with new schema
+      const planData = {
+        subscription_id: null, // Will be filled if subscription exists
+        invoice_id: formData.invoiceId,
+        student_id: invoice.student_id,
+        total_amount: totalAmount,
+        number_of_installments: formData.numberOfInstallments,
+        installment_amount: installmentAmount,
+        frequency: formData.frequency,
+        start_date: formData.startDate,
+        status: 'active' as const,
+        terms_accepted: formData.termsAccepted,
+        terms_accepted_date: formData.termsAccepted ? new Date().toISOString() : null,
+        late_fees_enabled: true,
+        late_fee_amount: 50, // Default late fee
+        grace_period_days: 3,
+        reminder_settings: {
+          days_before_due: [7, 3, 1],
+          days_after_due: [1, 7, 14],
+          methods: ['email', 'whatsapp']
+        },
+        created_by: currentUser.data.user.id,
+        updated_by: currentUser.data.user.id
+      }
+
+      const { data: plan, error: planError } = await supabase
+        .from('installment_plans')
+        .insert(planData)
+        .select('*')
+        .single()
+
+      if (planError) {
+        console.error('Error creating installment plan:', planError)
+        return { data: null, error: 'خطأ في إنشاء خطة الأقساط / Error creating installment plan' }
+      }
+
+      // Generate installment payment records using database function
+      const { error: generateError } = await supabase
+        .rpc('generate_installment_payments', {
+          plan_id: plan.id
+        })
+
+      if (generateError) {
+        console.error('Error generating installment payments:', generateError)
+        // Rollback the plan creation
+        await supabase.from('installment_plans').delete().eq('id', plan.id)
+        return { data: null, error: 'خطأ في إنشاء جدول الدفعات / Error creating payment schedule' }
+      }
+
+      return { data: plan, error: null }
+    } catch (error) {
+      console.error('Unexpected error creating installment plan:', error)
+      return { data: null, error: 'خطأ غير متوقع / Unexpected error occurred' }
+    }
+  }
+
+  /**
+   * جلب بيانات لوحة تحكم الأقساط / Get installment dashboard data (Story 4.2)
+   */
+  static async getDashboardData(
+    page: number = 1,
+    limit: number = 20,
+    filters?: {
+      status?: string[]
+      studentId?: string
+      overdueOnly?: boolean
+    }
+  ): Promise<{
+    data: InstallmentDashboardData[]
+    totalCount: number
+    error: string | null
+  }> {
+    try {
+      let query = supabase
+        .from('installment_dashboard_view')
+        .select('*', { count: 'exact' })
+
+      // Apply filters
+      if (filters?.status && filters.status.length > 0) {
+        query = query.in('plan_status', filters.status)
+      }
+
+      if (filters?.studentId) {
+        query = query.eq('student_id', filters.studentId)
+      }
+
+      if (filters?.overdueOnly) {
+        query = query.gt('overdue_installments', 0)
+      }
+
+      // Apply pagination
+      const from = (page - 1) * limit
+      const to = from + limit - 1
+
+      const { data, error, count } = await query
+        .range(from, to)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching dashboard data:', error)
+        return { data: [], totalCount: 0, error: 'خطأ في جلب البيانات / Error fetching data' }
+      }
+
+      return { data: data || [], totalCount: count || 0, error: null }
+    } catch (error) {
+      console.error('Unexpected error fetching dashboard data:', error)
+      return { data: [], totalCount: 0, error: 'خطأ غير متوقع / Unexpected error occurred' }
+    }
+  }
+
+  /**
+   * تسجيل دفعة قسط / Record installment payment (Story 4.2)
+   */
+  static async recordPayment(paymentData: PaymentRecordingData): Promise<{
+    success: boolean
+    error: string | null
+  }> {
+    try {
+      // Get installment details
+      const { data: installment, error: installmentError } = await supabase
+        .from('installment_payments')
+        .select(`
+          *,
+          installment_plans (
+            total_amount,
+            student_id
+          )
+        `)
+        .eq('id', paymentData.installmentPaymentId)
+        .single()
+
+      if (installmentError || !installment) {
+        return { success: false, error: 'لم يتم العثور على القسط / Installment not found' }
+      }
+
+      // Validate payment amount
+      if (paymentData.amount <= 0) {
+        return { success: false, error: 'مبلغ الدفع يجب أن يكون أكبر من صفر / Payment amount must be greater than zero' }
+      }
+
+      const outstandingAmount = installment.amount - (installment.paid_amount || 0)
+      if (paymentData.amount > outstandingAmount) {
+        return { success: false, error: 'مبلغ الدفع أكبر من المبلغ المطلوب / Payment amount exceeds outstanding balance' }
+      }
+
+      // Calculate new paid amount and status
+      const newPaidAmount = (installment.paid_amount || 0) + paymentData.amount
+      let newStatus: 'pending' | 'paid' | 'overdue' | 'partial'
+
+      if (newPaidAmount >= installment.amount) {
+        newStatus = 'paid'
+      } else if (newPaidAmount > 0) {
+        newStatus = 'partial'
+      } else {
+        newStatus = installment.status
+      }
+
+      const currentUser = await supabase.auth.getUser()
+      if (!currentUser.data.user) {
+        return { success: false, error: 'غير مصرح / Unauthorized' }
+      }
+
+      // Update installment payment
+      const { error: updateError } = await supabase
+        .from('installment_payments')
+        .update({
+          paid_amount: newPaidAmount,
+          paid_date: newStatus === 'paid' ? paymentData.paymentDate : installment.paid_date,
+          status: newStatus,
+          payment_method: paymentData.paymentMethod,
+          transaction_id: paymentData.transactionId,
+          receipt_number: paymentData.receiptNumber,
+          notes: paymentData.notes,
+          updated_by: currentUser.data.user.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentData.installmentPaymentId)
+
+      if (updateError) {
+        console.error('Error updating installment payment:', updateError)
+        return { success: false, error: 'خطأ في تحديث الدفعة / Error updating payment' }
+      }
+
+      // Check if all installments are paid and update plan status
+      const { data: allInstallments } = await supabase
+        .from('installment_payments')
+        .select('status')
+        .eq('installment_plan_id', installment.installment_plan_id)
+
+      const allPaid = allInstallments?.every(inst => inst.status === 'paid')
+
+      if (allPaid) {
+        await supabase
+          .from('installment_plans')
+          .update({
+            status: 'completed',
+            updated_by: currentUser.data.user.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', installment.installment_plan_id)
+      }
+
+      return { success: true, error: null }
+    } catch (error) {
+      console.error('Unexpected error recording payment:', error)
+      return { success: false, error: 'خطأ غير متوقع / Unexpected error occurred' }
+    }
+  }
+
+  /**
+   * جلب الأقساط المتأخرة / Get overdue installments (Story 4.2)
+   */
+  static async getOverdueInstallments(): Promise<{
+    data: OverdueInstallment[]
+    error: string | null
+  }> {
+    try {
+      const { data, error } = await supabase
+        .from('overdue_installments_view')
+        .select('*')
+        .order('due_date', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching overdue installments:', error)
+        return { data: [], error: 'خطأ في جلب الأقساط المتأخرة / Error fetching overdue installments' }
+      }
+
+      return { data: data || [], error: null }
+    } catch (error) {
+      console.error('Unexpected error fetching overdue installments:', error)
+      return { data: [], error: 'خطأ غير متوقع / Unexpected error occurred' }
+    }
+  }
+
+  /**
+   * تحديث حالة الأقساط المتأخرة / Update overdue installment status (Story 4.2)
+   */
+  static async updateOverdueStatus(): Promise<{
+    updatedCount: number
+    error: string | null
+  }> {
+    try {
+      // Call the database function to update overdue status
+      const { error } = await supabase
+        .rpc('update_overdue_installments')
+
+      if (error) {
+        console.error('Error updating overdue status:', error)
+        return { updatedCount: 0, error: 'خطأ في تحديث حالة الأقساط المتأخرة / Error updating overdue status' }
+      }
+
+      // Get count of overdue installments after update
+      const { count } = await supabase
+        .from('installment_payments')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'overdue')
+
+      return { updatedCount: count || 0, error: null }
+    } catch (error) {
+      console.error('Unexpected error updating overdue status:', error)
+      return { updatedCount: 0, error: 'خطأ غير متوقع / Unexpected error occurred' }
+    }
+  }
+
+  // ==============================================
+  // ORIGINAL METHODS (LEGACY SUPPORT)
+  // ==============================================
+
+  /**
+   * Create a new payment plan from an invoice (Legacy)
    */
   async createPaymentPlan(request: PaymentPlanCreationRequest): Promise<{
     success: boolean

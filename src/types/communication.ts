@@ -51,6 +51,10 @@ export interface Conversation {
   created_at: string
   updated_at: string
   created_by: string
+  
+  // Encryption settings
+  encryption_enabled?: boolean
+  encryption_key_rotation_at?: string
 
   // Populated via joins
   student?: {
@@ -104,6 +108,14 @@ export interface Message {
   thread_id?: string
   created_at: string
   updated_at: string
+  
+  // Encryption fields
+  encryption_key_id?: string
+  iv?: string
+  auth_tag?: string
+  content_hash?: string
+  encrypted_at?: string
+  decrypted?: boolean
 
   // Populated via joins
   sender?: {
@@ -127,11 +139,27 @@ export interface MediaAttachment {
   file_size: number
   mime_type: string
   thumbnail_path?: string
+  thumbnail_url?: string
   width?: number
   height?: number
   duration?: number // for videos/audio
   compressed: boolean
   compression_ratio?: number
+  uploaded_at: string
+  dimensions?: {
+    width: number
+    height: number
+  }
+  
+  // Encryption fields for media
+  encrypted_file_path?: string
+  encryption_metadata?: {
+    keyId: string
+    iv: string
+    authTag?: string
+    originalFilename: string
+    encryptedSize: number
+  }
 }
 
 export interface MessageReaction {

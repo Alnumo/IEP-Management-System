@@ -7,6 +7,54 @@ import { errorMonitoring } from '@/lib/error-monitoring'
 import { createEntityWebhook, createFormSubmissionWebhook } from '@/services/webhooks'
 import { initializeN8nWebhooks } from '@/services/n8n-webhook-config'
 
+// Additional types for CRM lead conversion
+export interface TherapyPlan {
+  id: string;
+  name_en: string;
+  name_ar: string;
+  category_id: string;
+  duration_weeks: number;
+  sessions_per_week: number;
+  price_per_session: number;
+  total_price: number;
+  description_en?: string;
+  description_ar?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateEnrollmentData {
+  student_id: string;
+  therapy_plan_id: string;
+  start_date: string;
+  sessions_per_week: number;
+  session_duration: number;
+  notes?: string;
+  billing_info: {
+    payment_method: 'monthly' | 'quarterly' | 'annual' | 'per_session';
+    discount_percentage: number;
+    payment_notes?: string;
+  };
+  converted_from_lead_id?: string;
+}
+
+export interface Enrollment {
+  id: string;
+  student_id: string;
+  therapy_plan_id: string;
+  start_date: string;
+  end_date?: string;
+  sessions_per_week: number;
+  session_duration: number;
+  notes?: string;
+  billing_info: any;
+  is_active: boolean;
+  converted_from_lead_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Initialize n8n webhook configuration on module load
 initializeN8nWebhooks()
 
@@ -302,4 +350,109 @@ export const useSearchStudents = (searchTerm: string) => {
     enabled: !!searchTerm.trim(),
     staleTime: 2 * 60 * 1000, // 2 minutes
   })
+}
+
+// Hook to fetch therapy plans for CRM lead conversion
+export function useStudentPlans() {
+  return useQuery({
+    queryKey: ['therapy-plans'],
+    queryFn: async (): Promise<TherapyPlan[]> => {
+      const user = await requireAuth()
+      
+      const { data, error } = await supabase
+        .from('therapy_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('name_en');
+
+      if (error) {
+        console.error('Error fetching therapy plans:', error);
+        throw new Error(error.message);
+      }
+
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+}
+
+// Hook to create a new enrollment for CRM lead conversion
+export function useCreateEnrollment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (enrollmentData: CreateEnrollmentData): Promise<Enrollment> => {
+      const user = await requireAuth()
+      
+      const { data, error } = await supabase
+        .from('student_enrollments')
+        .insert([{
+          student_id: enrollmentData.student_id,
+          therapy_plan_id: enrollmentData.therapy_plan_id,
+          start_date: enrollmentData.start_date,
+          sessions_per_week: enrollmentData.sessions_per_week,
+          session_duration: enrollmentData.session_duration,
+          notes: enrollmentData.notes,
+          billing_info: enrollmentData.billing_info,
+          converted_from_lead_id: enrollmentData.converted_from_lead_id,
+          is_active: true,
+          created_by: user.id,
+          updated_by: user.id
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating enrollment:', error);
+        throw new Error(error.message);
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      // Invalidate and refetch enrollment queries
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] });
+      queryClient.invalidateQueries({ queryKey: ['student-enrollments', data.student_id] });
+    },
+  });
+}
+
+// Hook to fetch student enrollments
+export function useStudentEnrollments(studentId: string) {
+  return useQuery({
+    queryKey: ['student-enrollments', studentId],
+    queryFn: async (): Promise<Enrollment[]> => {
+      const user = await requireAuth()
+      
+      const { data, error } = await supabase
+        .from('student_enrollments')
+        .select(`
+          *,
+          therapy_plans!inner(
+            id,
+            name_en,
+            name_ar,
+            price_per_session,
+            total_price
+          )
+        `)
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching student enrollments:', error);
+        throw new Error(error.message);
+      }
+
+      return data || [];
+    },
+    enabled: !!studentId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 }

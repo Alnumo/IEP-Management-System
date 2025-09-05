@@ -9,17 +9,30 @@ import { toast } from 'sonner'
 import { useAttendanceRecords, useAttendanceStats, useCheckInStudent, useStartSession, useRealTimeAttendance, useValidateQRCode } from '@/hooks/useAttendance'
 
 interface QRAttendanceSystemProps {
-  mode: 'student' | 'therapist' | 'session' | 'room'
+  mode: 'student' | 'therapist' | 'session' | 'room' | 'dual_level'
+  // Dual-level specific props
+  enableCenterLevel?: boolean
+  enableSessionLevel?: boolean
+  currentLocation?: string
 }
 
-export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
+export const QRAttendanceSystem = ({ 
+  mode, 
+  enableCenterLevel = true, 
+  enableSessionLevel = true, 
+  currentLocation = 'Main Entrance' 
+}: QRAttendanceSystemProps) => {
   const { language, isRTL } = useLanguage()
   const [isScanning, setIsScanning] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [scanError, setScanError] = useState<string>('')
+  const [scanResult, setScanResult] = useState<any>(null)
+  const [scanMode, setScanMode] = useState<'center' | 'session'>('center')
+  const [offlineScans, setOfflineScans] = useState<any[]>([])
+  const [pendingSyncCount, setPendingSyncCount] = useState(0)
   const scannerRef = useRef<Html5QrcodeScanner | null>(null)
-  const scannerElementId = 'qr-reader-' + mode
+  const scannerElementId = 'qr-reader-' + mode + '-' + scanMode
   
   // Hooks for data management
   const { data: attendanceRecords = [], isLoading } = useAttendanceRecords({ limit: 20 })
@@ -91,6 +104,9 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
           break
         case 'room':
           await handleRoomUtilization(qrInfo)
+          break
+        case 'dual_level':
+          await handleDualLevelAttendance(qrInfo)
           break
       }
       
@@ -220,6 +236,170 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
     // Therapist check-in for sessions
     toast.info(language === 'ar' ? 'تم تسجيل دخول المعالج' : 'Therapist checked in')
   }
+
+  // NEW: Dual-level attendance handler
+  const handleDualLevelAttendance = async (qrInfo: any) => {
+    try {
+      // Determine the type of attendance based on QR data
+      const qrData = qrInfo.parsedData || qrInfo;
+      
+      // Handle based on QR code level and type
+      switch (qrData.level) {
+        case 'center':
+          await handleCenterLevelAttendance(qrData);
+          break;
+        case 'session':
+          await handleSessionLevelAttendance(qrData);
+          break;
+        default:
+          // Fallback to existing behavior for legacy QR codes
+          if (qrData.type === 'student') {
+            await handleStudentAttendance(qrInfo);
+          } else if (qrData.type === 'session') {
+            await handleSessionAttendance(qrInfo);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Dual-level attendance error:', error);
+      throw error;
+    }
+  };
+
+  const handleCenterLevelAttendance = async (qrData: any) => {
+    const eventType = qrData.centerAction === 'check_in' ? 'center_check_in' : 'center_check_out';
+    
+    // Store for offline capability
+    const attendanceData = {
+      student_id: null, // Will be determined by user input or context
+      event_type: eventType,
+      scan_location: qrData.location || currentLocation,
+      facility_id: qrData.facilityId,
+      qr_scan_data: qrData,
+      device_info: navigator.userAgent,
+      timestamp: new Date().toISOString()
+    };
+
+    if (!isOnline) {
+      // Store offline for later sync
+      const updatedOfflineScans = [...offlineScans, attendanceData];
+      setOfflineScans(updatedOfflineScans);
+      setPendingSyncCount(updatedOfflineScans.length);
+      localStorage.setItem('offline_scans', JSON.stringify(updatedOfflineScans));
+      
+      toast.success(
+        language === 'ar' 
+          ? `تم حفظ ${eventType === 'center_check_in' ? 'دخول' : 'خروج'} المركز (سيتم المزامنة لاحقاً)` 
+          : `Center ${eventType === 'center_check_in' ? 'check-in' : 'check-out'} saved offline`
+      );
+      return;
+    }
+
+    // Call the API to log attendance
+    await logAttendanceAPI(attendanceData);
+    
+    toast.success(
+      language === 'ar' 
+        ? `تم تسجيل ${eventType === 'center_check_in' ? 'دخول' : 'خروج'} المركز بنجاح` 
+        : `Center ${eventType === 'center_check_in' ? 'check-in' : 'check-out'} recorded successfully`
+    );
+  };
+
+  const handleSessionLevelAttendance = async (qrData: any) => {
+    const attendanceData = {
+      student_id: qrData.studentId || null,
+      session_id: qrData.sessionId,
+      event_type: 'session_check_in',
+      scan_location: qrData.roomNumber || currentLocation,
+      qr_scan_data: qrData,
+      device_info: navigator.userAgent,
+      timestamp: new Date().toISOString()
+    };
+
+    if (!isOnline) {
+      const updatedOfflineScans = [...offlineScans, attendanceData];
+      setOfflineScans(updatedOfflineScans);
+      setPendingSyncCount(updatedOfflineScans.length);
+      localStorage.setItem('offline_scans', JSON.stringify(updatedOfflineScans));
+      
+      toast.success(
+        language === 'ar' 
+          ? 'تم حفظ حضور الجلسة (سيتم المزامنة لاحقاً)' 
+          : 'Session attendance saved offline'
+      );
+      return;
+    }
+
+    await logAttendanceAPI(attendanceData);
+    
+    toast.success(
+      language === 'ar' 
+        ? `تم تسجيل حضور الجلسة ${qrData.sessionType || ''}` 
+        : `Session attendance recorded for ${qrData.sessionType || 'therapy session'}`
+    );
+  };
+
+  // Helper function to call attendance API
+  const logAttendanceAPI = async (attendanceData: any) => {
+    // This would be replaced with actual API call via TanStack Query
+    const response = await fetch('/api/attendance/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(attendanceData)
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to log attendance');
+    }
+    
+    return response.json();
+  };
+
+  // Function to sync offline scans when back online
+  const syncOfflineScans = async () => {
+    if (!isOnline || offlineScans.length === 0) return;
+
+    try {
+      for (const scanData of offlineScans) {
+        await logAttendanceAPI(scanData);
+      }
+      
+      // Clear offline scans after successful sync
+      setOfflineScans([]);
+      setPendingSyncCount(0);
+      localStorage.removeItem('offline_scans');
+      
+      toast.success(
+        language === 'ar' 
+          ? `تم مزامنة ${offlineScans.length} سجل حضور` 
+          : `Synced ${offlineScans.length} attendance records`
+      );
+    } catch (error) {
+      console.error('Sync failed:', error);
+      toast.error(
+        language === 'ar' 
+          ? 'فشل في مزامنة سجلات الحضور' 
+          : 'Failed to sync attendance records'
+      );
+    }
+  };
+
+  // Load offline scans on component mount
+  useEffect(() => {
+    const savedOfflineScans = localStorage.getItem('offline_scans');
+    if (savedOfflineScans) {
+      const parsedScans = JSON.parse(savedOfflineScans);
+      setOfflineScans(parsedScans);
+      setPendingSyncCount(parsedScans.length);
+    }
+  }, []);
+
+  // Auto-sync when back online
+  useEffect(() => {
+    if (isOnline && offlineScans.length > 0) {
+      syncOfflineScans();
+    }
+  }, [isOnline]);
 
   const handleRoomUtilization = async (_qrInfo: any) => {
     // Room utilization tracking
@@ -379,6 +559,57 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
                   : 'Click to open camera and scan attendance QR code'
                 }
               </p>
+              {/* Dual-Level Mode Selector */}
+              {mode === 'dual_level' && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-center space-x-2 mb-4">
+                    <Button
+                      variant={scanMode === 'center' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setScanMode('center')}
+                      className="gap-2"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      {language === 'ar' ? 'دخول/خروج المركز' : 'Center Entry/Exit'}
+                    </Button>
+                    <Button
+                      variant={scanMode === 'session' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setScanMode('session')}
+                      className="gap-2"
+                    >
+                      <Clock className="h-4 w-4" />
+                      {language === 'ar' ? 'حضور الجلسة' : 'Session Attendance'}
+                    </Button>
+                  </div>
+                  
+                  <div className="text-center text-sm text-muted-foreground mb-4">
+                    {scanMode === 'center' ? (
+                      language === 'ar' 
+                        ? `امسح رمز ${currentLocation} للدخول أو الخروج` 
+                        : `Scan ${currentLocation} QR for entry/exit`
+                    ) : (
+                      language === 'ar' 
+                        ? 'امسح رمز الجلسة المحددة للحضور' 
+                        : 'Scan session-specific QR for attendance'
+                    )}
+                  </div>
+                  
+                  {/* Offline scanning indicator */}
+                  {!isOnline && pendingSyncCount > 0 && (
+                    <div className="flex items-center justify-center gap-2 text-amber-600 text-sm mb-4">
+                      <WifiOff className="h-4 w-4" />
+                      <span>
+                        {language === 'ar' 
+                          ? `${pendingSyncCount} سجل في انتظار المزامنة` 
+                          : `${pendingSyncCount} records pending sync`
+                        }
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-x-2">
                 <Button 
                   onClick={startScanning}
@@ -391,15 +622,37 @@ export const QRAttendanceSystem = ({ mode }: QRAttendanceSystemProps) => {
                     : (language === 'ar' ? 'فتح الكاميرا' : 'Open Camera')
                   }
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => handleQRScan('{"studentId":"std-003","studentName":"محمد أحمد","sessionType":"OT","roomNumber":"C-301"}')}
-                  disabled={isScanning}
-                  className="gap-2"
-                >
-                  <QrCode className="h-4 w-4" />
-                  {language === 'ar' ? 'اختبار (وهمي)' : 'Test (Demo)'}
-                </Button>
+                
+                {/* Test buttons for dual-level */}
+                {mode === 'dual_level' ? (
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const testData = scanMode === 'center' 
+                        ? '{"type":"center_entry","level":"center","facilityId":"arkan_center_main","location":"Main Entrance","centerAction":"check_in","timestamp":"' + new Date().toISOString() + '"}'
+                        : '{"type":"session_specific","level":"session","sessionId":"session-123","sessionType":"ABA Therapy","therapistId":"therapist-1","roomNumber":"Room 101","timestamp":"' + new Date().toISOString() + '"}';
+                      handleQRScan(testData);
+                    }}
+                    disabled={isScanning}
+                    className="gap-2"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    {language === 'ar' 
+                      ? `اختبار ${scanMode === 'center' ? 'دخول المركز' : 'حضور الجلسة'}` 
+                      : `Test ${scanMode === 'center' ? 'Center Entry' : 'Session Attendance'}`
+                    }
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleQRScan('{"studentId":"std-003","studentName":"محمد أحمد","sessionType":"OT","roomNumber":"C-301"}')}
+                    disabled={isScanning}
+                    className="gap-2"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    {language === 'ar' ? 'اختبار (وهمي)' : 'Test (Demo)'}
+                  </Button>
+                )}
               </div>
             </div>
           )}

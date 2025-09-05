@@ -734,7 +734,7 @@ export class SchedulingIntegrationService {
 
   private async resolveBillingConflicts(
     originalSession: ScheduledSession,
-    proposedChanges: Partial<ScheduledSess-ion>
+    proposedChanges: Partial<ScheduledSession>
   ) {
     return { success: true, data: null }
   }

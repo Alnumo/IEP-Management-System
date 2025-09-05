@@ -1046,5 +1046,450 @@ describe('InstallmentPaymentService', () => {
       expect(result.processedPayments).toBe(50)
       expect(executionTime).toBeLessThan(5000) // Should process 50 payments within 5 seconds
     })
+    })
+
+  // ==============================================
+  // STORY 4.2: ENHANCED INSTALLMENT PAYMENT TESTS
+  // ==============================================
+
+  describe('Story 4.2: Enhanced Installment Payment Methods', () => {
+    // Mock data for the enhanced methods
+    const mockInstallmentPlan = {
+      id: 'plan-enhanced-123',
+      subscription_id: 'sub-123',
+      invoice_id: 'invoice-123',
+      student_id: 'student-123',
+      total_amount: 1000,
+      number_of_installments: 4,
+      installment_amount: 250,
+      frequency: 'monthly',
+      start_date: '2025-02-01',
+      status: 'active',
+      terms_accepted: true,
+      terms_accepted_date: '2025-01-15T10:00:00Z',
+      late_fees_enabled: true,
+      grace_period_days: 3,
+      reminder_settings: {
+        days_before_due: [7, 3, 1],
+        days_after_due: [1, 7, 14],
+        methods: ['email', 'whatsapp']
+      },
+      created_by: 'user-123',
+      created_at: '2025-01-15T10:00:00Z',
+      updated_by: 'user-123',
+      updated_at: '2025-01-15T10:00:00Z'
+    }
+
+    const mockDashboardData = [
+      {
+        id: 'plan-1',
+        student_id: 'student-1',
+        student_name_ar: 'طالب أول',
+        student_name_en: 'First Student',
+        total_amount: 1000,
+        number_of_installments: 4,
+        installment_amount: 250,
+        frequency: 'monthly',
+        start_date: '2025-02-01',
+        plan_status: 'active',
+        total_installments: 4,
+        paid_installments: 1,
+        pending_installments: 3,
+        overdue_installments: 0,
+        partial_installments: 0,
+        total_paid: 250,
+        remaining_balance: 750,
+        next_due_date: '2025-03-01',
+        next_due_amount: 250,
+        created_at: '2025-01-15T10:00:00Z',
+        updated_at: '2025-01-15T10:00:00Z'
+      }
+    ]
+
+    const mockOverdueInstallments = [
+      {
+        id: 'payment-1',
+        installment_plan_id: 'plan-1',
+        student_id: 'student-1',
+        student_name_ar: 'طالب متأخر',
+        student_name_en: 'Overdue Student',
+        installment_number: 2,
+        amount: 250,
+        due_date: '2025-01-01',
+        paid_amount: 0,
+        days_overdue: 14,
+        late_fee_applied: true,
+        late_fee_amount: 50,
+        reminders_sent: [
+          {
+            sent_date: '2025-01-02',
+            method: 'email',
+            status: 'delivered'
+          }
+        ],
+        grace_period_days: 3,
+        late_fees_enabled: true
+      }
+    ]
+
+    describe('createInstallmentPlanEnhanced', () => {
+      it('should create a valid installment plan successfully', async () => {
+        const formData = {
+          invoiceId: 'invoice-123',
+          numberOfInstallments: 4,
+          frequency: 'monthly' as const,
+          startDate: '2025-02-01',
+          termsAccepted: true
+        }
+
+        const mockInstallmentPlanQuery = {
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ data: mockInstallmentPlan, error: null }))
+            }))
+          }))
+        }
+
+        mockSupabase.from.mockReturnValue(mockInstallmentPlanQuery)
+
+        const result = await InstallmentPaymentService.createInstallmentPlanEnhanced(formData)
+
+        expect(result.error).toBeNull()
+        expect(result.data).toEqual(mockInstallmentPlan)
+        expect(mockSupabase.from).toHaveBeenCalledWith('installment_plans')
+      })
+
+      it('should return bilingual error for invalid number of installments', async () => {
+        const formData = {
+          invoiceId: 'invoice-123',
+          numberOfInstallments: 0, // Invalid
+          frequency: 'monthly' as const,
+          startDate: '2025-02-01',
+          termsAccepted: true
+        }
+
+        const result = await InstallmentPaymentService.createInstallmentPlanEnhanced(formData)
+
+        expect(result.error).toContain('عدد الأقساط يجب أن يكون أكبر من صفر')
+        expect(result.error).toContain('Number of installments must be greater than zero')
+        expect(result.data).toBeNull()
+      })
+
+      it('should return bilingual error for past start date', async () => {
+        const formData = {
+          invoiceId: 'invoice-123',
+          numberOfInstallments: 4,
+          frequency: 'monthly' as const,
+          startDate: '2024-01-01', // Past date
+          termsAccepted: true
+        }
+
+        const result = await InstallmentPaymentService.createInstallmentPlanEnhanced(formData)
+
+        expect(result.error).toContain('تاريخ البداية يجب أن يكون في المستقبل')
+        expect(result.error).toContain('Start date must be in the future')
+        expect(result.data).toBeNull()
+      })
+
+      it('should return bilingual error when terms not accepted', async () => {
+        const formData = {
+          invoiceId: 'invoice-123',
+          numberOfInstallments: 4,
+          frequency: 'monthly' as const,
+          startDate: '2025-02-01',
+          termsAccepted: false // Not accepted
+        }
+
+        const result = await InstallmentPaymentService.createInstallmentPlanEnhanced(formData)
+
+        expect(result.error).toContain('يجب الموافقة على شروط والأحكام')
+        expect(result.error).toContain('Terms and conditions must be accepted')
+        expect(result.data).toBeNull()
+      })
+
+      it('should validate frequency enum values', async () => {
+        const formData = {
+          invoiceId: 'invoice-123',
+          numberOfInstallments: 4,
+          frequency: 'daily' as any, // Invalid frequency
+          startDate: '2025-02-01',
+          termsAccepted: true
+        }
+
+        const result = await InstallmentPaymentService.createInstallmentPlanEnhanced(formData)
+
+        expect(result.error).toContain('تردد الدفع غير صحيح')
+        expect(result.error).toContain('Invalid payment frequency')
+      })
+    })
+
+    describe('getDashboardData', () => {
+      it('should fetch dashboard data with pagination successfully', async () => {
+        const mockDashboardQuery = {
+          select: vi.fn(() => ({
+            range: vi.fn(() => Promise.resolve({ data: mockDashboardData, error: null }))
+          }))
+        }
+
+        mockSupabase.from.mockReturnValue(mockDashboardQuery)
+
+        const result = await InstallmentPaymentService.getDashboardData(1, 10, {})
+
+        expect(result.error).toBeNull()
+        expect(result.data).toEqual(mockDashboardData)
+        expect(mockSupabase.from).toHaveBeenCalledWith('installment_dashboard_view')
+        expect(mockDashboardQuery.select).toHaveBeenCalled()
+        expect(mockDashboardQuery.range).toHaveBeenCalledWith(0, 9)
+      })
+
+      it('should apply status filter when provided', async () => {
+        const filters = { status: 'active' }
+
+        const mockDashboardQuery = {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              range: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            }))
+          }))
+        }
+
+        mockSupabase.from.mockReturnValue(mockDashboardQuery)
+
+        await InstallmentPaymentService.getDashboardData(1, 10, filters)
+
+        expect(mockDashboardQuery.eq).toHaveBeenCalledWith('plan_status', 'active')
+      })
+
+      it('should handle database error gracefully', async () => {
+        const mockDashboardQuery = {
+          select: vi.fn(() => ({
+            range: vi.fn(() => Promise.resolve({ data: null, error: { message: 'Query failed' } }))
+          }))
+        }
+
+        mockSupabase.from.mockReturnValue(mockDashboardQuery)
+
+        const result = await InstallmentPaymentService.getDashboardData(1, 10, {})
+
+        expect(result.error).toContain('Query failed')
+        expect(result.data).toBeNull()
+      })
+    })
+
+    describe('recordPayment', () => {
+      it('should record payment successfully', async () => {
+        const paymentData = {
+          installmentPaymentId: 'payment-123',
+          amount: 250,
+          paymentMethod: 'mada',
+          paymentDate: '2025-01-15',
+          transactionId: 'txn-456',
+          receiptNumber: 'RCP-789',
+          notes: 'Full payment received'
+        }
+
+        const mockUpdatedPayment = {
+          id: 'payment-123',
+          status: 'paid',
+          paid_amount: 250,
+          paid_date: '2025-01-15T10:00:00Z'
+        }
+
+        const mockPaymentUpdate = {
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({ data: mockUpdatedPayment, error: null }))
+              }))
+            }))
+          }))
+        }
+
+        mockSupabase.from.mockReturnValue(mockPaymentUpdate)
+
+        const result = await InstallmentPaymentService.recordPayment(paymentData)
+
+        expect(result.error).toBeNull()
+        expect(result.data).toEqual(mockUpdatedPayment)
+        expect(mockSupabase.from).toHaveBeenCalledWith('installment_payments')
+      })
+
+      it('should return bilingual error for invalid payment amount', async () => {
+        const paymentData = {
+          installmentPaymentId: 'payment-123',
+          amount: -100, // Invalid negative amount
+          paymentMethod: 'mada',
+          paymentDate: '2025-01-15'
+        }
+
+        const result = await InstallmentPaymentService.recordPayment(paymentData)
+
+        expect(result.error).toContain('مبلغ الدفع يجب أن يكون أكبر من صفر')
+        expect(result.error).toContain('Payment amount must be greater than zero')
+        expect(result.data).toBeNull()
+      })
+
+      it('should return bilingual error for future payment date', async () => {
+        const paymentData = {
+          installmentPaymentId: 'payment-123',
+          amount: 250,
+          paymentMethod: 'mada',
+          paymentDate: '2026-01-15' // Future date
+        }
+
+        const result = await InstallmentPaymentService.recordPayment(paymentData)
+
+        expect(result.error).toContain('تاريخ الدفع لا يمكن أن يكون في المستقبل')
+        expect(result.error).toContain('Payment date cannot be in the future')
+        expect(result.data).toBeNull()
+      })
+    })
+
+    describe('getOverdueInstallments', () => {
+      it('should fetch overdue installments successfully', async () => {
+        const mockOverdueQuery = {
+          select: vi.fn(() => ({
+            order: vi.fn(() => Promise.resolve({ data: mockOverdueInstallments, error: null }))
+          }))
+        }
+
+        mockSupabase.from.mockReturnValue(mockOverdueQuery)
+
+        const result = await InstallmentPaymentService.getOverdueInstallments()
+
+        expect(result.error).toBeNull()
+        expect(result.data).toEqual(mockOverdueInstallments)
+        expect(mockSupabase.from).toHaveBeenCalledWith('overdue_installments_view')
+        expect(mockOverdueQuery.order).toHaveBeenCalledWith('days_overdue', { ascending: false })
+      })
+
+      it('should handle database error when fetching overdue installments', async () => {
+        const mockOverdueQuery = {
+          select: vi.fn(() => ({
+            order: vi.fn(() => Promise.resolve({ data: null, error: { message: 'View access denied' } }))
+          }))
+        }
+
+        mockSupabase.from.mockReturnValue(mockOverdueQuery)
+
+        const result = await InstallmentPaymentService.getOverdueInstallments()
+
+        expect(result.error).toContain('View access denied')
+        expect(result.data).toBeNull()
+      })
+    })
+
+    describe('updateOverdueStatus', () => {
+      it('should update overdue status successfully', async () => {
+        mockSupabase.rpc = vi.fn(() => Promise.resolve({ data: null, error: null }))
+
+        const result = await InstallmentPaymentService.updateOverdueStatus()
+
+        expect(result.success).toBe(true)
+        expect(result.error).toBeNull()
+        expect(mockSupabase.rpc).toHaveBeenCalledWith('update_overdue_installments')
+      })
+
+      it('should handle database error during overdue status update', async () => {
+        mockSupabase.rpc = vi.fn(() => Promise.resolve({ data: null, error: { message: 'Function execution failed' } }))
+
+        const result = await InstallmentPaymentService.updateOverdueStatus()
+
+        expect(result.success).toBe(false)
+        expect(result.error).toContain('Function execution failed')
+      })
+    })
+
+    describe('Arabic/English bilingual error handling', () => {
+      it('should provide bilingual error messages for all validation errors', async () => {
+        // Test invalid installment count
+        const invalidInstallments = await InstallmentPaymentService.createInstallmentPlanEnhanced({
+          invoiceId: 'invoice-123',
+          numberOfInstallments: -1,
+          frequency: 'monthly',
+          startDate: '2025-02-01',
+          termsAccepted: true
+        })
+        
+        expect(invalidInstallments.error).toContain('عدد الأقساط')
+        expect(invalidInstallments.error).toContain('Number of installments')
+
+        // Test invalid payment amount
+        const invalidPayment = await InstallmentPaymentService.recordPayment({
+          installmentPaymentId: 'payment-123',
+          amount: 0,
+          paymentMethod: 'mada',
+          paymentDate: '2025-01-15'
+        })
+        
+        expect(invalidPayment.error).toContain('مبلغ الدفع')
+        expect(invalidPayment.error).toContain('Payment amount')
+
+        // Test terms not accepted
+        const termsNotAccepted = await InstallmentPaymentService.createInstallmentPlanEnhanced({
+          invoiceId: 'invoice-123',
+          numberOfInstallments: 4,
+          frequency: 'monthly',
+          startDate: '2025-02-01',
+          termsAccepted: false
+        })
+        
+        expect(termsNotAccepted.error).toContain('يجب الموافقة')
+        expect(termsNotAccepted.error).toContain('Terms and conditions')
+      })
+    })
+
+    describe('Network error handling', () => {
+      it('should handle network errors gracefully', async () => {
+        const mockFailingQuery = {
+          select: vi.fn(() => {
+            throw new Error('Network timeout')
+          })
+        }
+
+        mockSupabase.from.mockReturnValue(mockFailingQuery)
+
+        const result = await InstallmentPaymentService.getDashboardData(1, 10, {})
+
+        expect(result.error).toContain('Network timeout')
+        expect(result.data).toBeNull()
+      })
+    })
+
+    describe('Partial payment handling', () => {
+      it('should handle partial payment recording correctly', async () => {
+        const partialPayment = {
+          installmentPaymentId: 'payment-123',
+          amount: 150, // Partial amount (less than full installment)
+          paymentMethod: 'cash',
+          paymentDate: '2025-01-15',
+          notes: 'Partial payment - remaining 100 SAR'
+        }
+
+        const mockPartialPayment = {
+          id: 'payment-123',
+          status: 'partial',
+          paid_amount: 150,
+          paid_date: '2025-01-15T10:00:00Z'
+        }
+
+        const mockPaymentUpdate = {
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({ data: mockPartialPayment, error: null }))
+              }))
+            }))
+          }))
+        }
+
+        mockSupabase.from.mockReturnValue(mockPaymentUpdate)
+
+        const result = await InstallmentPaymentService.recordPayment(partialPayment)
+
+        expect(result.error).toBeNull()
+        expect(result.data).toEqual(mockPartialPayment)
+      })
+    })
   })
 })
