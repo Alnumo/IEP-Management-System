@@ -20,12 +20,50 @@ vi.mock('@/hooks/useStudents', () => ({
     data: [
       {
         id: 'student-1',
-        name_ar: 'أحمد محمد',
-        name_en: 'Ahmed Mohammed',
+        first_name_ar: 'أحمد',
+        last_name_ar: 'محمد',
+        first_name_en: 'Ahmed',
+        last_name_en: 'Mohammed',
+        registration_number: 'STU001',
         date_of_birth: '2010-01-01',
-        grade_level: 'grade_5'
+        gender: 'male',
+        enrollment_date: '2024-01-01',
+        medical_records: [
+          {
+            special_needs_ar: 'احتياجات خاصة في التعلم',
+            special_needs_en: 'Special learning needs'
+          }
+        ]
       }
-    ] as StudentBasicInfo[],
+    ],
+    isLoading: false,
+  }),
+}));
+
+vi.mock('@/hooks/useAssessments', () => ({
+  useAssessmentResults: () => ({
+    data: [
+      {
+        id: 'assessment-1',
+        test_name: 'Cognitive Assessment',
+        test_name_ar: 'تقييم الإدراك',
+        assessment_type: 'cognitive',
+        total_score: 85,
+        max_score: 100,
+        interpretation_ar: 'أداء جيد في المهارات الإدراكية',
+        interpretation_en: 'Good performance in cognitive skills'
+      },
+      {
+        id: 'assessment-2',
+        test_name: 'Academic Skills Assessment', 
+        test_name_ar: 'تقييم المهارات الأكاديمية',
+        assessment_type: 'academic',
+        total_score: 72,
+        max_score: 100,
+        interpretation_ar: 'يحتاج دعم في المهارات الأكاديمية',
+        interpretation_en: 'Needs support in academic skills'
+      }
+    ],
     isLoading: false,
   }),
 }));
@@ -134,8 +172,8 @@ describe('IEPCreationWizard', () => {
       const studentSelect = screen.getByLabelText(/student/i);
       await user.click(studentSelect);
       
-      // Select first student option
-      const studentOption = await screen.findByText('Ahmed Mohammed');
+      // Select first student option (updated to match new format)
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
       await user.click(studentOption);
 
       // Select IEP type
@@ -163,7 +201,7 @@ describe('IEPCreationWizard', () => {
       // Fill step 1 and proceed to step 2
       const studentSelect = screen.getByLabelText(/student/i);
       await user.click(studentSelect);
-      const studentOption = await screen.findByText('Ahmed Mohammed');
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
       await user.click(studentOption);
 
       const iepTypeSelect = screen.getByLabelText(/iep type/i);
@@ -205,7 +243,7 @@ describe('IEPCreationWizard', () => {
       // Fill step 1
       const studentSelect = screen.getByLabelText(/student/i);
       await user.click(studentSelect);
-      const studentOption = await screen.findByText('Ahmed Mohammed');
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
       await user.click(studentOption);
 
       const iepTypeSelect = screen.getByLabelText(/iep type/i);
@@ -242,7 +280,7 @@ describe('IEPCreationWizard', () => {
       // Navigate to final step and submit (simplified)
       const studentSelect = screen.getByLabelText(/student/i);
       await user.click(studentSelect);
-      const studentOption = await screen.findByText('Ahmed Mohammed');
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
       await user.click(studentOption);
 
       const iepTypeSelect = screen.getByLabelText(/iep type/i);
@@ -368,7 +406,7 @@ describe('IEPCreationWizard', () => {
       // Fill required fields
       const studentSelect = screen.getByLabelText(/student/i);
       await user.click(studentSelect);
-      const studentOption = await screen.findByText('Ahmed Mohammed');
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
       await user.click(studentOption);
 
       const iepTypeSelect = screen.getByLabelText(/iep type/i);
@@ -400,7 +438,7 @@ describe('IEPCreationWizard', () => {
       // Navigate to final step and attempt submission
       const studentSelect = screen.getByLabelText(/student/i);
       await user.click(studentSelect);
-      const studentOption = await screen.findByText('Ahmed Mohammed');
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
       await user.click(studentOption);
 
       const iepTypeSelect = screen.getByLabelText(/iep type/i);
@@ -456,7 +494,7 @@ describe('IEPCreationWizard', () => {
       await userEvent.click(studentSelect);
       
       await waitFor(() => {
-        expect(screen.getByText('Ahmed Mohammed')).toBeInTheDocument();
+        expect(screen.getByText('Ahmed Mohammed (STU001)')).toBeInTheDocument();
       });
     });
 
@@ -469,6 +507,322 @@ describe('IEPCreationWizard', () => {
       await userEvent.click(closeButton);
 
       expect(onClose).toHaveBeenCalled();
+    });
+  });
+
+  describe('Student Profile Integration Tests', () => {
+    it('displays student profile summary when student is selected', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      // Select student
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      // Should show profile summary
+      await waitFor(() => {
+        expect(screen.getByText(/Student Profile Summary|ملخص ملف الطالب/)).toBeInTheDocument();
+        expect(screen.getByText(/Age:|العمر:/)).toBeInTheDocument();
+        expect(screen.getByText(/14|١٤/)).toBeInTheDocument(); // Age calculation
+        expect(screen.getByText(/Assessments:|التقييمات:/)).toBeInTheDocument();
+        expect(screen.getByText('2')).toBeInTheDocument(); // Number of assessments
+      });
+    });
+
+    it('shows assessment badges in student profile', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      await waitFor(() => {
+        expect(screen.getByText('Cognitive Assessment')).toBeInTheDocument();
+        expect(screen.getByText('(85/100)')).toBeInTheDocument();
+        expect(screen.getByText('Academic Skills Assessment')).toBeInTheDocument();
+        expect(screen.getByText('(72/100)')).toBeInTheDocument();
+      });
+    });
+
+    it('auto-populates present levels when student is selected', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      // Select student
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      // Navigate to present levels step
+      await user.click(screen.getByText('Next'));
+
+      // Should auto-populate with assessment data
+      await waitFor(() => {
+        // Check for auto-populated academic levels
+        const academicTextAreas = screen.getAllByRole('textbox');
+        const academicContent = academicTextAreas.find(textarea => 
+          textarea.value.includes('Based on assessments conducted') ||
+          textarea.value.includes('بناءً على التقييمات')
+        );
+        expect(academicContent).toBeInTheDocument();
+
+        // Check for assessment scores in populated text
+        const scoreContent = academicTextAreas.find(textarea =>
+          textarea.value.includes('85/100') || textarea.value.includes('72/100')
+        );
+        expect(scoreContent).toBeInTheDocument();
+      });
+    });
+
+    it('includes medical record information in functional levels', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      // Select student
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      // Navigate to present levels step
+      await user.click(screen.getByText('Next'));
+
+      // Should include medical records in functional levels
+      await waitFor(() => {
+        const textAreas = screen.getAllByRole('textbox');
+        const functionalContent = textAreas.find(textarea =>
+          textarea.value.includes('Special learning needs') ||
+          textarea.value.includes('احتياجات خاصة في التعلم')
+        );
+        expect(functionalContent).toBeInTheDocument();
+      });
+    });
+
+    it('handles students without assessments gracefully', async () => {
+      // Mock empty assessments for this specific test
+      vi.doMock('@/hooks/useAssessments', () => ({
+        useAssessmentResults: () => ({
+          data: [],
+          isLoading: false,
+        }),
+      }));
+
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      // Should show 0 assessments
+      await waitFor(() => {
+        expect(screen.getByText('0')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('Next'));
+
+      // Should show default text when no assessments
+      await waitFor(() => {
+        const textAreas = screen.getAllByRole('textbox');
+        const defaultContent = textAreas.find(textarea =>
+          textarea.value.includes('Comprehensive assessment needed') ||
+          textarea.value.includes('يحتاج إلى تقييم شامل')
+        );
+        expect(defaultContent).toBeInTheDocument();
+      });
+    });
+
+    it('calculates and displays student age correctly', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      // Should calculate age from birth date (2010-01-01)
+      await waitFor(() => {
+        expect(screen.getByText(/14|١٤/)).toBeInTheDocument();
+        expect(screen.getByText(/years|سنة/)).toBeInTheDocument();
+      });
+    });
+
+    it('shows auto-population notification message', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      // Should show notification about auto-population
+      await waitFor(() => {
+        expect(screen.getByText(/Present levels will be auto-populated|سيتم تعبئة المستويات الحالية تلقائياً/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Assessment Integration Tests', () => {
+    it('filters academic assessments for academic present levels', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      await user.click(screen.getByText('Next'));
+
+      // Should include academic assessment in academic levels
+      await waitFor(() => {
+        const textAreas = screen.getAllByRole('textbox');
+        const academicContent = textAreas.find(textarea =>
+          textarea.value.includes('Academic Skills Assessment') ||
+          textarea.value.includes('تقييم المهارات الأكاديمية')
+        );
+        expect(academicContent).toBeInTheDocument();
+      });
+    });
+
+    it('includes assessment interpretations in present levels', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      await user.click(screen.getByText('Next'));
+
+      // Should include assessment interpretations
+      await waitFor(() => {
+        const textAreas = screen.getAllByRole('textbox');
+        const interpretationContent = textAreas.find(textarea =>
+          textarea.value.includes('Good performance in cognitive skills') ||
+          textarea.value.includes('أداء جيد في المهارات الإدراكية')
+        );
+        expect(interpretationContent).toBeInTheDocument();
+      });
+    });
+
+    it('formats assessment scores correctly in present levels', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      await user.click(screen.getByText('Next'));
+
+      // Should format scores with percentage
+      await waitFor(() => {
+        const textAreas = screen.getAllByRole('textbox');
+        const scoreContent = textAreas.find(textarea =>
+          textarea.value.includes('85/100 (85%)') || textarea.value.includes('72/100 (72%)')
+        );
+        expect(scoreContent).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Bilingual Content Generation Tests', () => {
+    it('generates present levels in both Arabic and English', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} />);
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('Ahmed Mohammed (STU001)');
+      await user.click(studentOption);
+
+      await user.click(screen.getByText('Next'));
+
+      await waitFor(() => {
+        // Should have both Arabic and English content
+        const textAreas = screen.getAllByRole('textbox');
+        
+        const arabicContent = textAreas.find(textarea =>
+          textarea.value.includes('بناءً على التقييمات المُجراة للطالب أحمد محمد')
+        );
+        expect(arabicContent).toBeInTheDocument();
+
+        const englishContent = textAreas.find(textarea =>
+          textarea.value.includes('Based on assessments conducted for student Ahmed Mohammed')
+        );
+        expect(englishContent).toBeInTheDocument();
+      });
+    });
+
+    it('uses Arabic assessment names when available', async () => {
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} language="ar" />, { language: 'ar' });
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('أحمد محمد (STU001)');
+      await user.click(studentOption);
+
+      await waitFor(() => {
+        // Should show Arabic assessment names in profile summary
+        expect(screen.getByText('تقييم الإدراك')).toBeInTheDocument();
+        expect(screen.getByText('تقييم المهارات الأكاديمية')).toBeInTheDocument();
+      });
+    });
+
+    it('falls back to English assessment names when Arabic not available', async () => {
+      // Mock assessment without Arabic name
+      vi.doMock('@/hooks/useAssessments', () => ({
+        useAssessmentResults: () => ({
+          data: [
+            {
+              id: 'assessment-1',
+              test_name: 'English Only Assessment',
+              assessment_type: 'cognitive',
+              total_score: 85,
+              max_score: 100
+            }
+          ],
+          isLoading: false,
+        }),
+      }));
+
+      const user = userEvent.setup();
+      
+      render(<IEPCreationWizard {...defaultProps} language="ar" />, { language: 'ar' });
+
+      const studentSelect = screen.getByLabelText(/student/i);
+      await user.click(studentSelect);
+      const studentOption = await screen.findByText('أحمد محمد (STU001)');
+      await user.click(studentOption);
+
+      await waitFor(() => {
+        // Should fall back to English name
+        expect(screen.getByText('English Only Assessment')).toBeInTheDocument();
+      });
     });
   });
 });

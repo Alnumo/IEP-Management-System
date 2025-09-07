@@ -76,8 +76,13 @@ import {
   Settings,
   Calendar,
   Eye,
-  Share
+  Share,
+  Link2,
+  Zap,
+  Target
 } from 'lucide-react'
+import { schedulingIntegration } from '@/services/scheduling-integration-service'
+import { useToast } from '@/hooks/use-toast'
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -173,6 +178,33 @@ export interface IEPMeeting {
     due_date: string
     status: 'pending' | 'in_progress' | 'completed'
   }>
+
+  // Session Management Integration
+  session_integration?: {
+    related_session_ids: string[]
+    therapy_adjustments: Array<{
+      session_type: string
+      current_frequency: string
+      proposed_frequency: string
+      reason_ar: string
+      reason_en: string
+      effective_date: string
+      status: 'pending' | 'approved' | 'rejected'
+    }>
+    scheduling_conflicts: Array<{
+      session_id: string
+      conflict_type: 'time_overlap' | 'therapist_unavailable' | 'room_conflict'
+      description: string
+      resolved: boolean
+    }>
+    follow_up_sessions: Array<{
+      session_type: string
+      proposed_date: string
+      duration: number
+      therapist_id: string
+      notes: string
+    }>
+  }
   
   // Metadata
   created_at: string
@@ -347,6 +379,7 @@ export const IEPMeetingScheduler: React.FC<IEPMeetingSchedulerProps> = ({
   onMeetingUpdated
 }) => {
   const isRTL = language === 'ar'
+  const { toast } = useToast()
   
   // State management
   const [activeTab, setActiveTab] = useState<string>('upcoming')
@@ -357,6 +390,8 @@ export const IEPMeetingScheduler: React.FC<IEPMeetingSchedulerProps> = ({
   const [editMeetingDialog, setEditMeetingDialog] = useState<IEPMeeting | null>(null)
   const [attendeesDialog, setAttendeesDialog] = useState<IEPMeeting | null>(null)
   const [schedulingAssistant, setSchedulingAssistant] = useState(false)
+  const [sessionIntegrationDialog, setSessionIntegrationDialog] = useState<IEPMeeting | null>(null)
+  const [isSchedulingWithSessions, setIsSchedulingWithSessions] = useState(false)
   
   // Sample data - would be fetched from API
   const [meetings] = useState<IEPMeeting[]>([
@@ -547,33 +582,154 @@ export const IEPMeetingScheduler: React.FC<IEPMeetingSchedulerProps> = ({
   }, [meetings, searchQuery, statusFilter, typeFilter, activeTab])
 
   // Event handlers
-  const handleCreateMeeting = (meetingData: Partial<IEPMeeting>) => {
-    // Implementation for creating meeting
-    console.log('Creating meeting:', meetingData)
-    setCreateMeetingDialog(false)
-    onMeetingCreated?.(meetingData as IEPMeeting)
+  const handleCreateMeeting = async (meetingData: Partial<IEPMeeting>) => {
+    try {
+      setIsSchedulingWithSessions(true)
+      
+      // If session integration is enabled, validate scheduling conflicts
+      if (isSchedulingWithSessions && meetingData.session_integration) {
+        const validation = await schedulingIntegration.validateSchedulingRequest({
+          meeting_date: meetingData.meeting_date!,
+          start_time: meetingData.start_time!,
+          end_time: meetingData.end_time!,
+          related_sessions: meetingData.session_integration.related_session_ids,
+          therapy_adjustments: meetingData.session_integration.therapy_adjustments
+        })
+        
+        if (!validation.isValid) {
+          toast({
+            title: isRTL ? "تعارض في الجدولة" : "Scheduling Conflict",
+            description: validation.conflicts?.join(', ') || (isRTL ? "يوجد تعارض في الجدولة" : "There are scheduling conflicts"),
+            variant: "destructive"
+          })
+          return
+        }
+      }
+      
+      console.log('Creating meeting:', meetingData)
+      setCreateMeetingDialog(false)
+      onMeetingCreated?.(meetingData as IEPMeeting)
+      
+      toast({
+        title: isRTL ? "تم إنشاء الاجتماع" : "Meeting Created",
+        description: isRTL ? "تم إنشاء الاجتماع بنجاح" : "Meeting has been created successfully"
+      })
+    } catch (error) {
+      console.error('Error creating meeting:', error)
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: isRTL ? "فشل في إنشاء الاجتماع" : "Failed to create meeting",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSchedulingWithSessions(false)
+    }
   }
 
-  const handleUpdateMeeting = (meetingId: string, updates: Partial<IEPMeeting>) => {
-    // Implementation for updating meeting
-    console.log('Updating meeting:', meetingId, updates)
-    setEditMeetingDialog(null)
-    onMeetingUpdated?.(updates as IEPMeeting)
+  const handleUpdateMeeting = async (meetingId: string, updates: Partial<IEPMeeting>) => {
+    try {
+      // If session integration updates exist, validate them
+      if (updates.session_integration) {
+        const validation = await schedulingIntegration.validateSchedulingRequest({
+          meeting_date: updates.meeting_date!,
+          start_time: updates.start_time!,
+          end_time: updates.end_time!,
+          related_sessions: updates.session_integration.related_session_ids,
+          therapy_adjustments: updates.session_integration.therapy_adjustments
+        })
+        
+        if (!validation.isValid) {
+          toast({
+            title: isRTL ? "تعارض في الجدولة" : "Scheduling Conflict",
+            description: validation.conflicts?.join(', ') || (isRTL ? "يوجد تعارض في الجدولة" : "There are scheduling conflicts"),
+            variant: "destructive"
+          })
+          return
+        }
+      }
+      
+      console.log('Updating meeting:', meetingId, updates)
+      setEditMeetingDialog(null)
+      onMeetingUpdated?.(updates as IEPMeeting)
+      
+      toast({
+        title: isRTL ? "تم تحديث الاجتماع" : "Meeting Updated",
+        description: isRTL ? "تم تحديث الاجتماع بنجاح" : "Meeting has been updated successfully"
+      })
+    } catch (error) {
+      console.error('Error updating meeting:', error)
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: isRTL ? "فشل في تحديث الاجتماع" : "Failed to update meeting",
+        variant: "destructive"
+      })
+    }
   }
 
   const handleCancelMeeting = (meetingId: string, reason: string) => {
     // Implementation for cancelling meeting
     console.log('Cancelling meeting:', meetingId, reason)
+    
+    toast({
+      title: isRTL ? "تم إلغاء الاجتماع" : "Meeting Cancelled",
+      description: isRTL ? "تم إلغاء الاجتماع بنجاح" : "Meeting has been cancelled"
+    })
   }
 
   const handleAttendanceUpdate = (attendeeId: string, status: AttendanceStatus) => {
     // Implementation for updating attendance
     console.log('Updating attendance:', attendeeId, status)
+    
+    toast({
+      title: isRTL ? "تم تحديث الحضور" : "Attendance Updated",
+      description: isRTL ? "تم تحديث حالة الحضور" : "Attendance status has been updated"
+    })
   }
 
   const handleSendReminders = (meetingId: string) => {
     // Implementation for sending reminders
     console.log('Sending reminders for meeting:', meetingId)
+    
+    toast({
+      title: isRTL ? "تم إرسال التذكيرات" : "Reminders Sent",
+      description: isRTL ? "تم إرسال التذكيرات للحضور" : "Reminders have been sent to attendees"
+    })
+  }
+
+  const handleSessionIntegration = async (meeting: IEPMeeting, action: 'view' | 'manage' | 'resolve_conflicts') => {
+    try {
+      if (action === 'view' || action === 'manage') {
+        setSessionIntegrationDialog(meeting)
+      } else if (action === 'resolve_conflicts') {
+        // Auto-resolve scheduling conflicts
+        const conflicts = meeting.session_integration?.scheduling_conflicts || []
+        const unresolved = conflicts.filter(c => !c.resolved)
+        
+        if (unresolved.length > 0) {
+          const resolution = await schedulingIntegration.resolveSchedulingConflicts(meeting.id, unresolved)
+          
+          if (resolution.success) {
+            toast({
+              title: isRTL ? "تم حل التعارضات" : "Conflicts Resolved",
+              description: isRTL ? "تم حل جميع تعارضات الجدولة" : "All scheduling conflicts have been resolved"
+            })
+          } else {
+            toast({
+              title: isRTL ? "فشل في حل التعارضات" : "Resolution Failed", 
+              description: isRTL ? "لم يتم حل بعض التعارضات" : "Some conflicts could not be resolved",
+              variant: "destructive"
+            })
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error handling session integration:', error)
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: isRTL ? "فشل في معالجة تكامل الجلسات" : "Failed to handle session integration",
+        variant: "destructive"
+      })
+    }
   }
 
   return (
@@ -839,6 +995,14 @@ export const IEPMeetingScheduler: React.FC<IEPMeetingSchedulerProps> = ({
                             <Users className="h-4 w-4" />
                             {confirmedAttendees}/{totalRequired} {isRTL ? 'مؤكد' : 'confirmed'}
                           </span>
+                          {meeting.session_integration && (
+                            <span className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}>
+                              <Link2 className="h-4 w-4 text-blue-600" />
+                              <span className="text-blue-600">
+                                {meeting.session_integration.related_session_ids.length} {isRTL ? 'جلسات مرتبطة' : 'linked sessions'}
+                              </span>
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -874,6 +1038,25 @@ export const IEPMeetingScheduler: React.FC<IEPMeetingSchedulerProps> = ({
                               <Video className="h-4 w-4 mr-2" />
                               {isRTL ? 'انضم للاجتماع' : 'Join Meeting'}
                             </DropdownMenuItem>
+                          )}
+                          {meeting.session_integration && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleSessionIntegration(meeting, 'view')}>
+                                <Link2 className="h-4 w-4 mr-2" />
+                                {isRTL ? 'عرض تكامل الجلسات' : 'View Session Integration'}
+                              </DropdownMenuItem>
+                              {meeting.session_integration.scheduling_conflicts?.some(c => !c.resolved) && (
+                                <DropdownMenuItem onClick={() => handleSessionIntegration(meeting, 'resolve_conflicts')}>
+                                  <Zap className="h-4 w-4 mr-2" />
+                                  {isRTL ? 'حل تعارضات الجدولة' : 'Resolve Conflicts'}
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => handleSessionIntegration(meeting, 'manage')}>
+                                <Target className="h-4 w-4 mr-2" />
+                                {isRTL ? 'إدارة التعديلات العلاجية' : 'Manage Therapy Adjustments'}
+                              </DropdownMenuItem>
+                            </>
                           )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
@@ -933,6 +1116,63 @@ export const IEPMeetingScheduler: React.FC<IEPMeetingSchedulerProps> = ({
                         )}
                       </div>
                     </div>
+
+                    {/* Session Integration Summary */}
+                    {meeting.session_integration && (
+                      <div className="pt-4 border-t">
+                        <h4 className="text-sm font-medium mb-2">
+                          {isRTL ? 'ملخص تكامل الجلسات' : 'Session Integration Summary'}
+                        </h4>
+                        <div className="space-y-2">
+                          {/* Therapy Adjustments */}
+                          {meeting.session_integration.therapy_adjustments.length > 0 && (
+                            <div className={cn(
+                              "flex items-center gap-2 text-sm",
+                              isRTL && "flex-row-reverse"
+                            )}>
+                              <Target className="h-4 w-4 text-blue-600" />
+                              <span className="text-muted-foreground">
+                                {meeting.session_integration.therapy_adjustments.length} {isRTL ? 'تعديلات علاجية' : 'therapy adjustments'}
+                              </span>
+                              <Badge variant="outline" className="text-xs">
+                                {meeting.session_integration.therapy_adjustments.filter(a => a.status === 'pending').length} {isRTL ? 'معلقة' : 'pending'}
+                              </Badge>
+                            </div>
+                          )}
+                          
+                          {/* Scheduling Conflicts */}
+                          {meeting.session_integration.scheduling_conflicts.length > 0 && (
+                            <div className={cn(
+                              "flex items-center gap-2 text-sm",
+                              isRTL && "flex-row-reverse"
+                            )}>
+                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                              <span className="text-muted-foreground">
+                                {meeting.session_integration.scheduling_conflicts.filter(c => !c.resolved).length} {isRTL ? 'تعارضات غير محلولة' : 'unresolved conflicts'}
+                              </span>
+                              {meeting.session_integration.scheduling_conflicts.some(c => !c.resolved) && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {isRTL ? 'يحتاج حل' : 'needs resolution'}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Follow-up Sessions */}
+                          {meeting.session_integration.follow_up_sessions.length > 0 && (
+                            <div className={cn(
+                              "flex items-center gap-2 text-sm",
+                              isRTL && "flex-row-reverse"
+                            )}>
+                              <CalendarIcon className="h-4 w-4 text-green-600" />
+                              <span className="text-muted-foreground">
+                                {meeting.session_integration.follow_up_sessions.length} {isRTL ? 'جلسات متابعة مقترحة' : 'follow-up sessions planned'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Action Items (if any) */}
                     {meeting.action_items.length > 0 && (
@@ -1057,6 +1297,45 @@ export const IEPMeetingScheduler: React.FC<IEPMeetingSchedulerProps> = ({
                 placeholder={isRTL ? 'اكتب وصف الاجتماع...' : 'Enter meeting description...'}
                 rows={3}
               />
+            </div>
+
+            {/* Session Integration Option */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className={cn(
+                "flex items-center gap-2",
+                isRTL && "flex-row-reverse"
+              )}>
+                <Checkbox 
+                  id="enable-session-integration"
+                  checked={isSchedulingWithSessions}
+                  onCheckedChange={setIsSchedulingWithSessions}
+                />
+                <Label htmlFor="enable-session-integration" className="text-sm font-medium">
+                  {isRTL ? 'تفعيل تكامل الجلسات العلاجية' : 'Enable Session Integration'}
+                </Label>
+                <Link2 className="h-4 w-4 text-blue-600" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isRTL 
+                  ? 'ربط هذا الاجتماع بالجلسات العلاجية الحالية لتحسين التنسيق والمتابعة'
+                  : 'Link this meeting with ongoing therapy sessions for better coordination and follow-up'
+                }
+              </p>
+              
+              {isSchedulingWithSessions && (
+                <Alert>
+                  <Zap className="h-4 w-4" />
+                  <AlertTitle>
+                    {isRTL ? 'تكامل الجلسات مُفعل' : 'Session Integration Enabled'}
+                  </AlertTitle>
+                  <AlertDescription>
+                    {isRTL 
+                      ? 'سيتم التحقق من التعارضات في الجدولة وإنشاء التعديلات العلاجية المناسبة تلقائياً.'
+                      : 'The system will automatically check for scheduling conflicts and suggest appropriate therapy adjustments.'
+                    }
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </div>
 
@@ -1208,6 +1487,313 @@ export const IEPMeetingScheduler: React.FC<IEPMeetingSchedulerProps> = ({
             <Button onClick={() => console.log('Add attendee')}>
               <Plus className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
               {isRTL ? 'إضافة حاضر' : 'Add Attendee'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Session Integration Dialog */}
+      <Dialog open={!!sessionIntegrationDialog} onOpenChange={(open) => !open && setSessionIntegrationDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>
+              {isRTL ? 'تكامل الجلسات العلاجية' : 'Session Integration Management'}
+            </DialogTitle>
+            <DialogDescription>
+              {sessionIntegrationDialog && (
+                language === 'ar' ? sessionIntegrationDialog.title_ar : sessionIntegrationDialog.title_en
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {sessionIntegrationDialog?.session_integration && (
+            <ScrollArea className="max-h-[60vh]">
+              <Tabs defaultValue="adjustments" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="adjustments">
+                    {isRTL ? 'التعديلات العلاجية' : 'Therapy Adjustments'}
+                  </TabsTrigger>
+                  <TabsTrigger value="conflicts">
+                    {isRTL ? 'التعارضات' : 'Scheduling Conflicts'}
+                  </TabsTrigger>
+                  <TabsTrigger value="followup">
+                    {isRTL ? 'جلسات المتابعة' : 'Follow-up Sessions'}
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Therapy Adjustments Tab */}
+                <TabsContent value="adjustments" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {isRTL ? 'التعديلات العلاجية المقترحة' : 'Proposed Therapy Adjustments'}
+                      </CardTitle>
+                      <CardDescription>
+                        {isRTL 
+                          ? 'مراجعة وموافقة على التعديلات المقترحة للبرنامج العلاجي'
+                          : 'Review and approve proposed changes to the therapy program'
+                        }
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {sessionIntegrationDialog.session_integration.therapy_adjustments.map((adjustment, index) => (
+                          <Card key={index} className="border-l-4 border-l-blue-500">
+                            <CardContent className="p-4">
+                              <div className={cn(
+                                "flex items-start justify-between mb-3",
+                                isRTL && "flex-row-reverse"
+                              )}>
+                                <div className="flex-1">
+                                  <h4 className="font-medium mb-1">
+                                    {adjustment.session_type}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {isRTL ? adjustment.reason_ar : adjustment.reason_en}
+                                  </p>
+                                </div>
+                                <Badge className={
+                                  adjustment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                  adjustment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }>
+                                  {adjustment.status === 'approved' ? (isRTL ? 'موافق عليه' : 'Approved') :
+                                   adjustment.status === 'rejected' ? (isRTL ? 'مرفوض' : 'Rejected') :
+                                   (isRTL ? 'معلق' : 'Pending')}
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">{isRTL ? 'التكرار الحالي:' : 'Current Frequency:'}</span>
+                                  <span className={cn("font-medium", isRTL ? "mr-2" : "ml-2")}>
+                                    {adjustment.current_frequency}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">{isRTL ? 'التكرار المقترح:' : 'Proposed Frequency:'}</span>
+                                  <span className={cn("font-medium text-blue-600", isRTL ? "mr-2" : "ml-2")}>
+                                    {adjustment.proposed_frequency}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">{isRTL ? 'تاريخ التطبيق:' : 'Effective Date:'}</span>
+                                  <span className={cn("font-medium", isRTL ? "mr-2" : "ml-2")}>
+                                    {new Date(adjustment.effective_date).toLocaleDateString(
+                                      language === 'ar' ? 'ar-SA' : 'en-US',
+                                      { year: 'numeric', month: 'long', day: 'numeric' }
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {adjustment.status === 'pending' && (
+                                <div className={cn(
+                                  "flex gap-2 mt-4",
+                                  isRTL && "flex-row-reverse"
+                                )}>
+                                  <Button size="sm" variant="default">
+                                    <CheckCircle className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                                    {isRTL ? 'موافق' : 'Approve'}
+                                  </Button>
+                                  <Button size="sm" variant="destructive">
+                                    <XCircle className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                                    {isRTL ? 'رفض' : 'Reject'}
+                                  </Button>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                        
+                        {sessionIntegrationDialog.session_integration.therapy_adjustments.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>{isRTL ? 'لا توجد تعديلات علاجية' : 'No therapy adjustments'}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Scheduling Conflicts Tab */}
+                <TabsContent value="conflicts" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {isRTL ? 'تعارضات الجدولة' : 'Scheduling Conflicts'}
+                      </CardTitle>
+                      <CardDescription>
+                        {isRTL 
+                          ? 'حل التعارضات في جدولة الاجتماع والجلسات العلاجية'
+                          : 'Resolve conflicts between meeting and therapy session schedules'
+                        }
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {sessionIntegrationDialog.session_integration.scheduling_conflicts.map((conflict, index) => (
+                          <Alert key={index} className={
+                            conflict.resolved ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                          }>
+                            <AlertTriangle className={cn(
+                              "h-4 w-4",
+                              conflict.resolved ? 'text-green-600' : 'text-red-600'
+                            )} />
+                            <AlertTitle className="flex items-center justify-between">
+                              <span>
+                                {conflict.conflict_type === 'time_overlap' ? 
+                                  (isRTL ? 'تداخل في الأوقات' : 'Time Overlap') :
+                                 conflict.conflict_type === 'therapist_unavailable' ? 
+                                  (isRTL ? 'المعالج غير متاح' : 'Therapist Unavailable') :
+                                  (isRTL ? 'تعارض في الغرفة' : 'Room Conflict')
+                                }
+                              </span>
+                              {conflict.resolved ? (
+                                <Badge className="bg-green-100 text-green-800">
+                                  {isRTL ? 'محلول' : 'Resolved'}
+                                </Badge>
+                              ) : (
+                                <Badge variant="destructive">
+                                  {isRTL ? 'غير محلول' : 'Unresolved'}
+                                </Badge>
+                              )}
+                            </AlertTitle>
+                            <AlertDescription>
+                              <p className="mb-2">{conflict.description}</p>
+                              <div className={cn(
+                                "flex items-center gap-2 text-sm text-muted-foreground",
+                                isRTL && "flex-row-reverse"
+                              )}>
+                                <span>{isRTL ? 'معرف الجلسة:' : 'Session ID:'}</span>
+                                <code className="bg-gray-100 px-2 py-1 rounded text-xs">
+                                  {conflict.session_id}
+                                </code>
+                              </div>
+                              
+                              {!conflict.resolved && (
+                                <div className={cn(
+                                  "flex gap-2 mt-3",
+                                  isRTL && "flex-row-reverse"
+                                )}>
+                                  <Button size="sm" variant="default">
+                                    <Zap className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                                    {isRTL ? 'حل تلقائي' : 'Auto Resolve'}
+                                  </Button>
+                                  <Button size="sm" variant="outline">
+                                    <Edit className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                                    {isRTL ? 'حل يدوي' : 'Manual Resolution'}
+                                  </Button>
+                                </div>
+                              )}
+                            </AlertDescription>
+                          </Alert>
+                        ))}
+                        
+                        {sessionIntegrationDialog.session_integration.scheduling_conflicts.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50 text-green-600" />
+                            <p>{isRTL ? 'لا توجد تعارضات في الجدولة' : 'No scheduling conflicts'}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Follow-up Sessions Tab */}
+                <TabsContent value="followup" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {isRTL ? 'جلسات المتابعة المقترحة' : 'Proposed Follow-up Sessions'}
+                      </CardTitle>
+                      <CardDescription>
+                        {isRTL 
+                          ? 'جدولة الجلسات العلاجية المقترحة بناء على نتائج الاجتماع'
+                          : 'Schedule therapy sessions proposed based on meeting outcomes'
+                        }
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {sessionIntegrationDialog.session_integration.follow_up_sessions.map((session, index) => (
+                          <Card key={index} className="border-l-4 border-l-green-500">
+                            <CardContent className="p-4">
+                              <div className={cn(
+                                "flex items-start justify-between mb-3",
+                                isRTL && "flex-row-reverse"
+                              )}>
+                                <div className="flex-1">
+                                  <h4 className="font-medium mb-1">
+                                    {session.session_type}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {session.notes}
+                                  </p>
+                                </div>
+                                <Badge variant="outline">
+                                  {session.duration} {isRTL ? 'دقيقة' : 'min'}
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                                <div>
+                                  <span className="text-muted-foreground">{isRTL ? 'التاريخ المقترح:' : 'Proposed Date:'}</span>
+                                  <span className={cn("font-medium", isRTL ? "mr-2" : "ml-2")}>
+                                    {new Date(session.proposed_date).toLocaleDateString(
+                                      language === 'ar' ? 'ar-SA' : 'en-US',
+                                      { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+                                    )}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">{isRTL ? 'المعالج:' : 'Therapist:'}</span>
+                                  <span className={cn("font-medium", isRTL ? "mr-2" : "ml-2")}>
+                                    {session.therapist_id}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className={cn(
+                                "flex gap-2",
+                                isRTL && "flex-row-reverse"
+                              )}>
+                                <Button size="sm" variant="default">
+                                  <CalendarIcon className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                                  {isRTL ? 'جدولة الجلسة' : 'Schedule Session'}
+                                </Button>
+                                <Button size="sm" variant="outline">
+                                  <Edit className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                                  {isRTL ? 'تعديل' : 'Modify'}
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                        
+                        {sessionIntegrationDialog.session_integration.follow_up_sessions.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>{isRTL ? 'لا توجد جلسات متابعة مقترحة' : 'No follow-up sessions proposed'}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </ScrollArea>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSessionIntegrationDialog(null)}>
+              {isRTL ? 'إغلاق' : 'Close'}
+            </Button>
+            <Button onClick={() => console.log('Save session integration changes')}>
+              <Settings className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+              {isRTL ? 'حفظ التغييرات' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

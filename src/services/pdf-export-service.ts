@@ -4,7 +4,8 @@
 import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
-import { Invoice, Student, TherapyProgram } from '../types/financial-management';
+import { Invoice, Student, TherapyProgram } from '../types/billing';
+import { AutomatedInvoiceGenerationService } from './automated-invoice-generation-service';
 
 interface InvoicePDFOptions {
   language: 'ar' | 'en';
@@ -266,8 +267,9 @@ export class PDFExportService {
         total: 'المجموع',
         subtotal: 'المجموع الفرعي:',
         discount: 'الخصم:',
-        tax: 'الضريبة:',
-        totalAmount: 'المجموع الكلي:'
+        tax: 'ضريبة القيمة المضافة (15%):',
+        totalAmount: 'المجموع الكلي:',
+        vatNumber: 'الرقم الضريبي:'
       },
       en: {
         description: 'Description',
@@ -276,8 +278,9 @@ export class PDFExportService {
         total: 'Total',
         subtotal: 'Subtotal:',
         discount: 'Discount:',
-        tax: 'Tax:',
-        totalAmount: 'Total Amount:'
+        tax: 'VAT (15%):',
+        totalAmount: 'Total Amount:',
+        vatNumber: 'VAT Number:'
       }
     };
 
@@ -318,8 +321,8 @@ export class PDFExportService {
       if (isRTL) {
         doc.text(description, colPositions[0], currentY, { align: 'right' });
         doc.text(item.quantity.toString(), colPositions[1], currentY, { align: 'center' });
-        doc.text(`${item.unit_price.toFixed(2)} 1J'D`, colPositions[2], currentY, { align: 'center' });
-        doc.text(`${total.toFixed(2)} 1J'D`, colPositions[3], currentY, { align: 'left' });
+        doc.text(`${item.unit_price.toFixed(2)} ريال`, colPositions[2], currentY, { align: 'center' });
+        doc.text(`${total.toFixed(2)} ريال`, colPositions[3], currentY, { align: 'left' });
       } else {
         doc.text(description, colPositions[0], currentY);
         doc.text(item.quantity.toString(), colPositions[1], currentY);
@@ -343,6 +346,9 @@ export class PDFExportService {
       }
       if (invoiceData.tax_amount > 0) {
         doc.text(`${currentLabels.tax} ${invoiceData.tax_amount.toFixed(2)} ${currency}`, pageWidth - margin, totalsStartY + 20, { align: 'right' });
+        doc.setFontSize(8);
+        doc.text(`${currentLabels.vatNumber} ${invoiceData.vat_number || 'N/A'}`, pageWidth - margin, totalsStartY + 30, { align: 'right' });
+        doc.setFontSize(10);
       }
       doc.setFont('helvetica', 'bold');
       doc.text(`${currentLabels.totalAmount} ${invoiceData.total_amount.toFixed(2)} ${currency}`, pageWidth - margin, totalsStartY + 30, { align: 'right' });
@@ -353,6 +359,9 @@ export class PDFExportService {
       }
       if (invoiceData.tax_amount > 0) {
         doc.text(`${currentLabels.tax} ${currency} ${invoiceData.tax_amount.toFixed(2)}`, pageWidth - 80, totalsStartY + 20);
+        doc.setFontSize(8);
+        doc.text(`${currentLabels.vatNumber} ${invoiceData.vat_number || 'N/A'}`, pageWidth - 80, totalsStartY + 30);
+        doc.setFontSize(10);
       }
       doc.setFont('helvetica', 'bold');
       doc.text(`${currentLabels.totalAmount} ${currency} ${invoiceData.total_amount.toFixed(2)}`, pageWidth - 80, totalsStartY + 30);
@@ -447,7 +456,13 @@ export class PDFExportService {
     pageHeight: number
   ): void {
     doc.saveGraphicsState();
-    doc.setGState(new doc.GState({ opacity: 0.1 }));
+    try {
+      // @ts-ignore - GState is available in jsPDF but may not be in all environments
+      doc.setGState(new doc.GState({ opacity: 0.1 }));
+    } catch (e) {
+      // Fallback for environments without GState support
+      doc.setTextColor(200, 200, 200);
+    }
     doc.setFontSize(50);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(128, 128, 128);
@@ -465,6 +480,60 @@ export class PDFExportService {
     });
 
     doc.restoreGraphicsState();
+  }
+
+  public async generateInvoicesFromSessions(
+    options: InvoicePDFOptions
+  ): Promise<Blob> {
+    const invoiceService = AutomatedInvoiceGenerationService.getInstance();
+    const generatedInvoices = await invoiceService.generateInvoicesForCompletedSessions();
+    
+    if (!generatedInvoices || generatedInvoices.length === 0) {
+      throw new Error('No invoices were generated from completed sessions');
+    }
+
+    // Convert to PDF data format
+    const pdfInvoicesData: PDFInvoiceData[] = await Promise.all(
+      generatedInvoices.map(async (invoice) => {
+        // Fetch student and therapy program data for PDF
+        const studentData = await this.fetchStudentData(invoice.student_id);
+        const therapyPrograms = await this.fetchTherapyPrograms(invoice.student_id);
+        
+        return {
+          ...invoice,
+          student: studentData,
+          therapyPrograms: therapyPrograms,
+          companyInfo: options.companyInfo
+        };
+      })
+    );
+
+    return this.generateBulkInvoices(pdfInvoicesData, options);
+  }
+
+  private async fetchStudentData(studentId: string): Promise<Student> {
+    // This would typically fetch from Supabase
+    // For now, return mock data that matches the expected structure
+    return {
+      id: studentId,
+      name_ar: 'اسم الطالب',
+      name_en: 'Student Name',
+      parent_name_ar: 'اسم ولي الأمر',
+      parent_name_en: 'Parent Name',
+      parent_phone: '+966 50 123 4567'
+    } as Student;
+  }
+
+  private async fetchTherapyPrograms(studentId: string): Promise<TherapyProgram[]> {
+    // This would typically fetch from Supabase
+    // For now, return mock data
+    return [
+      {
+        id: 'program-1',
+        name_ar: 'تحليل السلوك التطبيقي',
+        name_en: 'Applied Behavior Analysis'
+      }
+    ] as TherapyProgram[];
   }
 
   public async generateBulkInvoices(
@@ -530,6 +599,13 @@ export const generateBulkInvoicesPDF = async (
 ): Promise<Blob> => {
   const service = PDFExportService.getInstance();
   return service.generateBulkInvoices(invoicesData, options);
+};
+
+export const generateInvoicesFromSessionsPDF = async (
+  options: InvoicePDFOptions
+): Promise<Blob> => {
+  const service = PDFExportService.getInstance();
+  return service.generateInvoicesFromSessions(options);
 };
 
 export default PDFExportService;

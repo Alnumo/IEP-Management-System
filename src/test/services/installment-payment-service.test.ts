@@ -8,37 +8,34 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { InstallmentPaymentService } from '../../services/installment-payment-service'
 import type { PaymentPlanCreationRequest } from '../../types/financial-management'
 
-// Mock Supabase
-const mockSupabase = {
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
+vi.mock('../../lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+        })),
         single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        gte: vi.fn(() => ({
+          lte: vi.fn(() => Promise.resolve({ data: [], error: null }))
+        })),
         order: vi.fn(() => Promise.resolve({ data: [], error: null }))
       })),
-      single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      gte: vi.fn(() => ({
-        lte: vi.fn(() => Promise.resolve({ data: [], error: null }))
-      })),
-      order: vi.fn(() => Promise.resolve({ data: [], error: null }))
-    })),
-    insert: vi.fn(() => ({
-      select: vi.fn(() => ({
+      insert: vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn(() => Promise.resolve({ data: null, error: null }))
+        })),
         single: vi.fn(() => Promise.resolve({ data: null, error: null }))
       })),
-      single: vi.fn(() => Promise.resolve({ data: null, error: null }))
-    })),
-    update: vi.fn(() => ({
-      eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
-    })),
-    delete: vi.fn(() => ({
-      eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+      update: vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+      })),
+      delete: vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+      }))
     }))
-  }))
-}
-
-vi.mock('../../lib/supabase', () => ({
-  supabase: mockSupabase
+  }
 }))
 
 describe('InstallmentPaymentService', () => {

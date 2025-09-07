@@ -201,6 +201,32 @@ async function processWebhookEvent(payload: WebhookPayload, supabase: any): Prom
 function mapGatewayStatus(gatewayStatus: string, gatewayProvider: string): string {
   // Status mapping for different gateways
   const statusMaps: Record<string, Record<string, string>> = {
+    paytabs: {
+      'A': 'completed', // Authorized/Captured
+      'H': 'pending',   // Hold
+      'P': 'processing', // Processing
+      'V': 'pending',   // Voided
+      'E': 'failed',    // Error
+      'D': 'failed',    // Declined
+      'C': 'cancelled', // Cancelled
+      'R': 'refunded',  // Refunded
+      'success': 'completed',
+      'failed': 'failed',
+      'pending': 'pending',
+      'processing': 'processing',
+      'cancelled': 'cancelled',
+      'refunded': 'refunded'
+    },
+    stripe: {
+      'requires_payment_method': 'pending',
+      'requires_confirmation': 'pending',
+      'requires_action': 'requires_action',
+      'processing': 'processing',
+      'requires_capture': 'requires_action',
+      'canceled': 'cancelled',
+      'succeeded': 'completed',
+      'payment_failed': 'failed'
+    },
     mada: {
       'success': 'completed',
       'failed': 'failed',

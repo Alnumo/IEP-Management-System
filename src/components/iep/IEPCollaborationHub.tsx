@@ -8,6 +8,9 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { useIEPCollaboration } from '@/hooks/useIEPCollaboration'
+import type { IEPSectionType } from '@/services/iep-collaboration-service'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -406,19 +409,226 @@ export const IEPCollaborationHub: React.FC<IEPCollaborationHubProps> = ({
   onSessionUpdate,
   onConflictDetected
 }) => {
-  const isRTL = language === 'ar'
+  const { language: contextLanguage, isRTL } = useLanguage()
+  const currentLanguage = language || contextLanguage
   
-  // State management
+  // Real-time collaboration hook
+  const collaboration = useIEPCollaboration({
+    iepId,
+    autoJoin: true
+  })
+  
+  // Local state management
   const [activeTab, setActiveTab] = useState<string>('overview')
-  const [isConnected, setIsConnected] = useState(false)
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected')
-  const [currentSection, setCurrentSection] = useState<string>('')
+  const [currentSection, setCurrentSection] = useState<IEPSectionType | null>(null)
   const [editingMode, setEditingMode] = useState(false)
   const [conflictDialog, setConflictDialog] = useState<EditConflict | null>(null)
   const [inviteDialog, setInviteDialog] = useState(false)
   const [settingsDialog, setSettingsDialog] = useState(false)
-  
-  // Real-time data
+  const [commentDialog, setCommentDialog] = useState<{ section: IEPSectionType, fieldName?: string } | null>(null)
+
+  // =============================================================================
+  // COLLABORATION HANDLERS  
+  // =============================================================================
+
+  const handleStartEditing = async (section: IEPSectionType) => {
+    const success = await collaboration.startEditing(section)
+    if (success) {
+      setCurrentSection(section)
+      setEditingMode(true)
+      console.log('✅ Started editing:', section)
+    } else {
+      // Section is locked by someone else
+      const lockInfo = collaboration.getSectionLockInfo(section)
+      if (lockInfo && currentLanguage === 'ar') {
+        alert(`القسم محجوز بواسطة ${lockInfo.locked_by_name_ar}`)
+      } else if (lockInfo) {
+        alert(`Section is locked by ${lockInfo.locked_by_name_en}`)
+      }
+    }
+  }
+
+  const handleStopEditing = async () => {
+    if (currentSection) {
+      await collaboration.stopEditing(currentSection)
+      setCurrentSection(null)
+      setEditingMode(false)
+      console.log('✅ Stopped editing')
+    }
+  }
+
+  const handleAddComment = async (contentAr: string, contentEn: string) => {
+    if (!commentDialog) return
+    
+    const comment = await collaboration.addComment(
+      commentDialog.section,
+      contentAr,
+      contentEn,
+      commentDialog.fieldName
+    )
+    
+    if (comment) {
+      setCommentDialog(null)
+      console.log('✅ Comment added:', comment.id)
+    }
+  }
+
+  // =============================================================================
+  // REAL-TIME UI COMPONENTS
+  // =============================================================================
+
+  const renderPresenceIndicators = () => (
+    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+      {collaboration.participants.map((participant) => (
+        <TooltipProvider key={participant.user_id}>
+          <Tooltip>
+            <TooltipTrigger>
+              <div className="relative">
+                <Avatar className="w-8 h-8 border-2" style={{ borderColor: participant.color }}>
+                  <AvatarImage src={participant.avatar} />
+                  <AvatarFallback className="text-xs" style={{ backgroundColor: `${participant.color}20` }}>
+                    {currentLanguage === 'ar' 
+                      ? participant.name_ar.charAt(0) 
+                      : participant.name_en.charAt(0)
+                    }
+                  </AvatarFallback>
+                </Avatar>
+                <div 
+                  className={cn(
+                    "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
+                    {
+                      'bg-green-500': participant.status === 'online',
+                      'bg-yellow-500': participant.status === 'away',
+                      'bg-blue-500': participant.status === 'editing'
+                    }
+                  )}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <div className="text-center">
+                <p className="font-semibold">
+                  {currentLanguage === 'ar' ? participant.name_ar : participant.name_en}
+                </p>
+                <p className="text-xs text-muted-foreground">{participant.role}</p>
+                {participant.current_section && (
+                  <p className="text-xs">
+                    {currentLanguage === 'ar' ? 'يحرر:' : 'Editing:'} {participant.current_section}
+                  </p>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ))}
+    </div>
+  )
+
+  const renderSectionStatus = (section: IEPSectionType) => {
+    const isLocked = collaboration.isSectionLocked(section)
+    const isLockedByMe = collaboration.isSectionLockedByMe(section)
+    const lockInfo = collaboration.getSectionLockInfo(section)
+
+    if (!isLocked) {
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => handleStartEditing(section)}
+          className="text-green-600 border-green-200 hover:bg-green-50"
+        >
+          <Edit3 className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+          {currentLanguage === 'ar' ? 'ابدأ التحرير' : 'Start Editing'}
+        </Button>
+      )
+    }
+
+    if (isLockedByMe) {
+      return (
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={handleStopEditing}
+        >
+          <Lock className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+          {currentLanguage === 'ar' ? 'توقف عن التحرير' : 'Stop Editing'}
+        </Button>
+      )
+    }
+
+    if (lockInfo) {
+      return (
+        <div className="flex items-center text-amber-600">
+          <Lock className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+          <span className="text-sm">
+            {currentLanguage === 'ar' 
+              ? `محجوز بواسطة ${lockInfo.locked_by_name_ar}` 
+              : `Locked by ${lockInfo.locked_by_name_en}`
+            }
+          </span>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  const renderActivityFeed = () => (
+    <ScrollArea className="h-64">
+      <div className="space-y-2">
+        {collaboration.recentEvents.slice(0, 10).map((event) => (
+          <div key={event.id} className="flex items-start space-x-3 rtl:space-x-reverse p-2 rounded-lg bg-muted/50">
+            <div className={cn("w-2 h-2 rounded-full mt-2", {
+              'bg-green-500': event.event_type === 'user_joined',
+              'bg-red-500': event.event_type === 'user_left',
+              'bg-blue-500': event.event_type === 'editing_started',
+              'bg-gray-500': event.event_type === 'editing_stopped',
+              'bg-yellow-500': event.event_type === 'content_changed',
+              'bg-purple-500': event.event_type === 'comment_added'
+            })} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm">
+                <span className="font-medium">
+                  {currentLanguage === 'ar' ? event.user_name_ar : event.user_name_en}
+                </span>
+                <span className="ml-1 rtl:mr-1 rtl:ml-0">
+                  {getEventMessage(event)}
+                </span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {new Date(event.timestamp).toLocaleTimeString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </ScrollArea>
+  )
+
+  const getEventMessage = (event: CollaborationEvent): string => {
+    const messages = {
+      ar: {
+        user_joined: 'انضم إلى الجلسة',
+        user_left: 'غادر الجلسة',
+        editing_started: `بدأ تحرير ${event.section}`,
+        editing_stopped: `توقف عن تحرير ${event.section}`,
+        content_changed: `حدث محتوى ${event.section}`,
+        comment_added: `أضاف تعليقاً على ${event.section}`
+      },
+      en: {
+        user_joined: 'joined the session',
+        user_left: 'left the session', 
+        editing_started: `started editing ${event.section}`,
+        editing_stopped: `stopped editing ${event.section}`,
+        content_changed: `updated ${event.section}`,
+        comment_added: `commented on ${event.section}`
+      }
+    }
+
+    return messages[currentLanguage as 'ar' | 'en'][event.event_type] || event.event_type
+  }
+
+  // Real-time data (keeping some demo data structure)
   const [session, setSession] = useState<CollaborationSession>({
     id: sessionId || 'demo_session',
     iep_id: iepId,

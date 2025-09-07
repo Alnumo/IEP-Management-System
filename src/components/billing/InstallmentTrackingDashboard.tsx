@@ -35,6 +35,7 @@ import {
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import { InstallmentPlan, InstallmentPayment, Student } from '../../types/financial-management';
+import { InstallmentPaymentAutomation } from '../../services/installment-payment-automation';
 
 interface InstallmentTrackingDashboardProps {
   installmentPlans: InstallmentPlan[];
@@ -93,6 +94,13 @@ export const InstallmentTrackingDashboard: React.FC<InstallmentTrackingDashboard
     defaultRate: 0
   });
   const [overdueReminders, setOverdueReminders] = useState<PaymentReminderData[]>([]);
+  const [automationService] = useState(() => InstallmentPaymentAutomation.getInstance());
+  const [automationStats, setAutomationStats] = useState({
+    totalAutomatedPlans: 0,
+    remindersSentToday: 0,
+    successfulCollections: 0,
+    failedCollections: 0
+  });
 
   // Labels for bilingual support
   const labels = {
@@ -156,7 +164,16 @@ export const InstallmentTrackingDashboard: React.FC<InstallmentTrackingDashboard
       overdue: 'متأخر',
       partial: 'جزئي',
       days: 'يوم',
-      sar: 'ريال'
+      sar: 'ريال',
+      automation: 'الأتمتة',
+      automatedPlans: 'الخطط المؤتمتة',
+      remindersSentToday: 'التذكيرات المرسلة اليوم',
+      successfulCollections: 'التحصيلات الناجحة',
+      failedCollections: 'التحصيلات الفاشلة',
+      pauseAutomation: 'إيقاف الأتمتة',
+      resumeAutomation: 'استئناف الأتمتة',
+      bulkReminders: 'إرسال تذكيرات جماعية',
+      automationStatus: 'حالة الأتمتة'
     },
     en: {
       title: 'Installment Plans Tracking Dashboard',
@@ -218,7 +235,16 @@ export const InstallmentTrackingDashboard: React.FC<InstallmentTrackingDashboard
       overdue: 'Overdue',
       partial: 'Partial',
       days: 'days',
-      sar: 'SAR'
+      sar: 'SAR',
+      automation: 'Automation',
+      automatedPlans: 'Automated Plans',
+      remindersSentToday: 'Reminders Sent Today',
+      successfulCollections: 'Successful Collections',
+      failedCollections: 'Failed Collections',
+      pauseAutomation: 'Pause Automation',
+      resumeAutomation: 'Resume Automation',
+      bulkReminders: 'Send Bulk Reminders',
+      automationStatus: 'Automation Status'
     }
   };
 
@@ -228,7 +254,17 @@ export const InstallmentTrackingDashboard: React.FC<InstallmentTrackingDashboard
   useEffect(() => {
     calculateDashboardStats();
     generateOverdueReminders();
+    loadAutomationStats();
   }, [installmentPlans]);
+
+  const loadAutomationStats = async () => {
+    try {
+      const stats = await automationService.getAutomationStatistics();
+      setAutomationStats(stats);
+    } catch (error) {
+      console.error('Error loading automation statistics:', error);
+    }
+  };
 
   const calculateDashboardStats = () => {
     const activePlans = installmentPlans.filter(plan => plan.status === 'active');
@@ -527,6 +563,78 @@ export const InstallmentTrackingDashboard: React.FC<InstallmentTrackingDashboard
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Automation Statistics */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              {currentLabels.automation}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {currentLabels.automatedPlans}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">{automationStats.totalAutomatedPlans}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {currentLabels.remindersSentToday}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{automationStats.remindersSentToday}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {currentLabels.successfulCollections}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{automationStats.successfulCollections}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {currentLabels.failedCollections}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">{automationStats.failedCollections}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Automation Controls */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => automationService.pauseAutomation()}
+                className="flex items-center gap-2"
+              >
+                <Clock className="h-4 w-4" />
+                {currentLabels.pauseAutomation}
+              </Button>
+              <Button
+                onClick={() => automationService.processOverduePayments()}
+                className="flex items-center gap-2"
+              >
+                <Send className="h-4 w-4" />
+                {currentLabels.bulkReminders}
+              </Button>
+            </div>
           </div>
 
           {/* Quick Actions */}

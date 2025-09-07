@@ -13,6 +13,7 @@ import { Badge } from '../ui/badge';
 import { Alert, AlertDescription } from '../ui/alert';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { InstallmentPaymentService } from '../../services/installment-payment-service';
+import { InstallmentPaymentAutomation } from '../../services/installment-payment-automation';
 import { 
   Calendar, 
   CreditCard, 
@@ -87,6 +88,16 @@ export const InstallmentPlanCreation: React.FC<InstallmentPlanCreationProps> = (
   );
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  // Automation settings
+  const [autoCollectEnabled, setAutoCollectEnabled] = useState(false);
+  const [whatsappReminders, setWhatsappReminders] = useState(true);
+  const [emailReminders, setEmailReminders] = useState(true);
+  const [reminderDaysBefore, setReminderDaysBefore] = useState([3, 1]);
+  const [reminderDaysAfter, setReminderDaysAfter] = useState([1, 3, 7]);
+  const [lateFeeEnabled, setLateFeeEnabled] = useState(true);
+  const [lateFeeAmount, setLateFeeAmount] = useState(25);
+  const [gracePeriodDays, setGracePeriodDays] = useState(3);
+
   // Labels for bilingual support
   const labels = {
     ar: {
@@ -105,6 +116,15 @@ export const InstallmentPlanCreation: React.FC<InstallmentPlanCreationProps> = (
       applyLateFees: 'تطبيق رسوم التأخير',
       lateFeeAmount: 'مبلغ رسوم التأخير',
       gracePeriod: 'فترة السماح (أيام)',
+      automationSettings: 'إعدادات الأتمتة',
+      autoCollection: 'التحصيل التلقائي',
+      autoCollectionDesc: 'تفعيل الدفع التلقائي من بطاقة العميل المحفوظة',
+      reminderSettings: 'إعدادات التذكير',
+      whatsappReminders: 'تذكير واتساب',
+      emailReminders: 'تذكير بريد إلكتروني',
+      remindersBefore: 'أيام التذكير قبل الاستحقاق',
+      remindersAfter: 'أيام التذكير بعد الاستحقاق',
+      gracePeriodDesc: 'عدد الأيام قبل تطبيق رسوم التأخير',
       installmentPreview: 'معاينة الأقساط',
       paymentSchedule: 'جدولة المدفوعات',
       installmentNo: 'رقم القسط',
@@ -144,6 +164,15 @@ export const InstallmentPlanCreation: React.FC<InstallmentPlanCreationProps> = (
       applyLateFees: 'Apply Late Fees',
       lateFeeAmount: 'Late Fee Amount',
       gracePeriod: 'Grace Period (Days)',
+      automationSettings: 'Automation Settings',
+      autoCollection: 'Auto Collection',
+      autoCollectionDesc: 'Enable automatic payment collection from saved customer card',
+      reminderSettings: 'Reminder Settings',
+      whatsappReminders: 'WhatsApp Reminders',
+      emailReminders: 'Email Reminders',
+      remindersBefore: 'Days to remind before due',
+      remindersAfter: 'Days to remind after due',
+      gracePeriodDesc: 'Number of days before applying late fees',
       installmentPreview: 'Installment Preview',
       paymentSchedule: 'Payment Schedule',
       installmentNo: 'Installment #',
@@ -300,28 +329,49 @@ export const InstallmentPlanCreation: React.FC<InstallmentPlanCreationProps> = (
     setErrorMessage('');
     
     try {
-      // Prepare form data for the enhanced service
-      const formData: InstallmentPlanFormData = {
-        invoiceId: invoice.id,
-        numberOfInstallments,
-        frequency,
-        startDate,
-        termsAccepted,
-        ...(firstPaymentAmount && { firstPaymentAmount })
-      };
-
-      // Call the enhanced service method
-      const result = await InstallmentPaymentService.createInstallmentPlanEnhanced(formData);
+      // Use the automation service for comprehensive installment plan creation
+      const automationService = InstallmentPaymentAutomation.getInstance();
       
-      if (result.error) {
-        setErrorMessage(result.error);
+      const result = await automationService.createAutomatedPaymentPlan({
+        student_id: student.id,
+        invoice_id: invoice.id,
+        total_amount: invoice.totalAmount,
+        number_of_installments: numberOfInstallments,
+        frequency: frequency,
+        first_payment_date: startDate,
+        auto_collect: autoCollectEnabled,
+        reminder_preferences: {
+          whatsapp_enabled: whatsappReminders,
+          email_enabled: emailReminders,
+          days_before: reminderDaysBefore,
+          days_after: reminderDaysAfter
+        },
+        late_fee_settings: {
+          enabled: lateFeeEnabled,
+          amount: lateFeeAmount,
+          grace_period_days: gracePeriodDays
+        }
+      });
+      
+      if (!result.success) {
+        setErrorMessage(result.error || 'Failed to create automated payment plan');
         return;
       }
 
-      if (result.data) {
-        // Success! Call the onSuccess callback
-        await onSuccess(result.data);
-      }
+      // Fallback to legacy service for onSuccess callback compatibility
+      const legacyPlan: InstallmentPlan = {
+        id: result.payment_plan_id!,
+        invoiceId: invoice.id,
+        totalAmount: invoice.totalAmount,
+        numberOfInstallments,
+        frequency,
+        startDate,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      await onSuccess(legacyPlan);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
       setErrorMessage(language === 'ar' 
@@ -473,7 +523,162 @@ export const InstallmentPlanCreation: React.FC<InstallmentPlanCreationProps> = (
             </CardContent>
           </Card>
 
-          {/* Late fees are handled automatically by the backend service */}
+          {/* Automation Settings */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                {currentLabels.automationSettings}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              {/* Auto Collection */}
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3 rtl:space-x-reverse">
+                  <Switch
+                    id="auto-collect"
+                    checked={autoCollectEnabled}
+                    onCheckedChange={setAutoCollectEnabled}
+                  />
+                  <div className="space-y-1">
+                    <Label htmlFor="auto-collect" className="font-medium">
+                      {currentLabels.autoCollection}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {currentLabels.autoCollectionDesc}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Reminder Settings */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">{currentLabels.reminderSettings}</Label>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <Switch
+                      id="whatsapp-reminders"
+                      checked={whatsappReminders}
+                      onCheckedChange={setWhatsappReminders}
+                    />
+                    <Label htmlFor="whatsapp-reminders">
+                      {currentLabels.whatsappReminders}
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <Switch
+                      id="email-reminders"
+                      checked={emailReminders}
+                      onCheckedChange={setEmailReminders}
+                    />
+                    <Label htmlFor="email-reminders">
+                      {currentLabels.emailReminders}
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">{currentLabels.remindersBefore}</Label>
+                    <div className="flex gap-2 mt-1">
+                      {[1, 3, 7].map((days) => (
+                        <Badge
+                          key={`before-${days}`}
+                          variant={reminderDaysBefore.includes(days) ? 'default' : 'outline'}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            if (reminderDaysBefore.includes(days)) {
+                              setReminderDaysBefore(reminderDaysBefore.filter(d => d !== days));
+                            } else {
+                              setReminderDaysBefore([...reminderDaysBefore, days]);
+                            }
+                          }}
+                        >
+                          {days} {language === 'ar' ? 'أيام' : 'days'}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm">{currentLabels.remindersAfter}</Label>
+                    <div className="flex gap-2 mt-1">
+                      {[1, 3, 7, 14].map((days) => (
+                        <Badge
+                          key={`after-${days}`}
+                          variant={reminderDaysAfter.includes(days) ? 'default' : 'outline'}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            if (reminderDaysAfter.includes(days)) {
+                              setReminderDaysAfter(reminderDaysAfter.filter(d => d !== days));
+                            } else {
+                              setReminderDaysAfter([...reminderDaysAfter, days]);
+                            }
+                          }}
+                        >
+                          {days} {language === 'ar' ? 'أيام' : 'days'}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Late Fee Settings */}
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3 rtl:space-x-reverse">
+                  <Switch
+                    id="late-fees"
+                    checked={lateFeeEnabled}
+                    onCheckedChange={setLateFeeEnabled}
+                  />
+                  <div className="space-y-1">
+                    <Label htmlFor="late-fees" className="font-medium">
+                      {currentLabels.applyLateFees}
+                    </Label>
+                  </div>
+                </div>
+
+                {lateFeeEnabled && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6 rtl:mr-6">
+                    <div>
+                      <Label htmlFor="late-fee-amount">{currentLabels.lateFeeAmount}</Label>
+                      <Input
+                        id="late-fee-amount"
+                        type="number"
+                        min="0"
+                        value={lateFeeAmount}
+                        onChange={(e) => setLateFeeAmount(parseFloat(e.target.value) || 0)}
+                        placeholder="25"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="grace-period">{currentLabels.gracePeriod}</Label>
+                      <Input
+                        id="grace-period"
+                        type="number"
+                        min="0"
+                        max="30"
+                        value={gracePeriodDays}
+                        onChange={(e) => setGracePeriodDays(parseInt(e.target.value) || 0)}
+                        placeholder="3"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {currentLabels.gracePeriodDesc}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Installment Preview */}
           {planPreview.length > 0 && (

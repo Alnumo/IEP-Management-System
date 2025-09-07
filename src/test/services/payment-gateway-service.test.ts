@@ -6,35 +6,50 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { PaymentGatewayService } from '../../services/payment-gateway-service'
-import type { PaymentRequest, PaymentResult } from '../../types/financial-management'
+import type { PaymentRequest, PaymentResult, CustomerInfo } from '../../types/financial-management'
 
 // Mock Supabase
-const mockSupabase = {
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => Promise.resolve({ data: [], error: null })),
-      insert: vi.fn(() => Promise.resolve({ data: [], error: null })),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+vi.mock('../../lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        insert: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        update: vi.fn(() => ({
+          eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+        }))
       }))
     }))
-  }))
-}
-
-vi.mock('../../lib/supabase', () => ({
-  supabase: mockSupabase
+  }
 }))
 
 // Mock environment variables
 vi.stubEnv('NODE_ENV', 'test')
 vi.stubEnv('MADA_API_URL', 'https://api.test.mada.com/v1')
 vi.stubEnv('STC_PAY_API_URL', 'https://api.test.stcpay.com.sa/v2')
+vi.stubEnv('PAYTABS_API_URL', 'https://secure.paytabs.sa/payment/request')
+vi.stubEnv('STRIPE_API_URL', 'https://api.stripe.com/v1')
+vi.stubEnv('PAYTABS_PROFILE_ID', 'test-profile-id')
+vi.stubEnv('PAYTABS_SERVER_KEY', 'test-server-key')
+vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123')
+vi.stubEnv('STRIPE_PUBLISHABLE_KEY', 'pk_test_123')
 
 // Mock fetch for external API calls
 global.fetch = vi.fn()
 
 describe('PaymentGatewayService', () => {
   let service: PaymentGatewayService
+  const mockSupabase = {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        insert: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        update: vi.fn(() => ({
+          eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+        }))
+      }))
+    }))
+  }
   
   beforeEach(async () => {
     // Mock credentials data
@@ -51,6 +66,23 @@ describe('PaymentGatewayService', () => {
         apiKey: 'test-stc-key',
         secretKey: 'test-stc-secret',
         merchantId: 'test-stc-merchant',
+        environment: 'test'
+      },
+      {
+        gatewayId: 'paytabs',
+        apiKey: 'test-paytabs-key',
+        secretKey: 'test-paytabs-secret',
+        merchantId: 'test-paytabs-merchant',
+        profileId: 'test-profile-id',
+        serverKey: 'test-server-key',
+        environment: 'test'
+      },
+      {
+        gatewayId: 'stripe',
+        apiKey: 'sk_test_123',
+        secretKey: 'test-stripe-secret',
+        merchantId: 'test-stripe-merchant',
+        publishableKey: 'pk_test_123',
         environment: 'test'
       }
     ]
@@ -86,7 +118,7 @@ describe('PaymentGatewayService', () => {
       amount: 1000,
       currency: 'SAR',
       paymentMethod: 'mada',
-      customerInfo: {
+      customer: {
         name: 'Ahmed Ali',
         nameAr: 'أحمد علي',
         email: 'ahmed@example.com',
@@ -106,7 +138,7 @@ describe('PaymentGatewayService', () => {
       amount: 500,
       currency: 'SAR',
       paymentMethod: 'stc_pay',
-      customerInfo: {
+      customer: {
         name: 'Sara Ahmed',
         nameAr: 'سارة أحمد',
         email: 'sara@example.com',
@@ -123,7 +155,7 @@ describe('PaymentGatewayService', () => {
       amount: 2000,
       currency: 'SAR',
       paymentMethod: 'bank_transfer',
-      customerInfo: {
+      customer: {
         name: 'Omar Hassan',
         nameAr: 'عمر حسن',
         email: 'omar@example.com',
@@ -134,6 +166,50 @@ describe('PaymentGatewayService', () => {
         accountNumber: '1234567890',
         accountName: 'Omar Hassan'
       }
+    }
+
+    const validPayTabsRequest: PaymentRequest = {
+      invoiceId: 'inv-pt-123',
+      amount: 500,
+      currency: 'SAR',
+      paymentMethod: 'mada',
+      customer: {
+        name: 'Fatima Al-Zahra',
+        nameAr: 'فاطمة الزهراء',
+        email: 'fatima@example.com',
+        phone: '+966501234570'
+      },
+      paymentData: {
+        cardNumber: '5123456789012346',
+        expiryMonth: '12',
+        expiryYear: '2026',
+        cvv: '123',
+        cardholderName: 'Fatima Al-Zahra'
+      },
+      returnUrl: 'https://example.com/return',
+      callbackUrl: 'https://example.com/callback'
+    }
+
+    const validStripeRequest: PaymentRequest = {
+      invoiceId: 'inv-stripe-456',
+      amount: 1000,
+      currency: 'SAR',
+      paymentMethod: 'visa',
+      customer: {
+        name: 'Abdullah Malik',
+        nameAr: 'عبدالله مالك',
+        email: 'abdullah@example.com',
+        phone: '+966501234571'
+      },
+      paymentData: {
+        cardNumber: '4242424242424242',
+        expiryMonth: '08',
+        expiryYear: '2027',
+        cvv: '424',
+        cardholderName: 'Abdullah Malik'
+      },
+      returnUrl: 'https://example.com/return',
+      callbackUrl: 'https://example.com/callback'
     }
 
     it('should process MADA payment successfully', async () => {
@@ -212,7 +288,7 @@ describe('PaymentGatewayService', () => {
         amount: 0,
         currency: 'USD', // Invalid currency for Saudi Arabia
         paymentMethod: 'mada',
-        customerInfo: {
+        customer: {
           name: '',
           email: 'invalid-email',
           phone: '123' // Invalid phone format
@@ -278,7 +354,7 @@ describe('PaymentGatewayService', () => {
     it('should handle Arabic customer names and data correctly', async () => {
       const arabicRequest: PaymentRequest = {
         ...validMadaRequest,
-        customerInfo: {
+        customer: {
           name: 'Mohammed bin Rashid',
           nameAr: 'محمد بن راشد',
           email: 'mohammed@example.com',
@@ -328,6 +404,423 @@ describe('PaymentGatewayService', () => {
 
       expect(result.success).toBe(true)
       expect(result.transactionId).toBe('stc-mobile-123')
+    })
+
+    // ==============================================
+    // PAYTABS INTEGRATION TESTS
+    // ==============================================
+
+    it('should process PayTabs payment successfully', async () => {
+      const mockPayTabsResponse = {
+        tran_ref: 'TST2409061234567890',
+        tran_type: 'Sale',
+        cart_id: 'inv-pt-123',
+        cart_description: 'Payment for invoice inv-pt-123',
+        cart_currency: 'SAR',
+        cart_amount: '500.00',
+        customer_details: {
+          name: 'Fatima Al-Zahra',
+          email: 'fatima@example.com',
+          phone: '+966501234570'
+        },
+        payment_result: {
+          response_status: 'A',
+          response_code: '100',
+          response_message: 'Approved',
+          response_message_ar: 'تمت الموافقة',
+          transaction_time: new Date().toISOString(),
+          acquirer_message: 'Approved',
+          acquirer_rrn: 'RRN123456789',
+          acquirer_code: '00'
+        },
+        payment_info: {
+          payment_method: 'CreditCard',
+          card_first_six: '512345',
+          card_last_four: '2346',
+          card_scheme: 'MasterCard',
+          payment_description: 'MADA Card Payment'
+        }
+      }
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockPayTabsResponse)
+      } as Response)
+
+      const result = await service.processPayment(validPayTabsRequest)
+
+      expect(result.success).toBe(true)
+      expect(result.status).toBe('completed')
+      expect(result.transactionId).toBe('TST2409061234567890')
+      expect(result.gatewayResponse).toBeDefined()
+    })
+
+    it('should handle PayTabs 3D Secure requirement', async () => {
+      const mockPayTabs3DResponse = {
+        tran_ref: 'TST2409061234567891',
+        redirect_url: 'https://secure.paytabs.sa/3ds/redirect/TST2409061234567891',
+        payment_result: {
+          response_status: 'H',
+          response_code: '777',
+          response_message: '3-D Secure Required',
+          response_message_ar: 'مطلوب التحقق ثلاثي الأبعاد'
+        }
+      }
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockPayTabs3DResponse)
+      } as Response)
+
+      const result = await service.processPayment(validPayTabsRequest)
+
+      expect(result.success).toBe(true)
+      expect(result.status).toBe('requires_action')
+      expect(result.actionRequired?.type).toBe('3d_secure')
+      expect(result.actionRequired?.url).toBe('https://secure.paytabs.sa/3ds/redirect/TST2409061234567891')
+    })
+
+    it('should handle PayTabs payment failures', async () => {
+      const mockPayTabsFailure = {
+        tran_ref: 'TST2409061234567892',
+        payment_result: {
+          response_status: 'D',
+          response_code: '481',
+          response_message: 'Transaction declined',
+          response_message_ar: 'تم رفض المعاملة',
+          acquirer_message: 'Insufficient funds'
+        }
+      }
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockPayTabsFailure)
+      } as Response)
+
+      const result = await service.processPayment(validPayTabsRequest)
+
+      expect(result.success).toBe(false)
+      expect(result.status).toBe('failed')
+      expect(result.error?.code).toBe('CARD_DECLINED')
+      expect(result.error?.messageAr).toBe('تم رفض المعاملة')
+    })
+
+    // ==============================================
+    // STRIPE INTEGRATION TESTS
+    // ==============================================
+
+    it('should process Stripe payment successfully', async () => {
+      const mockStripeResponse = {
+        id: 'pi_1234567890ABCDEF',
+        object: 'payment_intent',
+        amount: 100000, // 1000 SAR in cents
+        currency: 'sar',
+        status: 'succeeded',
+        charges: {
+          data: [{
+            id: 'ch_1234567890ABCDEF',
+            amount: 100000,
+            currency: 'sar',
+            status: 'succeeded',
+            payment_method_details: {
+              card: {
+                brand: 'visa',
+                last4: '4242',
+                exp_month: 8,
+                exp_year: 2027
+              }
+            },
+            receipt_url: 'https://pay.stripe.com/receipts/acct_123/ch_1234567890ABCDEF'
+          }]
+        },
+        client_secret: 'pi_1234567890ABCDEF_secret_123',
+        created: Math.floor(Date.now() / 1000),
+        metadata: {
+          invoiceId: 'inv-stripe-456',
+          studentId: 'student-123'
+        }
+      }
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockStripeResponse)
+      } as Response)
+
+      const result = await service.processPayment(validStripeRequest)
+
+      expect(result.success).toBe(true)
+      expect(result.status).toBe('completed')
+      expect(result.transactionId).toBe('pi_1234567890ABCDEF')
+      expect(result.gatewayResponse).toBeDefined()
+    })
+
+    it('should handle Stripe payment requiring authentication', async () => {
+      const mockStripeAuthRequired = {
+        id: 'pi_1234567890AUTHREQ',
+        status: 'requires_action',
+        next_action: {
+          type: 'use_stripe_sdk',
+          use_stripe_sdk: {
+            type: 'three_d_secure_redirect',
+            stripe_js: 'https://js.stripe.com/v3/',
+            source: 'src_1234567890'
+          }
+        },
+        client_secret: 'pi_1234567890AUTHREQ_secret_123'
+      }
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockStripeAuthRequired)
+      } as Response)
+
+      const result = await service.processPayment(validStripeRequest)
+
+      expect(result.success).toBe(true)
+      expect(result.status).toBe('requires_action')
+      expect(result.actionRequired?.type).toBe('3d_secure')
+      expect(result.transactionId).toBe('pi_1234567890AUTHREQ')
+    })
+
+    it('should handle Stripe payment failures', async () => {
+      const mockStripeError = {
+        error: {
+          type: 'card_error',
+          code: 'card_declined',
+          decline_code: 'generic_decline',
+          message: 'Your card was declined.',
+          param: 'card'
+        }
+      }
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 402,
+        json: () => Promise.resolve(mockStripeError)
+      } as Response)
+
+      const result = await service.processPayment(validStripeRequest)
+
+      expect(result.success).toBe(false)
+      expect(result.status).toBe('failed')
+      expect(result.error?.code).toBe('CARD_DECLINED')
+    })
+
+    // ==============================================
+    // PCI-DSS COMPLIANCE TESTS
+    // ==============================================
+
+    it('should validate card number using Luhn algorithm', async () => {
+      const invalidCardRequest = {
+        ...validMadaRequest,
+        paymentData: {
+          ...validMadaRequest.paymentData,
+          cardNumber: '4111111111111112' // Invalid Luhn check
+        }
+      }
+
+      const result = await service.processPayment(invalidCardRequest)
+
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('VALIDATION_ERROR')
+      expect(result.error?.message).toContain('card number')
+    })
+
+    it('should validate card expiry date', async () => {
+      const expiredCardRequest = {
+        ...validMadaRequest,
+        paymentData: {
+          ...validMadaRequest.paymentData,
+          expiryMonth: '01',
+          expiryYear: '2023' // Expired
+        }
+      }
+
+      const result = await service.processPayment(expiredCardRequest)
+
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('VALIDATION_ERROR')
+      expect(result.error?.message).toContain('expired')
+    })
+
+    it('should validate CVV format', async () => {
+      const invalidCvvRequest = {
+        ...validMadaRequest,
+        paymentData: {
+          ...validMadaRequest.paymentData,
+          cvv: '12' // Too short
+        }
+      }
+
+      const result = await service.processPayment(invalidCvvRequest)
+
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('VALIDATION_ERROR')
+      expect(result.error?.message).toContain('CVV')
+    })
+
+    it('should mask sensitive data in error logs', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      
+      vi.mocked(fetch).mockRejectedValueOnce(new Error('Payment processing failed'))
+
+      await service.processPayment(validMadaRequest)
+
+      const errorLogs = consoleSpy.mock.calls.flat().join(' ')
+      expect(errorLogs).not.toContain('4111111111111111') // Card number should be masked
+      expect(errorLogs).not.toContain('123') // CVV should not appear in logs
+      
+      consoleSpy.mockRestore()
+    })
+
+    // ==============================================
+    // GATEWAY FALLBACK TESTS
+    // ==============================================
+
+    it('should fallback to secondary gateway on primary failure', async () => {
+      const fallbackRequest = {
+        ...validMadaRequest,
+        amount: 500 // Amount suitable for multiple gateways
+      }
+
+      // Mock primary gateway failure
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: () => Promise.resolve({ error: 'Service temporarily unavailable' })
+      } as Response)
+
+      // Mock fallback gateway success
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          transactionId: 'fallback-tx-123',
+          status: 'completed'
+        })
+      } as Response)
+
+      const result = await service.processPayment(fallbackRequest)
+
+      expect(result.success).toBe(true)
+      expect(result.transactionId).toBe('fallback-tx-123')
+      expect(fetch).toHaveBeenCalledTimes(2) // Primary + fallback
+    })
+
+    it('should respect gateway priority order', async () => {
+      const sarRequest = {
+        ...validMadaRequest,
+        currency: 'SAR' as const,
+        amount: 1000
+      }
+
+      const gatewaySpy = vi.spyOn(service, 'selectOptimalGateway')
+      gatewaySpy.mockResolvedValue('paytabs') // PayTabs should be preferred for SAR
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          tran_ref: 'priority-test-123',
+          payment_result: { response_status: 'A' }
+        })
+      } as Response)
+
+      await service.processPayment(sarRequest)
+
+      expect(gatewaySpy).toHaveBeenCalledWith('SAR', 1000, 'mada')
+      
+      gatewaySpy.mockRestore()
+    })
+
+    it('should implement exponential backoff for retries', async () => {
+      const retryRequest = { ...validMadaRequest }
+      
+      // Mock temporary failures followed by success
+      vi.mocked(fetch)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: () => Promise.resolve({ error: 'Internal server error' })
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 503,
+          json: () => Promise.resolve({ error: 'Service unavailable' })
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            transactionId: 'retry-success-123',
+            status: 'completed'
+          })
+        } as Response)
+
+      const startTime = Date.now()
+      const result = await service.processPayment(retryRequest)
+      const executionTime = Date.now() - startTime
+
+      expect(result.success).toBe(true)
+      expect(result.transactionId).toBe('retry-success-123')
+      expect(fetch).toHaveBeenCalledTimes(3) // Original + 2 retries
+      expect(executionTime).toBeGreaterThan(1000) // Should have delays
+    })
+
+    it('should fail gracefully after maximum retry attempts', async () => {
+      const maxRetryRequest = { ...validMadaRequest }
+      
+      // Mock persistent failures
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ error: 'Persistent failure' })
+      } as Response)
+
+      const result = await service.processPayment(maxRetryRequest)
+
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('PROCESSING_ERROR')
+      expect(fetch).toHaveBeenCalledTimes(4) // Original + 3 retries (max)
+    })
+
+    // ==============================================
+    // MULTI-CURRENCY SUPPORT TESTS
+    // ==============================================
+
+    it('should handle USD payments via Stripe', async () => {
+      const usdRequest = {
+        ...validStripeRequest,
+        currency: 'USD' as const,
+        amount: 100 // $100 USD
+      }
+
+      const mockStripeUsdResponse = {
+        id: 'pi_usd_123456789',
+        currency: 'usd',
+        amount: 10000, // $100 in cents
+        status: 'succeeded'
+      }
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockStripeUsdResponse)
+      } as Response)
+
+      const result = await service.processPayment(usdRequest)
+
+      expect(result.success).toBe(true)
+      expect(result.status).toBe('completed')
+    })
+
+    it('should reject unsupported currencies for Saudi gateways', async () => {
+      const eurRequest = {
+        ...validMadaRequest,
+        currency: 'EUR' as const
+      }
+
+      const result = await service.processPayment(eurRequest)
+
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('VALIDATION_ERROR')
+      expect(result.error?.message).toContain('currency')
     })
   })
 
@@ -583,8 +1076,8 @@ describe('PaymentGatewayService', () => {
     it('should validate phone number format for Saudi Arabia', async () => {
       const invalidPhoneRequest: PaymentRequest = {
         ...validStcPayRequest,
-        customerInfo: {
-          ...validStcPayRequest.customerInfo,
+        customer: {
+          ...validStcPayRequest.customer,
           phone: '+1234567890' // Non-Saudi number
         }
       }

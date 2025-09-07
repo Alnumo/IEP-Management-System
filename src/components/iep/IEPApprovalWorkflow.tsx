@@ -75,193 +75,35 @@ import {
   FileCheck,
   AlertCircle,
   Timer,
-  Settings
+  Settings,
+  Plus,
+  Upload,
+  Pencil,
+  Verified
 } from 'lucide-react'
+
+import { useToast } from '@/hooks/use-toast'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { 
+  iepApprovalService,
+  type ApprovalRequest,
+  type ApprovalAction,
+  type CreateApprovalRequestData,
+  type ApprovalActionData,
+  type ApprovalStatus,
+  type ApprovalType,
+  type ApprovalRole
+} from '@/services/iep-approval-service'
 
 // =============================================================================
 // TYPES AND INTERFACES
 // =============================================================================
-
-export type ApprovalStatus = 
-  | 'draft'
-  | 'pending_review'
-  | 'under_review'
-  | 'approved'
-  | 'rejected'
-  | 'requires_changes'
-  | 'expired'
-  | 'withdrawn'
-
-export type ApprovalType = 
-  | 'initial_iep'
-  | 'annual_review'
-  | 'interim_review'
-  | 'goal_modification'
-  | 'service_change'
-  | 'placement_change'
-  | 'evaluation_consent'
-  | 'meeting_minutes'
 
 export type SignatureType = 
   | 'electronic'
   | 'digital'
   | 'wet_signature'
   | 'voice_confirmation'
-
-export type ApprovalRole = 
-  | 'coordinator'
-  | 'special_education_teacher'
-  | 'administrator'
-  | 'parent_guardian'
-  | 'student'
-  | 'related_service_provider'
-  | 'general_education_teacher'
-  | 'evaluator'
-
-export interface ApprovalRequest {
-  id: string
-  iep_id: string
-  document_id?: string
-  
-  // Request Details
-  approval_type: ApprovalType
-  title_ar: string
-  title_en: string
-  description_ar?: string
-  description_en?: string
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  
-  // Approval Configuration
-  required_approvers: ApprovalRole[]
-  optional_approvers: ApprovalRole[]
-  approval_threshold: number // Percentage of required approvers needed
-  allow_sequential_approval: boolean
-  allow_parallel_approval: boolean
-  
-  // Status and Timeline
-  request_status: ApprovalStatus
-  requested_date: string
-  due_date?: string
-  completed_date?: string
-  
-  // Content and Attachments
-  content_summary_ar?: string
-  content_summary_en?: string
-  changes_made: Array<{
-    section: string
-    change_type: 'added' | 'modified' | 'removed'
-    description_ar: string
-    description_en: string
-    timestamp: string
-    made_by: string
-  }>
-  attachments: Array<{
-    id: string
-    filename: string
-    file_type: string
-    file_size: number
-    uploaded_at: string
-    uploaded_by: string
-  }>
-  
-  // Workflow Configuration
-  workflow_steps: Array<{
-    step_number: number
-    step_name_ar: string
-    step_name_en: string
-    required_roles: ApprovalRole[]
-    is_parallel: boolean
-    estimated_days: number
-    status: 'pending' | 'in_progress' | 'completed' | 'skipped'
-  }>
-  
-  // Metadata
-  created_by: string
-  created_at: string
-  updated_at: string
-}
-
-export interface ApprovalAction {
-  id: string
-  approval_request_id: string
-  
-  // Approver Details
-  approver_id: string
-  approver_role: ApprovalRole
-  approver_name_ar: string
-  approver_name_en: string
-  
-  // Action Details
-  action_type: 'approved' | 'rejected' | 'request_changes' | 'delegated' | 'comment_added'
-  action_status: 'completed' | 'pending' | 'expired'
-  
-  // Decision Information
-  decision_reason_ar?: string
-  decision_reason_en?: string
-  suggested_changes_ar?: string
-  suggested_changes_en?: string
-  conditions_ar?: string
-  conditions_en?: string
-  
-  // Signature Information
-  signature_type: SignatureType
-  signature_data?: string // Base64 signature image or digital signature hash
-  signature_timestamp?: string
-  signature_ip_address?: string
-  signature_device_info?: string
-  
-  // Delegation (if applicable)
-  delegated_to?: string
-  delegation_reason_ar?: string
-  delegation_reason_en?: string
-  delegation_expires_at?: string
-  
-  // Timing
-  responded_date?: string
-  expires_at?: string
-  
-  // Metadata
-  created_at: string
-  updated_at: string
-}
-
-export interface DigitalSignature {
-  id: string
-  approval_action_id: string
-  
-  // Signature Details
-  signature_method: SignatureType
-  signature_image?: string // Base64 encoded signature
-  signature_hash: string // Cryptographic hash for verification
-  certificate_data?: string // Digital certificate information
-  
-  // Signer Information
-  signer_id: string
-  signer_name: string
-  signer_email: string
-  signer_role: ApprovalRole
-  
-  // Verification Data
-  verification_status: 'verified' | 'unverified' | 'failed' | 'expired'
-  verification_timestamp?: string
-  verification_method?: string
-  
-  // Security Information
-  signing_timestamp: string
-  signing_ip_address: string
-  signing_device: string
-  signing_location?: string
-  
-  // Legal Information
-  consent_statement_ar: string
-  consent_statement_en: string
-  legal_disclaimer_ar?: string
-  legal_disclaimer_en?: string
-  
-  // Audit Trail
-  created_at: string
-  updated_at: string
-}
 
 interface IEPApprovalWorkflowProps {
   iepId: string
@@ -360,6 +202,8 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
   onWorkflowUpdated
 }) => {
   const isRTL = language === 'ar'
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
   
   // State management
   const [activeTab, setActiveTab] = useState<string>('pending')
@@ -369,170 +213,121 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
   const [signatureDialog, setSignatureDialog] = useState<ApprovalRequest | null>(null)
   const [delegationDialog, setDelegationDialog] = useState<ApprovalRequest | null>(null)
   const [auditDialog, setAuditDialog] = useState<ApprovalRequest | null>(null)
+  const [createRequestDialog, setCreateRequestDialog] = useState(false)
+  const [signatureData, setSignatureData] = useState<string>('')
+  const [approvalReason, setApprovalReason] = useState('')
   
-  // Sample data - would be fetched from API
-  const [approvalRequests] = useState<ApprovalRequest[]>([
-    {
-      id: '1',
-      iep_id: iepId,
-      document_id: 'doc_1',
-      approval_type: 'goal_modification',
-      title_ar: 'تعديل أهداف التواصل والنطق',
-      title_en: 'Communication and Speech Goals Modification',
-      description_ar: 'تحديث أهداف التواصل بناءً على التقييم الحديث',
-      description_en: 'Update communication goals based on recent assessment',
-      priority: 'high',
-      required_approvers: ['coordinator', 'parent_guardian', 'special_education_teacher'],
-      optional_approvers: ['administrator'],
-      approval_threshold: 100,
-      allow_sequential_approval: false,
-      allow_parallel_approval: true,
-      request_status: 'under_review',
-      requested_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      content_summary_ar: 'تم تعديل 3 أهداف رئيسية في مجال التواصل',
-      content_summary_en: '3 main communication goals have been modified',
-      changes_made: [
-        {
-          section: 'communication_goals',
-          change_type: 'modified',
-          description_ar: 'تحديث هدف التعبير الشفهي',
-          description_en: 'Updated verbal expression goal',
-          timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          made_by: 'teacher_1'
-        }
-      ],
-      attachments: [
-        {
-          id: 'att_1',
-          filename: 'assessment_report.pdf',
-          file_type: 'application/pdf',
-          file_size: 245760,
-          uploaded_at: new Date().toISOString(),
-          uploaded_by: 'teacher_1'
-        }
-      ],
-      workflow_steps: [
-        {
-          step_number: 1,
-          step_name_ar: 'مراجعة المنسق',
-          step_name_en: 'Coordinator Review',
-          required_roles: ['coordinator'],
-          is_parallel: false,
-          estimated_days: 2,
-          status: 'completed'
-        },
-        {
-          step_number: 2,
-          step_name_ar: 'موافقة ولي الأمر والمعلم',
-          step_name_en: 'Parent and Teacher Approval',
-          required_roles: ['parent_guardian', 'special_education_teacher'],
-          is_parallel: true,
-          estimated_days: 3,
-          status: 'in_progress'
-        }
-      ],
-      created_by: 'coordinator_1',
-      created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      updated_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+  // Fetch approval requests
+  const { data: approvalRequests = [], isLoading: requestsLoading, error: requestsError } = useQuery({
+    queryKey: ['approval-requests', iepId, statusFilter, typeFilter],
+    queryFn: async (): Promise<ApprovalRequest[]> => {
+      const result = await iepApprovalService.getApprovalRequests(iepId, {
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        type: typeFilter !== 'all' ? typeFilter : undefined,
+        includeCompleted: activeTab === 'completed' || activeTab === 'all'
+      })
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch approval requests')
+      }
+      
+      return result.data || []
     },
-    {
-      id: '2',
-      iep_id: iepId,
-      approval_type: 'annual_review',
-      title_ar: 'المراجعة السنوية للبرنامج',
-      title_en: 'Annual IEP Review',
-      description_ar: 'مراجعة شاملة للبرنامج التعليمي الفردي السنوي',
-      description_en: 'Comprehensive annual review of Individual Education Program',
-      priority: 'medium',
-      required_approvers: ['coordinator', 'parent_guardian', 'special_education_teacher', 'administrator'],
-      optional_approvers: ['related_service_provider'],
-      approval_threshold: 100,
-      allow_sequential_approval: true,
-      allow_parallel_approval: false,
-      request_status: 'approved',
-      requested_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      due_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      completed_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      content_summary_ar: 'مراجعة كاملة لجميع أهداف البرنامج والخدمات',
-      content_summary_en: 'Complete review of all program goals and services',
-      changes_made: [],
-      attachments: [
-        {
-          id: 'att_2',
-          filename: 'annual_review_complete.pdf',
-          file_type: 'application/pdf',
-          file_size: 512000,
-          uploaded_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          uploaded_by: 'coordinator_1'
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2
+  })
+
+  // Fetch approval actions for all requests
+  const { data: allApprovalActions = [] } = useQuery({
+    queryKey: ['approval-actions', approvalRequests.map(r => r.id)],
+    queryFn: async (): Promise<ApprovalAction[]> => {
+      const allActions: ApprovalAction[] = []
+      
+      for (const request of approvalRequests) {
+        const result = await iepApprovalService.getApprovalActions(request.id)
+        if (result.success && result.data) {
+          allActions.push(...result.data)
         }
-      ],
-      workflow_steps: [
-        {
-          step_number: 1,
-          step_name_ar: 'مراجعة المنسق',
-          step_name_en: 'Coordinator Review',
-          required_roles: ['coordinator'],
-          is_parallel: false,
-          estimated_days: 3,
-          status: 'completed'
-        },
-        {
-          step_number: 2,
-          step_name_ar: 'موافقة الإدارة',
-          step_name_en: 'Administrative Approval',
-          required_roles: ['administrator'],
-          is_parallel: false,
-          estimated_days: 2,
-          status: 'completed'
-        }
-      ],
-      created_by: 'coordinator_1',
-      created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-      updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      }
+      
+      return allActions
+    },
+    enabled: approvalRequests.length > 0,
+    staleTime: 5 * 60 * 1000
+  })
+
+  // Create new approval request mutation
+  const createRequestMutation = useMutation({
+    mutationFn: async (data: CreateApprovalRequestData) => {
+      const result = await iepApprovalService.createApprovalRequest(data, currentUserId)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create approval request')
+      }
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approval-requests'] })
+      setCreateRequestDialog(false)
+      toast({
+        title: isRTL ? "تم إنشاء الطلب" : "Request Created",
+        description: isRTL ? "تم إنشاء طلب الموافقة بنجاح" : "Approval request created successfully"
+      })
+      onWorkflowUpdated?.()
+    },
+    onError: (error: Error) => {
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: error.message,
+        variant: "destructive"
+      })
     }
-  ])
+  })
+
+  // Submit approval action mutation
+  const submitActionMutation = useMutation({
+    mutationFn: async (params: {
+      requestId: string
+      actionData: ApprovalActionData
+      userProfile: { name_ar: string; name_en: string; email: string }
+    }) => {
+      const result = await iepApprovalService.submitApprovalAction(
+        params.requestId,
+        params.actionData,
+        currentUserId,
+        userRole,
+        params.userProfile
+      )
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit approval action')
+      }
+      
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approval-requests'] })
+      queryClient.invalidateQueries({ queryKey: ['approval-actions'] })
+      setSignatureDialog(null)
+      setDelegationDialog(null)
+      setSignatureData('')
+      setApprovalReason('')
+      
+      toast({
+        title: isRTL ? "تم الإجراء" : "Action Completed",
+        description: isRTL ? "تم تسجيل إجراءك بنجاح" : "Your action has been recorded successfully"
+      })
+      onWorkflowUpdated?.()
+    },
+    onError: (error: Error) => {
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: error.message,
+        variant: "destructive"
+      })
+    }
+  })
   
-  const [approvalActions] = useState<ApprovalAction[]>([
-    {
-      id: '1',
-      approval_request_id: '1',
-      approver_id: 'coord_1',
-      approver_role: 'coordinator',
-      approver_name_ar: 'د. أحمد محمد',
-      approver_name_en: 'Dr. Ahmed Mohammed',
-      action_type: 'approved',
-      action_status: 'completed',
-      decision_reason_ar: 'التعديلات مناسبة ومبررة',
-      decision_reason_en: 'Modifications are appropriate and justified',
-      signature_type: 'electronic',
-      signature_data: 'signature_hash_123',
-      signature_timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      signature_ip_address: '192.168.1.100',
-      signature_device_info: 'Chrome/Windows',
-      responded_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      id: '2',
-      approval_request_id: '2',
-      approver_id: 'parent_1',
-      approver_role: 'parent_guardian',
-      approver_name_ar: 'والدة الطالب',
-      approver_name_en: 'Student\'s Mother',
-      action_type: 'approved',
-      action_status: 'completed',
-      decision_reason_ar: 'أوافق على جميع التوصيات',
-      decision_reason_en: 'I approve all recommendations',
-      signature_type: 'digital',
-      signature_data: 'digital_signature_456',
-      signature_timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      responded_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-    }
-  ])
 
   // Filtered requests
   const filteredRequests = useMemo(() => {
@@ -554,29 +349,94 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
   }, [approvalRequests, searchQuery, statusFilter, typeFilter, activeTab, userRole])
 
   // Event handlers
-  const handleApprove = async (requestId: string, signature?: string) => {
-    // Implementation for approving request
-    console.log('Approving request:', requestId, 'with signature:', signature)
-    onWorkflowUpdated?.()
+  const handleApproveWithSignature = async () => {
+    if (!signatureDialog) return
+    
+    // Get user profile - in a real app this would come from context/auth
+    const userProfile = {
+      name_ar: 'المستخدم الحالي', // Would be from user context
+      name_en: 'Current User',
+      email: 'user@example.com'
+    }
+
+    await submitActionMutation.mutateAsync({
+      requestId: signatureDialog.id,
+      actionData: {
+        action_type: 'approved',
+        decision_reason_ar: approvalReason,
+        decision_reason_en: approvalReason,
+        signature_type: 'electronic',
+        signature_data: signatureData || `approved_${Date.now()}`
+      },
+      userProfile
+    })
   }
 
   const handleReject = async (requestId: string, reason: string) => {
-    // Implementation for rejecting request
-    console.log('Rejecting request:', requestId, 'reason:', reason)
-    onWorkflowUpdated?.()
+    const userProfile = {
+      name_ar: 'المستخدم الحالي',
+      name_en: 'Current User', 
+      email: 'user@example.com'
+    }
+
+    await submitActionMutation.mutateAsync({
+      requestId,
+      actionData: {
+        action_type: 'rejected',
+        decision_reason_ar: reason,
+        decision_reason_en: reason,
+        signature_type: 'electronic'
+      },
+      userProfile
+    })
   }
 
   const handleDelegate = async (requestId: string, delegateToId: string, reason: string) => {
-    // Implementation for delegating approval
-    console.log('Delegating request:', requestId, 'to:', delegateToId, 'reason:', reason)
-    setDelegationDialog(null)
-    onWorkflowUpdated?.()
+    const userProfile = {
+      name_ar: 'المستخدم الحالي',
+      name_en: 'Current User',
+      email: 'user@example.com'
+    }
+
+    await submitActionMutation.mutateAsync({
+      requestId,
+      actionData: {
+        action_type: 'delegated',
+        delegated_to: delegateToId,
+        delegation_reason_ar: reason,
+        delegation_reason_en: reason,
+        signature_type: 'electronic'
+      },
+      userProfile
+    })
   }
 
   const handleRequestChanges = async (requestId: string, changes: string) => {
-    // Implementation for requesting changes
-    console.log('Requesting changes for:', requestId, 'changes:', changes)
-    onWorkflowUpdated?.()
+    const userProfile = {
+      name_ar: 'المستخدم الحالي',
+      name_en: 'Current User',
+      email: 'user@example.com'
+    }
+
+    await submitActionMutation.mutateAsync({
+      requestId,
+      actionData: {
+        action_type: 'request_changes',
+        suggested_changes_ar: changes,
+        suggested_changes_en: changes,
+        signature_type: 'electronic'
+      },
+      userProfile
+    })
+  }
+
+  const handleRefreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['approval-requests'] })
+    queryClient.invalidateQueries({ queryKey: ['approval-actions'] })
+  }
+
+  const handleCreateNewRequest = () => {
+    setCreateRequestDialog(true)
   }
 
   const canUserApprove = (request: ApprovalRequest): boolean => {
@@ -585,7 +445,7 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
   }
 
   const hasUserApproved = (request: ApprovalRequest): boolean => {
-    return approvalActions.some(
+    return allApprovalActions.some(
       action => action.approval_request_id === request.id && 
                action.approver_id === currentUserId && 
                action.action_type === 'approved' && 
@@ -615,12 +475,17 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
           "flex items-center gap-2",
           isRTL && "flex-row-reverse"
         )}>
-          <Button variant="outline" size="sm" onClick={() => console.log('Refresh')}>
-            <RefreshCw className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefreshData}
+            disabled={requestsLoading}
+          >
+            <RefreshCw className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2", requestsLoading && "animate-spin")} />
             {isRTL ? 'تحديث' : 'Refresh'}
           </Button>
-          <Button size="sm" onClick={() => console.log('New request')}>
-            <Send className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+          <Button size="sm" onClick={handleCreateNewRequest}>
+            <Plus className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
             {isRTL ? 'طلب جديد' : 'New Request'}
           </Button>
         </div>
@@ -687,7 +552,7 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
                   {isRTL ? 'التوقيعات الرقمية' : 'Digital Signatures'}
                 </p>
                 <p className="text-2xl font-bold">
-                  {approvalActions.filter(a => a.signature_data).length}
+                  {allApprovalActions.filter(a => a.signature_data).length}
                 </p>
               </div>
               <Signature className="h-8 w-8 text-purple-600" />
@@ -786,11 +651,18 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
 
           {/* Approval Requests List */}
           <div className="space-y-4">
-            {filteredRequests.map((request) => {
-              const progress = calculateApprovalProgress(request, approvalActions.filter(a => a.approval_request_id === request.id))
+            {requestsLoading ? (
+              <div className="text-center py-8">
+                <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin opacity-50" />
+                <p className="text-muted-foreground">
+                  {isRTL ? 'تحميل البيانات...' : 'Loading data...'}
+                </p>
+              </div>
+            ) : filteredRequests.map((request) => {
+              const requestActions = allApprovalActions.filter(a => a.approval_request_id === request.id)
+              const progress = calculateApprovalProgress(request, requestActions)
               const userCanApprove = canUserApprove(request)
               const userHasApproved = hasUserApproved(request)
-              const requestActions = approvalActions.filter(a => a.approval_request_id === request.id)
 
               return (
                 <Card key={request.id} className={
@@ -1036,6 +908,8 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
                 <Textarea
                   id="approval-reason"
                   placeholder={isRTL ? 'اكتب سبب الموافقة...' : 'Write approval reason...'}
+                  value={approvalReason}
+                  onChange={(e) => setApprovalReason(e.target.value)}
                   rows={3}
                 />
               </div>
@@ -1053,15 +927,55 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
                 </Select>
               </div>
 
-              <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                <Signature className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">
-                  {isRTL ? 'اضغط هنا لإضافة توقيعك' : 'Click here to add your signature'}
-                </p>
-                <Button variant="outline">
-                  <Signature className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
-                  {isRTL ? 'إضافة التوقيع' : 'Add Signature'}
-                </Button>
+              <div className="space-y-4">
+                <Label>{isRTL ? 'التوقيع الرقمي' : 'Digital Signature'}</Label>
+                {signatureData ? (
+                  <div className="border rounded-lg p-4 bg-green-50">
+                    <div className={cn(
+                      "flex items-center gap-2 text-green-700",
+                      isRTL && "flex-row-reverse"
+                    )}>
+                      <Verified className="h-5 w-5" />
+                      <span className="font-medium">
+                        {isRTL ? 'تم إضافة التوقيع بنجاح' : 'Signature Added Successfully'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-green-600 mt-2">
+                      {isRTL 
+                        ? `تم إنشاء التوقيع في ${new Date().toLocaleString('ar-SA')}`
+                        : `Signature created at ${new Date().toLocaleString('en-US')}`
+                      }
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-3"
+                      onClick={() => setSignatureData('')}
+                    >
+                      <Pencil className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                      {isRTL ? 'تغيير التوقيع' : 'Change Signature'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
+                    <Signature className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground mb-4">
+                      {isRTL ? 'اضغط هنا لإضافة توقيعك الرقمي' : 'Click here to add your digital signature'}
+                    </p>
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        // Simulate signature creation - in real app would open signature pad
+                        const timestamp = Date.now()
+                        const simulatedSignature = `signature_${currentUserId}_${timestamp}`
+                        setSignatureData(simulatedSignature)
+                      }}
+                    >
+                      <Pencil className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                      {isRTL ? 'إضافة التوقيع' : 'Add Signature'}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <Alert>
@@ -1081,13 +995,12 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
             <Button variant="outline" onClick={() => setSignatureDialog(null)}>
               {isRTL ? 'إلغاء' : 'Cancel'}
             </Button>
-            <Button onClick={() => {
-              if (signatureDialog) {
-                handleApprove(signatureDialog.id, 'signature_data')
-                setSignatureDialog(null)
-              }
-            }}>
-              <Signature className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+            <Button 
+              onClick={handleApproveWithSignature}
+              disabled={!signatureData || submitActionMutation.isPending}
+            >
+              {submitActionMutation.isPending && <RefreshCw className={cn("h-4 w-4 animate-spin", isRTL ? "ml-2" : "mr-2")} />}
+              {!submitActionMutation.isPending && <Signature className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />}
               {isRTL ? 'موافقة ووقع' : 'Approve & Sign'}
             </Button>
           </DialogFooter>
@@ -1251,6 +1164,155 @@ export const IEPApprovalWorkflow: React.FC<IEPApprovalWorkflowProps> = ({
             <Button onClick={() => console.log('Export audit')}>
               <Download className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
               {isRTL ? 'تصدير السجل' : 'Export Log'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create New Request Dialog */}
+      <Dialog open={createRequestDialog} onOpenChange={setCreateRequestDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {isRTL ? 'إنشاء طلب موافقة جديد' : 'Create New Approval Request'}
+            </DialogTitle>
+            <DialogDescription>
+              {isRTL 
+                ? 'أنشئ طلب موافقة جديد للبرنامج التعليمي الفردي'
+                : 'Create a new approval request for IEP document or modification'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{isRTL ? 'نوع الموافقة' : 'Approval Type'}</Label>
+                <Select defaultValue="goal_modification">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="initial_iep">{getApprovalTypeLabel('initial_iep', language)}</SelectItem>
+                    <SelectItem value="annual_review">{getApprovalTypeLabel('annual_review', language)}</SelectItem>
+                    <SelectItem value="goal_modification">{getApprovalTypeLabel('goal_modification', language)}</SelectItem>
+                    <SelectItem value="service_change">{getApprovalTypeLabel('service_change', language)}</SelectItem>
+                    <SelectItem value="placement_change">{getApprovalTypeLabel('placement_change', language)}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{isRTL ? 'الأولوية' : 'Priority'}</Label>
+                <Select defaultValue="medium">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">{isRTL ? 'منخفض' : 'Low'}</SelectItem>
+                    <SelectItem value="medium">{isRTL ? 'متوسط' : 'Medium'}</SelectItem>
+                    <SelectItem value="high">{isRTL ? 'عالي' : 'High'}</SelectItem>
+                    <SelectItem value="urgent">{isRTL ? 'عاجل' : 'Urgent'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="title-ar">{isRTL ? 'العنوان بالعربية' : 'Arabic Title'}</Label>
+                <Input
+                  id="title-ar"
+                  placeholder={isRTL ? 'اكتب العنوان بالعربية...' : 'Enter Arabic title...'}
+                />
+              </div>
+              <div>
+                <Label htmlFor="title-en">{isRTL ? 'العنوان بالإنجليزية' : 'English Title'}</Label>
+                <Input
+                  id="title-en"
+                  placeholder={isRTL ? 'اكتب العنوان بالإنجليزية...' : 'Enter English title...'}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="desc-ar">{isRTL ? 'الوصف بالعربية' : 'Arabic Description'}</Label>
+                <Textarea
+                  id="desc-ar"
+                  placeholder={isRTL ? 'اكتب الوصف بالعربية...' : 'Enter Arabic description...'}
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Label htmlFor="desc-en">{isRTL ? 'الوصف بالإنجليزية' : 'English Description'}</Label>
+                <Textarea
+                  id="desc-en"
+                  placeholder={isRTL ? 'اكتب الوصف بالإنجليزية...' : 'Enter English description...'}
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label>{isRTL ? 'الموافقين المطلوبين' : 'Required Approvers'}</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {[
+                  { role: 'coordinator', label_ar: 'المنسق', label_en: 'Coordinator' },
+                  { role: 'special_education_teacher', label_ar: 'معلم التعليم الخاص', label_en: 'Special Education Teacher' },
+                  { role: 'administrator', label_ar: 'الإدارة', label_en: 'Administrator' },
+                  { role: 'parent_guardian', label_ar: 'ولي الأمر', label_en: 'Parent/Guardian' }
+                ].map(({ role, label_ar, label_en }) => (
+                  <div key={role} className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                    <input
+                      type="checkbox"
+                      id={`approver-${role}`}
+                      defaultChecked={['coordinator', 'parent_guardian'].includes(role)}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor={`approver-${role}`} className="text-sm">
+                      {language === 'ar' ? label_ar : label_en}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="due-date">{isRTL ? 'تاريخ الاستحقاق' : 'Due Date'}</Label>
+              <Input
+                id="due-date"
+                type="date"
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateRequestDialog(false)}>
+              {isRTL ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button 
+              onClick={() => {
+                // In a real implementation, would collect form data and call createRequestMutation
+                const sampleRequestData: CreateApprovalRequestData = {
+                  iep_id: iepId,
+                  approval_type: 'goal_modification',
+                  title_ar: 'طلب تعديل جديد',
+                  title_en: 'New Modification Request',
+                  description_ar: 'وصف الطلب',
+                  description_en: 'Request description',
+                  priority: 'medium',
+                  required_approvers: ['coordinator', 'parent_guardian'],
+                  due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                }
+                
+                createRequestMutation.mutate(sampleRequestData)
+              }}
+              disabled={createRequestMutation.isPending}
+            >
+              {createRequestMutation.isPending && <RefreshCw className={cn("h-4 w-4 animate-spin", isRTL ? "ml-2" : "mr-2")} />}
+              {!createRequestMutation.isPending && <Plus className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />}
+              {isRTL ? 'إنشاء الطلب' : 'Create Request'}
             </Button>
           </DialogFooter>
         </DialogContent>

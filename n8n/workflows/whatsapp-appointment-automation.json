@@ -1,0 +1,696 @@
+{
+  "name": "WhatsApp Appointment Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Schedule Check Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  ts.id as session_id,\n  ts.date as session_date,\n  ts.start_time,\n  ts.end_time,\n  ts.type as session_type,\n  s.first_name_ar as student_name_ar,\n  s.first_name_en as student_name_en,\n  s.last_name_ar as student_surname_ar,\n  s.last_name_en as student_surname_en,\n  parent.phone as parent_phone,\n  parent.name as parent_name,\n  parent.preferred_language,\n  therapist.name as therapist_name,\n  therapist.specialization\nFROM therapy_sessions ts\nJOIN students s ON ts.student_id = s.id\nJOIN profiles parent ON s.parent_id = parent.id\nJOIN profiles therapist ON ts.therapist_id = therapist.id\nWHERE \n  ts.date = CURRENT_DATE + INTERVAL '1 day'\n  AND ts.status = 'scheduled'\n  AND parent.phone IS NOT NULL\n  AND NOT EXISTS (\n    SELECT 1 FROM whatsapp_messages wm \n    WHERE wm.related_session_id = ts.id \n    AND wm.template_name = 'appointment_reminder_24h'\n    AND wm.sent_at >= CURRENT_DATE\n  )\nORDER BY ts.start_time;",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Get Tomorrow's Appointments",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Arkan Supabase API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "Check If Appointments Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Split Appointments",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 180]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "sessionId",
+              "value": "={{ $json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "2", 
+              "name": "sessionDate",
+              "value": "={{ $json.session_date }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "startTime",
+              "value": "={{ $json.start_time }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "endTime", 
+              "value": "={{ $json.end_time }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "studentNameAr",
+              "value": "={{ $json.student_name_ar + ' ' + $json.student_surname_ar }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "studentNameEn",
+              "value": "={{ $json.student_name_en + ' ' + $json.student_surname_en }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "parentPhone",
+              "value": "={{ $json.parent_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "parentName",
+              "value": "={{ $json.parent_name }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "preferredLanguage",
+              "value": "={{ $json.preferred_language || 'ar' }}",
+              "type": "string"
+            },
+            {
+              "id": "10",
+              "name": "therapistName", 
+              "value": "={{ $json.therapist_name }}",
+              "type": "string"
+            },
+            {
+              "id": "11",
+              "name": "sessionType",
+              "value": "={{ $json.session_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5",
+      "name": "Prepare Message Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Schedule Check Every Hour').item.json.webhook_base_url }}/whatsapp-send-template",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Schedule Check Every Hour').item.json.supabase_service_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.parentPhone }}"
+            },
+            {
+              "name": "template_name", 
+              "value": "appointment_reminder_24h"
+            },
+            {
+              "name": "language",
+              "value": "={{ $json.preferredLanguage }}"
+            },
+            {
+              "name": "parameters",
+              "value": "={{ {\n  \"parent_name\": $json.parentName,\n  \"student_name\": $json.preferredLanguage === 'ar' ? $json.studentNameAr : $json.studentNameEn,\n  \"session_date\": new Date($json.sessionDate).toLocaleDateString($json.preferredLanguage === 'ar' ? 'ar-SA' : 'en-US', { \n    weekday: 'long', \n    year: 'numeric', \n    month: 'long', \n    day: 'numeric' \n  }),\n  \"session_time\": $json.startTime + ' - ' + $json.endTime,\n  \"therapist_name\": $json.therapistName,\n  \"session_type\": $json.sessionType,\n  \"center_phone\": \"+966112345678\"\n} }}"
+            },
+            {
+              "name": "conversation_id",
+              "value": ""
+            },
+            {
+              "name": "related_session_id",
+              "value": "={{ $json.sessionId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Send WhatsApp Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 180],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7",
+      "name": "Check Send Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1560, 180]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO whatsapp_automation_log (\n  session_id,\n  automation_type,\n  status,\n  message_details,\n  created_at\n) VALUES (\n  '{{ $('Prepare Message Variables').item.json.sessionId }}',\n  'appointment_reminder_24h',\n  'success',\n  '{{ JSON.stringify({\n    parent_phone: $('Prepare Message Variables').item.json.parentPhone,\n    language: $('Prepare Message Variables').item.json.preferredLanguage,\n    sent_at: new Date().toISOString()\n  }) }}',\n  NOW()\n);",
+        "options": {}
+      },
+      "id": "8",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 80],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Arkan Supabase API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO whatsapp_automation_log (\n  session_id,\n  automation_type,\n  status,\n  error_message,\n  created_at\n) VALUES (\n  '{{ $('Prepare Message Variables').item.json.sessionId }}',\n  'appointment_reminder_24h',\n  'failed',\n  '{{ $json.error || \"Unknown error\" }}',\n  NOW()\n);",
+        "options": {}
+      },
+      "id": "9",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.supabase", 
+      "typeVersion": 1,
+      "position": [1780, 280],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1", 
+          "name": "Arkan Supabase API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "10",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [2000, 180]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours", 
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "11",
+      "name": "2-Hour Reminder Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 600]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  ts.id as session_id,\n  ts.date as session_date,\n  ts.start_time,\n  ts.end_time,\n  ts.type as session_type,\n  s.first_name_ar as student_name_ar,\n  s.first_name_en as student_name_en,\n  s.last_name_ar as student_surname_ar,\n  s.last_name_en as student_surname_en,\n  parent.phone as parent_phone,\n  parent.name as parent_name,\n  parent.preferred_language,\n  therapist.name as therapist_name,\n  therapist.specialization\nFROM therapy_sessions ts\nJOIN students s ON ts.student_id = s.id\nJOIN profiles parent ON s.parent_id = parent.id\nJOIN profiles therapist ON ts.therapist_id = therapist.id\nWHERE \n  ts.date = CURRENT_DATE\n  AND ts.start_time <= (CURRENT_TIME + INTERVAL '2 hours')\n  AND ts.start_time > CURRENT_TIME\n  AND ts.status = 'scheduled'\n  AND parent.phone IS NOT NULL\n  AND NOT EXISTS (\n    SELECT 1 FROM whatsapp_messages wm \n    WHERE wm.related_session_id = ts.id \n    AND wm.template_name = 'appointment_reminder_2h'\n    AND wm.sent_at >= CURRENT_DATE\n  )\nORDER BY ts.start_time;",
+        "options": {}
+      },
+      "id": "12",
+      "name": "Get Today's Near Appointments",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 600],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Arkan Supabase API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "13",
+      "name": "Check If Near Appointments",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "14",
+      "name": "Split Near Appointments",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 480]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "sessionId",
+              "value": "={{ $json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "sessionDate", 
+              "value": "={{ $json.session_date }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "startTime",
+              "value": "={{ $json.start_time }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "endTime",
+              "value": "={{ $json.end_time }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "studentNameAr",
+              "value": "={{ $json.student_name_ar + ' ' + $json.student_surname_ar }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "studentNameEn",
+              "value": "={{ $json.student_name_en + ' ' + $json.student_surname_en }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "parentPhone",
+              "value": "={{ $json.parent_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "parentName",
+              "value": "={{ $json.parent_name }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "preferredLanguage",
+              "value": "={{ $json.preferred_language || 'ar' }}",
+              "type": "string"
+            },
+            {
+              "id": "10",
+              "name": "therapistName",
+              "value": "={{ $json.therapist_name }}",
+              "type": "string"
+            },
+            {
+              "id": "11",
+              "name": "sessionType",
+              "value": "={{ $json.session_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "15",
+      "name": "Prepare 2H Message Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 480]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('2-Hour Reminder Check').item.json.webhook_base_url }}/whatsapp-send-template",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('2-Hour Reminder Check').item.json.supabase_service_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.parentPhone }}"
+            },
+            {
+              "name": "template_name",
+              "value": "appointment_reminder_2h"
+            },
+            {
+              "name": "language",
+              "value": "={{ $json.preferredLanguage }}"
+            },
+            {
+              "name": "parameters",
+              "value": "={{ {\n  \"parent_name\": $json.parentName,\n  \"student_name\": $json.preferredLanguage === 'ar' ? $json.studentNameAr : $json.studentNameEn,\n  \"session_time\": $json.startTime,\n  \"therapist_name\": $json.therapistName,\n  \"center_location\": \"مركز أركان للنمو - الرياض\",\n  \"center_phone\": \"+966112345678\"\n} }}"
+            },
+            {
+              "name": "conversation_id",
+              "value": ""
+            },
+            {
+              "name": "related_session_id",
+              "value": "={{ $json.sessionId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "16",
+      "name": "Send 2H WhatsApp Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 480],
+      "continueOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Check Every Hour": {
+      "main": [
+        [
+          {
+            "node": "Get Tomorrow's Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tomorrow's Appointments": {
+      "main": [
+        [
+          {
+            "node": "Check If Appointments Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Appointments Found": {
+      "main": [
+        [
+          {
+            "node": "Split Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Split Appointments": {
+      "main": [
+        [
+          {
+            "node": "Prepare Message Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Message Variables": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Reminder": {
+      "main": [
+        [
+          {
+            "node": "Check Send Success",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Send Success": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Success": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "2-Hour Reminder Check": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Near Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today's Near Appointments": {
+      "main": [
+        [
+          {
+            "node": "Check If Near Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Near Appointments": {
+      "main": [
+        [
+          {
+            "node": "Split Near Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Split Near Appointments": {
+      "main": [
+        [
+          {
+            "node": "Prepare 2H Message Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare 2H Message Variables": {
+      "main": [
+        [
+          {
+            "node": "Send 2H WhatsApp Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1"
+  },
+  "id": "1",
+  "tags": [
+    {
+      "createdAt": "2025-01-15T10:30:00.000Z",
+      "updatedAt": "2025-01-15T10:30:00.000Z",
+      "id": "1",
+      "name": "WhatsApp Automation"
+    },
+    {
+      "createdAt": "2025-01-15T10:30:00.000Z", 
+      "updatedAt": "2025-01-15T10:30:00.000Z",
+      "id": "2",
+      "name": "Healthcare"
+    }
+  ]
+}

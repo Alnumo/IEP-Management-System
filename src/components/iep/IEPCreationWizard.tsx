@@ -33,7 +33,10 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useCreateIEP } from '@/hooks/useIEPs'
 import { useStudents } from '@/hooks/useStudents'
+import { useAssessmentResults } from '@/hooks/useAssessments'
 import type { CreateIEPData, IEPType, GoalDomain, ServiceCategory } from '@/types/iep'
+import type { Student, MedicalRecord } from '@/types/student'
+import type { AssessmentResult } from '@/types/assessment'
 import { cn } from '@/lib/utils'
 
 // =============================================================================
@@ -192,9 +195,15 @@ export default function IEPCreationWizard({
   const [currentStep, setCurrentStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [assessmentData, setAssessmentData] = useState<AssessmentResult[]>([])
 
   const { data: students } = useStudents()
   const createIEPMutation = useCreateIEP()
+  const { data: assessmentResults } = useAssessmentResults({
+    student_id: selectedStudent?.id,
+    include_latest_only: true
+  })
 
   const form = useForm<WizardFormData>({
     resolver: zodResolver(wizardSchema),
@@ -233,6 +242,141 @@ export default function IEPCreationWizard({
       esy_justification_en: initialData?.esy_justification_en || ''
     }
   })
+
+  // Auto-populate form when student is selected
+  useEffect(() => {
+    if (selectedStudent && assessmentResults) {
+      setAssessmentData(assessmentResults)
+      autoPopulatePresentLevels(selectedStudent, assessmentResults)
+    }
+  }, [selectedStudent, assessmentResults])
+
+  // Auto-populate present levels from student profile and assessments
+  const autoPopulatePresentLevels = (student: Student, assessments: AssessmentResult[]) => {
+    try {
+      // Generate present levels from medical records and assessment data
+      const academicLevelsAr = generateAcademicLevelsText(student, assessments, 'ar')
+      const academicLevelsEn = generateAcademicLevelsText(student, assessments, 'en')
+      const functionalLevelsAr = generateFunctionalLevelsText(student, assessments, 'ar')
+      const functionalLevelsEn = generateFunctionalLevelsText(student, assessments, 'en')
+
+      // Update form with auto-generated content
+      form.setValue('present_levels_academic_ar', academicLevelsAr)
+      form.setValue('present_levels_academic_en', academicLevelsEn)
+      form.setValue('present_levels_functional_ar', functionalLevelsAr)
+      form.setValue('present_levels_functional_en', functionalLevelsEn)
+
+      console.log('✅ IEPCreationWizard: Auto-populated present levels for student:', student.registration_number)
+    } catch (error) {
+      console.error('❌ Error auto-populating present levels:', error)
+    }
+  }
+
+  // Generate academic levels text from assessments
+  const generateAcademicLevelsText = (student: Student, assessments: AssessmentResult[], lang: 'ar' | 'en'): string => {
+    if (!assessments?.length) {
+      return lang === 'ar' 
+        ? `تم تسجيل الطالب ${student.first_name_ar} ${student.last_name_ar} في المركز. يحتاج إلى تقييم شامل لتحديد المستويات الأكاديمية الحالية.`
+        : `Student ${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar} has been enrolled. Comprehensive assessment needed to determine current academic levels.`
+    }
+
+    // Extract academic assessment data
+    const academicAssessments = assessments.filter(a => 
+      a.assessment_type === 'academic' || 
+      a.assessment_type === 'cognitive' ||
+      a.test_name?.toLowerCase().includes('academic')
+    )
+
+    if (lang === 'ar') {
+      let text = `بناءً على التقييمات المُجراة للطالب ${student.first_name_ar} ${student.last_name_ar}:\n\n`
+      
+      academicAssessments.forEach(assessment => {
+        text += `• ${assessment.test_name_ar || assessment.test_name}: `
+        if (assessment.total_score && assessment.max_score) {
+          const percentage = Math.round((assessment.total_score / assessment.max_score) * 100)
+          text += `حصل على ${assessment.total_score}/${assessment.max_score} (${percentage}%)\n`
+        }
+        if (assessment.interpretation_ar) {
+          text += `  التفسير: ${assessment.interpretation_ar}\n`
+        }
+      })
+
+      return text || 'يحتاج الطالب إلى تقييم أكاديمي شامل لتحديد نقاط القوة والاحتياجات.'
+    } else {
+      let text = `Based on assessments conducted for student ${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar}:\n\n`
+      
+      academicAssessments.forEach(assessment => {
+        text += `• ${assessment.test_name}: `
+        if (assessment.total_score && assessment.max_score) {
+          const percentage = Math.round((assessment.total_score / assessment.max_score) * 100)
+          text += `scored ${assessment.total_score}/${assessment.max_score} (${percentage}%)\n`
+        }
+        if (assessment.interpretation_en) {
+          text += `  Interpretation: ${assessment.interpretation_en}\n`
+        }
+      })
+
+      return text || 'Student needs comprehensive academic assessment to determine strengths and needs.'
+    }
+  }
+
+  // Generate functional levels text from assessments
+  const generateFunctionalLevelsText = (student: Student, assessments: AssessmentResult[], lang: 'ar' | 'en'): string => {
+    if (!assessments?.length) {
+      return lang === 'ar' 
+        ? 'يحتاج الطالب إلى تقييم المهارات الوظيفية والحياتية اليومية.'
+        : 'Student needs functional and daily living skills assessment.'
+    }
+
+    const functionalAssessments = assessments.filter(a => 
+      a.assessment_type === 'functional' || 
+      a.assessment_type === 'behavioral' ||
+      a.test_name?.toLowerCase().includes('functional') ||
+      a.test_name?.toLowerCase().includes('adaptive')
+    )
+
+    if (lang === 'ar') {
+      let text = `المهارات الوظيفية للطالب ${student.first_name_ar} ${student.last_name_ar}:\n\n`
+      
+      functionalAssessments.forEach(assessment => {
+        text += `• ${assessment.test_name_ar || assessment.test_name}: `
+        if (assessment.interpretation_ar) {
+          text += `${assessment.interpretation_ar}\n`
+        }
+      })
+
+      if (student.medical_records?.length) {
+        text += '\nالاحتياجات الطبية والوظيفية:\n'
+        student.medical_records.forEach((record: any) => {
+          if (record.special_needs_ar) {
+            text += `• ${record.special_needs_ar}\n`
+          }
+        })
+      }
+
+      return text || 'يحتاج الطالب إلى تقييم المهارات الوظيفية والتكيفية.'
+    } else {
+      let text = `Functional skills for student ${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar}:\n\n`
+      
+      functionalAssessments.forEach(assessment => {
+        text += `• ${assessment.test_name}: `
+        if (assessment.interpretation_en) {
+          text += `${assessment.interpretation_en}\n`
+        }
+      })
+
+      if (student.medical_records?.length) {
+        text += '\nMedical and functional needs:\n'
+        student.medical_records.forEach((record: any) => {
+          if (record.special_needs_en || record.special_needs_ar) {
+            text += `• ${record.special_needs_en || record.special_needs_ar}\n`
+          }
+        })
+      }
+
+      return text || 'Student needs functional and adaptive skills assessment.'
+    }
+  }
 
   const { fields: accommodationsArFields, append: appendAccommodationAr, remove: removeAccommodationAr } = 
     useFieldArray({ control: form.control, name: 'accommodations_ar' })
@@ -388,7 +532,16 @@ export default function IEPCreationWizard({
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Step Content Rendering */}
-              {currentStep === 0 && <BasicInfoStep form={form} students={students} language={language} />}
+              {currentStep === 0 && (
+                <BasicInfoStep 
+                  form={form} 
+                  students={students} 
+                  language={language} 
+                  onStudentSelect={(student) => setSelectedStudent(student)}
+                  selectedStudent={selectedStudent}
+                  assessmentData={assessmentData}
+                />
+              )}
               {currentStep === 1 && <PresentLevelsStep form={form} language={language} />}
               {currentStep === 2 && (
                 <AccommodationsStep 
@@ -476,41 +629,154 @@ export default function IEPCreationWizard({
 // STEP COMPONENTS
 // =============================================================================
 
-function BasicInfoStep({ form, students, language }: any) {
+function BasicInfoStep({ form, students, language, onStudentSelect, selectedStudent, assessmentData }: any) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <FormField
-        control={form.control}
-        name="student_id"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{language === 'ar' ? 'الطالب *' : 'Student *'}</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={language === 'ar' ? 'اختر الطالب' : 'Select Student'} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {students?.map((student: any) => (
-                  <SelectItem key={student.id} value={student.id}>
-                    {language === 'ar' 
-                      ? `${student.first_name_ar} ${student.last_name_ar}`
-                      : `${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar}`
-                    }
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          control={form.control}
+          name="student_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{language === 'ar' ? 'الطالب *' : 'Student *'}</FormLabel>
+              <Select 
+                onValueChange={(value) => {
+                  field.onChange(value)
+                  const student = students?.find((s: any) => s.id === value)
+                  if (student) {
+                    onStudentSelect(student)
+                  }
+                }} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر الطالب' : 'Select Student'} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {students?.map((student: any) => (
+                    <SelectItem key={student.id} value={student.id}>
+                      {language === 'ar' 
+                        ? `${student.first_name_ar} ${student.last_name_ar} (${student.registration_number})`
+                        : `${student.first_name_en || student.first_name_ar} ${student.last_name_en || student.last_name_ar} (${student.registration_number})`
+                      }
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <FormField
-        control={form.control}
-        name="iep_type"
-        render={({ field }) => (
+        {/* Student Profile Summary */}
+        {selectedStudent && (
+          <div className="md:col-span-2">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardHeader>
+                <CardTitle className="text-lg text-blue-800">
+                  {language === 'ar' ? 'ملخص ملف الطالب' : 'Student Profile Summary'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="font-semibold text-blue-700">
+                      {language === 'ar' ? 'العمر:' : 'Age:'}
+                    </span>
+                    <span className="ml-2">
+                      {selectedStudent.date_of_birth 
+                        ? Math.floor((Date.now() - new Date(selectedStudent.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+                        : 'N/A'
+                      } {language === 'ar' ? 'سنة' : 'years'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-blue-700">
+                      {language === 'ar' ? 'الجنس:' : 'Gender:'}
+                    </span>
+                    <span className="ml-2">
+                      {language === 'ar' 
+                        ? (selectedStudent.gender === 'male' ? 'ذكر' : 'أنثى')
+                        : selectedStudent.gender
+                      }
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-blue-700">
+                      {language === 'ar' ? 'تاريخ التسجيل:' : 'Enrollment Date:'}
+                    </span>
+                    <span className="ml-2">
+                      {selectedStudent.enrollment_date 
+                        ? new Date(selectedStudent.enrollment_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')
+                        : 'N/A'
+                      }
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-blue-700">
+                      {language === 'ar' ? 'التقييمات:' : 'Assessments:'}
+                    </span>
+                    <span className="ml-2">
+                      {assessmentData?.length || 0} {language === 'ar' ? 'متوفرة' : 'available'}
+                    </span>
+                  </div>
+                </div>
+                
+                {assessmentData && assessmentData.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-semibold text-blue-700 mb-2">
+                      {language === 'ar' ? 'أحدث التقييمات:' : 'Recent Assessments:'}
+                    </h4>
+                    <div className="space-y-1">
+                      {assessmentData.slice(0, 3).map((assessment, index) => (
+                        <Badge key={index} variant="outline" className="mr-2 mb-1">
+                          {language === 'ar' && assessment.test_name_ar 
+                            ? assessment.test_name_ar 
+                            : assessment.test_name
+                          }
+                          {assessment.total_score && assessment.max_score && (
+                            <span className="ml-1 text-xs">
+                              ({assessment.total_score}/{assessment.max_score})
+                            </span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                    {assessmentData.length > 3 && (
+                      <p className="text-xs text-blue-600 mt-2">
+                        {language === 'ar' 
+                          ? `+${assessmentData.length - 3} تقييم إضافي`
+                          : `+${assessmentData.length - 3} more assessments`
+                        }
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                <div className="bg-green-50 border border-green-200 rounded p-3 mt-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-green-800">
+                      {language === 'ar' 
+                        ? 'سيتم تعبئة المستويات الحالية تلقائياً بناءً على ملف الطالب والتقييمات'
+                        : 'Present levels will be auto-populated based on student profile and assessments'
+                      }
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          control={form.control}
+          name="iep_type"
+          render={({ field }) => (
           <FormItem>
             <FormLabel>{language === 'ar' ? 'نوع البرنامج *' : 'IEP Type *'}</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -594,6 +860,7 @@ function BasicInfoStep({ form, students, language }: any) {
           </FormItem>
         )}
       />
+      </div>
     </div>
   )
 }
